@@ -1,0 +1,9 @@
+BOT_TOKEN=5743271049:AAGexB8ngY70Boh_Gz5B3W0jbMewoDNnQiE
+NOW_PAYMENT_API_KEY=VGHNN98-RKCMF73-PXDKGD4-J4NNNCV
+NOW_PAYMENT_URL=https://api.nowpayments.io/v1
+WESWAP=https://api.weswap.digital/api
+XUI=http://vpn.torgod.site:44090
+XUI_API=http://vpn.torgod.site:44090/panel/api/inbounds
+XUI_USERNAME=C3cZaYP7
+XUI_PASSWORD=Ht9w4rLF
+IPN_SECRET_KEY=RjaUuQk5q3uDTGAed3ca4nqw7RzKutPY
