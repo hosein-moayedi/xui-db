@@ -248,6 +248,39 @@ const cleanExpiredCooldown = () => {
   })
 }
 
+const cleanExpiredOrders = async () => {
+  try {
+    const { orders } = db.data
+    let userId, messageId
+    for (const orderId in orders.waiting) {
+      const order = orders.waiting[orderId];
+      if (order.limit_time < Date.now()) {
+        [userId, messageId] = [order.user_id, order.message_id]
+        delete order.message_id
+        orders.expired[order.id] = { ...order }
+        delete orders.waiting[orderId]
+        bot.deleteMessage(userId, messageId);
+        bot.sendMessage(userId, `❌ زمان انجام تراکنش برای سفارش ${orderId} به اتمام رسید.\n🙏 لطفا با زدن دکمه <b>«🚀 خرید سرویس VPN»</b> از منوی اصلی اقدام به ثبت سفارش جدید بفرمایید.`, { parse_mode: "HTML" })
+        db.write()
+      }
+    }
+  } catch (err) {
+    console.error("❌ Error: config_generation> ", err);
+    bot.sendMessage(userId, "❌ متاسفانه مشکلی در تایید پرداخت یا ساخت کانفیگ به وجود آمده. لطفا به پشتیبانی پیام دهید 🙏");
+  }
+}
+
+const convertTimestampToIran = (time) => {
+  let iranTime = new Date(time);
+  iranTime = moment(iranTime.toISOString())
+    .tz(iranTimezone)
+    .format()
+    .replace("T", " ")
+    .replace(/-/g, '/')
+    .slice(0, 19)
+  return iranTime
+}
+
 bot.onText(/\/start/, ({ from }) => {
   if (isOnCooldown(from.id)) return
   if (from.is_bot)
@@ -255,20 +288,13 @@ bot.onText(/\/start/, ({ from }) => {
 
   const user = db.data.users[from.id];
   if (!user) {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    const hours = String(now.getHours()).padStart(2, "0");
-    const minutes = String(now.getMinutes()).padStart(2, "0");
-
     db.data.users[from.id] = {
       id: from.id,
       tg_name: from.first_name,
       tg_username: from.username,
       test_config: null,
       configs: [],
-      created_at: `${year}/${month}/${day} ${hours}:${minutes}`,
+      created_at: convertTimestampToIran(Date.now()),
     }
     db.write();
   }
@@ -373,7 +399,7 @@ bot.on("callback_query", async (query) => {
   const messageId = message.message_id;
   const queryData = JSON.parse(data);
 
-  if (queryData.action === "generate_invoice") {
+  if (queryData.action === "generate_order") {
     bot.editMessageText("⏳ در حال صدور فاکتور ...\n🙏 لطفا منتظر بمانید", {
       chat_id: chatId,
       message_id: messageId,
@@ -381,27 +407,16 @@ bot.on("callback_query", async (query) => {
     const plan = plans.find((item) => item.id == queryData.data.planId);
     try {
       const orderId = Math.floor(Math.random() * (999999999 - 100000000 + 1)) + 100000000;
-      //--> get it from api
-      const rates = { TRX: 3700 };
-      // const rates = await api.weswap.getRates();
-      const amount = (
-        ((plan.final_price - FIX_COMMISSION) * 1000) /
-        rates.TRX
-      )?.toFixed(4);
-
-      const customQuery = JSON.stringify({ chatId, messageId, orderId })
-      const paymentInfo = await api.nowPayment.createPayment(
-        customQuery,
-        amount,
-        "trx",
-      );
-
-      const paymentLink = `https://weswap.digital/quick?amount=${amount}&currency=TRX&address=${paymentInfo.pay_address}`;
+      const code = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000
+      let amount = (plan.final_price * 10000) + code
+      amount = amount.toLocaleString()
+      const now = Date.now()
+      const expireAt = now + 7200000 // 2 hours
 
       const order = {
         id: orderId,
         user_id: from.id,
-        payment_link: paymentLink,
+        message_id: messageId,
         plan: {
           ...plan,
           name: plan.name
@@ -409,41 +424,21 @@ bot.on("callback_query", async (query) => {
             .replace("${PERIOD}", plan.period / 30)
             .replace("${PRICE}", plan.final_price),
         },
-        payment: { ...paymentInfo },
+        amount,
+        created_at: convertTimestampToIran(now),
+        expire_at: convertTimestampToIran(expireAt),
+        limit_time: expireAt
       };
-      db.data.orders[orderId] = order;
+      db.data.orders.waiting[orderId] = order;
       db.write();
 
-      let expireTime = new Date(paymentInfo.time_limit);
-      expireTime.setMinutes(expireTime.getMinutes() - 5);
-      expireTime = moment(expireTime.toISOString())
-        .tz(iranTimezone)
-        .format()
-        .slice(11, 16);
-
+      //--> enter card number for transaction
       bot.editMessageText(
-        `#️⃣ شماره سفارش: ${orderId}\n\n🟡 آخرین وضعیت: <b>درانتظار پرداخت</b>\n\n⬇️ قبل از باز کردن <b>«💸 لینک خرید»</b> باید <b>VPN</b> خود را <b>خاموش</b> کنید\n\n✅ ۵ دقیقه پس از پرداخت موفق، <b>«🕵🏻‍♂️ بررسی پرداخت»</b> را بزنید تا اشتراک فعال شود\n\n⚠️ <b>هشدار: لینک پرداخت تنها تا ساعت ${expireTime} اعتبار دارد و پس از آن هیچ مسئولیتی بر عهده ما نخواهد بود.</b>`,
+        `#️⃣ شماره سفارش: ${orderId}\n\n🟡 آخرین وضعیت: <b>درانتظار پرداخت</b>\n\n⬇️ قبل از باز کردن <b>«💸 لینک خرید»</b> باید <b>VPN</b> خود را <b>خاموش</b> کنید\n\n✅ ۵ دقیقه پس از پرداخت موفق، <b>«🕵🏻‍♂️ بررسی پرداخت»</b> را بزنید تا اشتراک فعال شود\n\n⚠️ <b>هشدار: لینک پرداخت تنها تا ساعت ${convertTimestampToIran(expireAt).slice(11, 16)} اعتبار دارد و پس از آن هیچ مسئولیتی بر عهده ما نخواهد بود.</b>`,
         {
           parse_mode: "HTML",
           chat_id: chatId,
-          message_id: messageId,
-          reply_markup: {
-            inline_keyboard: [
-              [
-                {
-                  text: "🕵🏻‍♂️ بررسی پرداخت",
-                  callback_data: JSON.stringify({
-                    action: "check_payment",
-                    data: { orderId },
-                  }),
-                },
-                {
-                  text: "💸 پرداخت فاکتور",
-                  url: paymentLink,
-                },
-              ],
-            ],
-          },
+          message_id: messageId
         }
       );
     } catch (e) {
@@ -459,7 +454,7 @@ bot.on("callback_query", async (query) => {
                 {
                   text: "♻️ تلاش مجدد",
                   callback_data: JSON.stringify({
-                    action: "generate_invoice",
+                    action: "generate_order",
                     data: { planId: plan.id },
                   }),
                 },
@@ -475,61 +470,6 @@ bot.on("callback_query", async (query) => {
         }
       );
     }
-  }
-
-  if (queryData.action === "check_payment") {
-    console.log("this query: ", JSON.stringify(query));
-    bot.editMessageText("⏳ در حال بررسی پرداخت ...\n🙏 لطفا منتظر بمانید", {
-      chat_id: chatId,
-      message_id: messageId,
-    });
-    const order = db.data.orders[queryData.data.orderId]
-    if (!order) {
-      bot.sendMessage(chatId, "❌ سفارش موردنظر پیدا نشد! لطفا به ساپورت پیام دهید 🙏");
-      return
-    }
-    const paymentInfo = await api.nowPayment.checkPaymentStatus(
-      order.payment.payment_id
-    );
-    if (paymentInfo.payment_status == "finished") {
-      bot.editMessageText("✅ پرداخت شما تایید شد\n👨🏻‍💻 درحال ساخت کانفیگ...", {
-        chat_id: chatId,
-        message_id: messageId,
-      });
-      try {
-        const config = await vpn.addConfig(user.id, order.plan)
-        user.configs.push({
-          ...config,
-          orderId: order.id
-        })
-        db.write()
-        const textConfig = vpn.linkGenerator(config.id, order.id)
-        const botMsg = `✅ کانفیگ شما با موفقیت ایجاد شد.\n\n😇 ابتدا بر روی کانفیگ زیر کلیک کرده تا کپی شود و سپس برای مشاهده نحوه اتصال، در منو اصلی ربات بر روی دکمه <b>👨🏼‍🏫 آموزش اتصال 👨🏼‍🏫</b> کلیک کنید\n\n<code>${textConfig}</code>`;
-
-        bot.sendMessage(chatId, botMsg, { parse_mode: "HTML" });
-      } catch (e) {
-        console.error("❌ Error: config_generation> ", e);
-        bot.sendMessage(chatId, "❌ متاسفانه مشکلی در ساخت کانفیگ به وجود آمده. لطفا به پشتیبانی پیام دهید 🙏");
-      }
-    } else {
-      bot.editMessageText("🟡 آخرین وضعیت تراکنش:‌ <b>تایید نشده</b>\n🙏لطفا پس از ۳ دقیقه دوباره دکمه <b>بررسی پرداخت</b> را بزنید.",
-        {
-          chat_id: chatId,
-          message_id: messageId,
-          parse_mode: "HTML"
-        });
-      setTimeout(() => {
-        bot.editMessageText(message.text,
-          {
-            parse_mode: "HTML",
-            chat_id: chatId,
-            message_id: messageId,
-            reply_markup: message.reply_markup
-          })
-      }, 7000)
-    }
-    order.payment = paymentInfo;
-    db.write();
   }
 
   if (queryData.action === "plan_detailes") {
@@ -553,7 +493,7 @@ bot.on("callback_query", async (query) => {
             {
               text: "✅ صدور فاکتور",
               callback_data: JSON.stringify({
-                action: "generate_invoice",
+                action: "generate_order",
                 data: { planId: plan.id },
               }),
             },
@@ -597,24 +537,42 @@ app.get("/", (req, res) => {
   res.send("🚀 Bot is running ✅");
 });
 
-app.post("/update_payment", async (req, res) => {
+app.post("/c2c-transaction-verification", async (req, res) => {
+  const { amount } = req.body
+  const { orders } = db.data
+  let userId, messageId
+  console.log(req.body);
+
   try {
-    console.log(req.body);
-    const { payment_status, order_id } = req.body
-    if (payment_status == 'finished') {
-      let customQuery = JSON.parse(order_id)
-      customQuery = {
-        from: { id: customQuery.chatId },
-        message: { message_id: customQuery.messageId },
-        data: JSON.stringify({ action: "check_payment", data: { orderId: customQuery.orderId } })
+    for (const orderId in orders.waiting) {
+      const order = orders.waiting[orderId];
+      if (order.amount == amount) {
+        [userId, messageId] = [order.user_id, order.message_id]
+        delete order.message_id
+        orders.verified[order.id] = { ...order, paid_at: convertTimestampToIran(Date.now()) }
+        delete orders.waiting[orderId]
+        bot.editMessageText(`✅ سفارش ${orderId} با موفقیت پرداخت شد\n👨🏻‍💻 درحال ساخت کانفیگ...`, {
+          chat_id: userId,
+          message_id: messageId,
+        });
+
+        const config = await vpn.addConfig(userId, order.plan)
+        db.data.users[userId].configs.push({
+          ...config,
+          orderId: order.id
+        })
+        db.write()
+        const textConfig = vpn.linkGenerator(config.id, order.id)
+        bot.sendMessage(userId, `✅ کانفیگ شما با موفقیت ایجاد شد.\n\n😇 ابتدا بر روی کانفیگ زیر کلیک کرده تا کپی شود و سپس برای مشاهده نحوه اتصال، در منو اصلی ربات بر روی دکمه <b>👨🏼‍🏫 آموزش اتصال 👨🏼‍🏫</b> کلیک کنید\n\n<code>${textConfig}</code>`, { parse_mode: "HTML" });
+        res.status(200).json({ msg: "verified", success: true });
+        return
       }
-      console.log("customQuery: ", customQuery);
-      bot.emit("callback_query", customQuery);
     }
   } catch (err) {
-    console.error(err);
+    console.error("❌ Error: config_generation> ", err);
+    bot.sendMessage(userId, "❌ متاسفانه مشکلی در تایید پرداخت یا ساخت کانفیگ به وجود آمده. لطفا به پشتیبانی پیام دهید 🙏");
   }
-  res.send("Done");
+  res.status(404).json({ msg: "transaction not found!", success: false });
 });
 
 const checkXuiSessionExpiration = () => {
@@ -634,7 +592,8 @@ app.listen(port, '0.0.0.0', async () => {
   cron.schedule('0 0 */25 * *', () => {
     checkXuiSessionExpiration()
   }).start();
-  cron.schedule('*/1 * * * *', () => {
+  cron.schedule('*/1 * * * * *', () => {
     cleanExpiredCooldown()
+    cleanExpiredOrders()
   }).start();
 });
