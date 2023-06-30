@@ -54,17 +54,14 @@ const plans = [
   },
 ];
 
-const FIX_COMMISSION = 15;
-
 const INBOUND = {
-  id: 3,
+  id: 4,
   protocol: "vless",
   domain: "ir.torgod.site",
   port: 443,
   type: "ws",
   path: "%2F",
-  security: 'tls',
-  sni: "ir.torgod.site"
+  security: 'none',
 }
 const LIMIT_IP = 5
 
@@ -195,38 +192,57 @@ let api = {
           });
       });
     },
+    getClientInfo: async (email) => {
+      return new Promise(async (resolve, reject) => {
+        const options = {
+          headers: {
+            Cookie: `session=${api.xui.session.token}=`
+          }
+        }
+        await axios
+          .get(process.env.XUI_API + `/getClientTraffics/${email}`, options)
+          .then((response) => {
+            if (!response.data.success) {
+              throw response.data.msg;
+            }
+            resolve(response.data.obj);
+          })
+          .catch((error) => {
+            reject(`API call error [xui/addClient]: ${error}`);
+          });
+      });
+    }
   }
 };
 
 const vpn = {
-  addConfig: async (userId, plan) => {
-    const config = vpn.createConfigObj(userId, plan.traffic, plan.period)
+  addConfig: async (userId, orderId, plan) => {
+    const config = vpn.createConfigObj(userId, orderId, plan.traffic, plan.period)
     await api.xui.addClient(INBOUND.id, config)
     return { inbound_id: INBOUND.id, ...config }
   },
   addTestConfig: async (userId) => {
-    const testConfig = vpn.createConfigObj(userId, 0.5, 1, true)
+    const testConfig = vpn.createConfigObj(userId, null, 0.5, 1, true)
     await api.xui.addClient(INBOUND.id, testConfig)
     return { inbound_id: INBOUND.id, ...testConfig }
   },
-  createConfigObj: (userId, traffic, period, isTest = false) => {
+  createConfigObj: (userId, orderId, traffic, period, isTest = false) => {
     const uuid = uuidv4()
     const nowtime = Date.now()
     return {
       alterId: 0,
-      email: `${isTest ? "test-" : ""}${userId}-${nowtime}`,
+      email: `${userId}-${isTest ? "test" : orderId}🚀`,
       enable: true,
       expiryTime: nowtime + (period * 86400000),
       id: uuid,
       limitIp: LIMIT_IP,
-      subId: "",
+      subId: isTest ? `test-${userId}` : orderId,
       tgId: "",
       totalGB: traffic * 1000000000
     }
   },
-  linkGenerator: (id, orderId) => {
-    const { protocol, domain, port, type, path, sni } = INBOUND
-    return `${protocol}://${id}@${domain}:${port}?type=${type}&path=${path}&security=tls&fp=&alpn=&sni=${sni}#Dedicated%20VPN%20-%20${orderId}`
+  getSubLink: (subId) => {
+    return `https://ir.torgod.site:2096/sub/${subId}`
   }
 }
 
@@ -260,7 +276,7 @@ const cleanExpiredOrders = async () => {
         orders.expired[order.id] = { ...order }
         delete orders.waiting[orderId]
         bot.deleteMessage(userId, messageId);
-        bot.sendMessage(userId, `❌ زمان انجام تراکنش برای سفارش ${orderId} به اتمام رسید.\n🙏 لطفا با زدن دکمه <b>«🚀 خرید سرویس VPN»</b> از منوی اصلی اقدام به ثبت سفارش جدید بفرمایید.`, { parse_mode: "HTML" })
+        bot.sendMessage(userId, `❌ زمان انجام تراکنش برای سفارش ${orderId} به اتمام رسید.\n\n✅ درصورتی که هزینه سرویس را به درستی به کارت مقصد ارسال نمودین  اما به صورت خودکار از سمت ما تایید نشده، لطفا رسید پرداخت را برای پشتیبانی ارسال بفرمایید. \nدر غیر این صورت لطفا با زدن دکمه «🚀 خرید سرویس VPN» از منوی اصلی اقدام به ثبت و پرداخت سفارش جدید بفرمایید.`, { parse_mode: "HTML" })
         db.write()
       }
     }
@@ -298,11 +314,11 @@ bot.onText(/\/start/, ({ from }) => {
     }
     db.write();
   }
-  bot.sendMessage(from.id, "توضیحات کوتاه روبات", {
+  bot.sendMessage(from.id, "😇 به بات فروش سرویس VPN اختصاصی خوش آمدید\n\n😋 برای دریافت تست رایگان ۲۴ ساعته، روی دکمه «🎁 دریافت تست رایگان» در منو اصلی بزنید تا کانفیگ تست را دریافت نمایید (۵۰۰ مگابایت)", {
     reply_markup: JSON.stringify({
       keyboard: [
         ["🎁 دریافت تست رایگان", "🚀 خرید سرویس VPN"],
-        ["🛒 کانفیگ های من", "👨🏼‍🏫 آموزش اتصال"],
+        ["🛒 سفارشات من", "👨🏼‍🏫 آموزش اتصال"],
         ["😇 پشتیبانی (فنی و مالی)"],
       ],
       resize_keyboard: true,
@@ -326,10 +342,10 @@ bot.onText(/🎁 دریافت تست رایگان/, async ({ from }) => {
   }
   try {
     const testConfig = await vpn.addTestConfig(user.id)
-    const textConfig = vpn.linkGenerator(testConfig.id, 'test')
+    const subLink = vpn.getSubLink(testConfig.subId)
     user.test_config = testConfig
     db.write()
-    bot.sendMessage(from.id, `✅ کانفیگ شما با موفقیت ایجاد شد.\n\n😇 ابتدا بر روی کانفیگ زیر کلیک کرده تا کپی شود و سپس برای مشاهده نحوه اتصال، در منو اصلی ربات بر روی دکمه <b>👨🏼‍🏫 آموزش اتصال 👨🏼‍🏫</b> کلیک کنید\n\n<code>${textConfig}</code>`, { parse_mode: "HTML" });
+    bot.sendMessage(from.id, `"✅ کانفیگ تست با موفقیت ساخته شده.\n\n⚠️ این کانفیگ شامل ۵۰۰ مگابایت حجم رایگان بوده و تنها ۲۴ ساعت اعتبار دارد.\n\n📡 از کانفیگ تست میتوانید برای بررسی ارتباط، سرعت و پایداری سرویس با اوپراتور خود استفاده کنید.\n\n🌈 بر روی لینک آپدیت زیر کلیک کرده تا کپی شود و از طریق دکمه «👨🏻‍🏫 آموزش اتصال» در منو اصلی به کانفیگ زیر متصل شوید."\n\n<code>${subLink}</code>`, { parse_mode: "HTML" });
   } catch (e) {
     console.error("❌ Error: test_config_generation> ", e);
     bot.sendMessage(from.id, "❌ مشکلی در ساخت کافیگ تست رخ داده است. لطفا دوباره تلاش کنید 🙏");
@@ -343,21 +359,24 @@ bot.onText(/🚀 خرید سرویس VPN/, ({ from }) => {
     bot.sendMessage(from.id, "❌ متاسفانه مشکلی پیش آمده.\n لطفا بر روی /start بزنید.");
     return
   }
-  bot.sendMessage(from.id, "🔻 قوانین و مقررات", {
-    reply_markup: JSON.stringify({
-      inline_keyboard: [
-        [
-          {
-            text: "🫡 شرایط را خوانده و میپذیرم",
-            callback_data: JSON.stringify({ action: "store" }),
-          },
+  bot.sendMessage(
+    from.id,
+    "🔻 شرایط و قوانین استفاده از سرویس:\n\n۱) 🌟حتما قبل از خرید سرویس، از منو اصلی بات، کانفیگ تست را دریافت نموده تا از توانایی اتصال به سرویس های ما با استفاده از اوپراتور خودتان مطمئن شوید. (در غیر این صورت مسئولیت خرید بر عهده کاربر است)\n\n۲) 📡  سرویس ما در تمام ساعات روز برای شما عزیزان قابل دسترس است مگر اینکه اختلال کلی در زیرساخت کشور وجود داشته باشد که در این صورت باید صبر کنید تا اختلال های زیرساخت کشور برطرف شود.\n\n۳) 🕵🏻‍♂️ خرید سرویس از طریق کارت به کارت صورت میگیرد و از تکنولوژی تایید خودکار تراکنش استفاده میشود (به این صورت که پس از دریافت تراکنش از سمت شما به کارت مقصد، کانفیگ ها به صورت خودکار ساخته و تحویل داده میشود. (اما کاربر همچنان موظف به ذخیره رسید کارت به کارت برای مواقع خاص میباشد)\n\n۴) ❌ کاربران حق فروش و یا اجاره سرویس به افراد دیگر را نداشته و باید حتما سرویس را از بات تهیه کنند.\n\n😇 ایا شرایط را می پذیرید؟",
+    {
+      reply_markup: JSON.stringify({
+        inline_keyboard: [
+          [
+            {
+              text: "🫡 شرایط را خوانده و میپذیرم",
+              callback_data: JSON.stringify({ action: "store" }),
+            },
+          ],
         ],
-      ],
-    }),
-  });
+      }),
+    });
 });
 
-bot.onText(/🛒 کانفیگ های من/, async ({ from }) => {
+bot.onText(/🛒 سفارشات من/, async ({ from }) => {
   if (isOnCooldown(from.id)) return
   const user = db.data.users[from.id]
   if (!user) {
@@ -369,11 +388,18 @@ bot.onText(/🛒 کانفیگ های من/, async ({ from }) => {
     return
   }
   let botMsg = ""
-  user.configs.map(({ id, orderId }) => {
-    const textConfig = vpn.linkGenerator(id, orderId)
-    botMsg = botMsg + `\n\n🌈 سفارش: ${orderId}\n\n<code>${textConfig}</code>\n---------------------------------`
-  })
-  bot.sendMessage(from.id, botMsg, { parse_mode: "HTML" });
+  try {
+    for (const { email, subId, orderId } of user.configs) {
+      const { up, down, total } = await api.xui.getClientInfo(email)
+      const { paid_at, expire_at } = db.data.orders.verified[orderId]
+      const subLink = vpn.getSubLink(subId)
+      const remainingTraffic = ((total - up - down) / 1000000000).toFixed(2)
+      botMsg = `\n\n\n🌈 شماره سفارش: ${orderId}\n🥇 حجم باقیمانده: ${remainingTraffic} گیگ\n⏱️ زمان تحویل: ${paid_at.slice(0, 16)}\n📅 زمان انقضا: ${expire_at.slice(0, 16)}\n♻️لینک اپدیت: \n<code>${subLink}</code>` + botMsg
+    }
+    bot.sendMessage(from.id, botMsg, { parse_mode: "HTML" });
+  } catch (err) {
+    bot.sendMessage(from.id, "❌ متاسفانه مشکلی در دریافت سفارشات شما بوجود آمده است.\n🙏 لطفا پس از چند دقیقه دوباره تلاش کنید.");
+  }
 });
 
 bot.onText(/👨🏼‍🏫 آموزش اتصال/, async ({ from }) => {
@@ -383,7 +409,7 @@ bot.onText(/👨🏼‍🏫 آموزش اتصال/, async ({ from }) => {
 bot.onText(/😇 پشتیبانی/, ({ from }) => {
   if (isOnCooldown(from.id)) return
   const botMsg =
-    "⚠️درصورتی که تنها مشکل در پرداخت و یا خرید داشتین به آی دی زیر پیام دهید.\n⚠️درصورتی که تمامی آموزش ها را مشاهده کرده اید و همچنان در اتصال مشکل دارید میتوانید به آی دی زیر پیام دهید.\n@dedicated_vpn_support";
+    "😇🙏🏻 قبل از ارتباط با پشتیبانی لطف کنید و ابتدا در گروه سوال خود را مطرح کنید و درصورتی که مشکلتان حل نشد ،حتما آموزش های نحوه اتصال به سرویس را از طریق منو اصلی بات دریافت و مشاهده بفرمایید.\n\n🔗 لینک گروه: \n@dedicated_vpn_group\n\n💸 درصورتی که مبلغ دقیق سرویس را با موفقیت به کارت مقصد ارسال کردین ولی کانفیگ را پس از گذشت حداکثر ۱۵ دقیقه دریافت نکردین، میتوانید به پشتیبانی پیام داده و رسید خود را ارسال بفرمایید تا در اسرع وقت بررسی شود.\n\n🫂 پشتیبانی مالی و فنی: @dedicated_vpn_support";
   bot.sendMessage(from.id, botMsg);
 });
 
@@ -434,7 +460,7 @@ bot.on("callback_query", async (query) => {
 
       //--> enter card number for transaction
       bot.editMessageText(
-        `#️⃣ شماره سفارش: ${orderId}\n\n🟡 آخرین وضعیت: <b>درانتظار پرداخت</b>\n\n⬇️ قبل از باز کردن <b>«💸 لینک خرید»</b> باید <b>VPN</b> خود را <b>خاموش</b> کنید\n\n✅ ۵ دقیقه پس از پرداخت موفق، <b>«🕵🏻‍♂️ بررسی پرداخت»</b> را بزنید تا اشتراک فعال شود\n\n⚠️ <b>هشدار: لینک پرداخت تنها تا ساعت ${convertTimestampToIran(expireAt).slice(11, 16)} اعتبار دارد و پس از آن هیچ مسئولیتی بر عهده ما نخواهد بود.</b>`,
+        `🌟 جهت پرداخت هزینه سرویس مبلغ دقیق زیر را به شماره کارت ذکر شده حداکثر تا ساعت ${convertTimestampToIran(expireAt).slice(11, 16)} ارسال بفرمایید.\n\n💳 شماره کارت: 6219-8619-0430-8318\n\n👤 صاحب حساب: محمد حسین مویدی\n\n💸 مبلغ نهایی: ${amount} ریال (بر روی عدد مبلغ بزنید تا کپی شود)\n\n❌ توجه: تمامی اعداد مبلغ نهایی سرویس جهت تایید خودکار تراکنش بسیار مهم بوده و باید با دقت وارد شود\n\n✅  بین ۱ تا ۵ دقیقه پس از پرداخت موفق، سفارش شما به صورت خودکار و آنی تحویل داده میشود. (درصورت عدم دریافت سفارش، لطفا به پشتیبانی مراجعه فرمایید)\n\n🌈 شماره سفارش: ${orderId}\n\n🟡 آخرین وضعیت: درانتظار پرداخت`,
         {
           parse_mode: "HTML",
           chat_id: chatId,
@@ -475,10 +501,7 @@ bot.on("callback_query", async (query) => {
   if (queryData.action === "plan_detailes") {
     const plan = plans.find((item) => item.id == queryData.data.planId);
 
-    const botMsg = `🥇 ${plan.traffic} گیگ   ⏰ ${plan.period / 30
-      } ماهه\n🌟 چند کاربره (بدون محدودیت اتصال)\n💳 ${plan.original_price
-      } تومان: با تخفیف ⬅️ ${plan.final_price
-      } تومان\n\n برای صدور فاکتور و خرید نهایی روی دکمه "صدور فاکتور ✅" کلیک کنید.`;
+    const botMsg = `🥇 ${plan.traffic} گیگ   ⏰ ${plan.period / 30} ماهه\n🌟 چند کاربره (بدون محدودیت اتصال)\n💳 ${plan.original_price} تومان ⬅️ ${plan.final_price} تومان 🎉\n\nبرای صدور فاکتور و خرید نهایی روی دکمه \"صدور فاکتور ✅\" کلیک کنید.`
 
     bot.editMessageText(botMsg, {
       chat_id: chatId,
@@ -505,7 +528,7 @@ bot.on("callback_query", async (query) => {
 
   if (queryData.action === "store") {
     const botMsg =
-      "🔻 لطفا یک طرح را انتخاب کنید: لطفا یک طرح را انتخاب کنید:";
+      "🌟 توجه: تمامی پلن ها <b>چندکاربره</b> هستند 🌟\n🔻 لطفا طرح مورد نظر خود را انتخاب کنید 🔻";
     bot.editMessageText(botMsg, {
       chat_id: chatId,
       message_id: messageId,
@@ -525,6 +548,7 @@ bot.on("callback_query", async (query) => {
           ];
         }),
       },
+      parse_mode: "HTML"
     });
   }
 });
@@ -551,19 +575,16 @@ app.post("/c2c-transaction-verification", async (req, res) => {
         delete order.message_id
         orders.verified[order.id] = { ...order, paid_at: convertTimestampToIran(Date.now()) }
         delete orders.waiting[orderId]
-        bot.editMessageText(`✅ سفارش ${orderId} با موفقیت پرداخت شد\n👨🏻‍💻 درحال ساخت کانفیگ...`, {
-          chat_id: userId,
-          message_id: messageId,
-        });
+        bot.deleteMessage(userId, messageId);
 
-        const config = await vpn.addConfig(userId, order.plan)
+        const config = await vpn.addConfig(userId, orderId, order.plan)
         db.data.users[userId].configs.push({
           ...config,
           orderId: order.id
         })
         db.write()
-        const textConfig = vpn.linkGenerator(config.id, order.id)
-        bot.sendMessage(userId, `✅ کانفیگ شما با موفقیت ایجاد شد.\n\n😇 ابتدا بر روی کانفیگ زیر کلیک کرده تا کپی شود و سپس برای مشاهده نحوه اتصال، در منو اصلی ربات بر روی دکمه <b>👨🏼‍🏫 آموزش اتصال 👨🏼‍🏫</b> کلیک کنید\n\n<code>${textConfig}</code>`, { parse_mode: "HTML" });
+        const subLink = vpn.getSubLink(config.subId)
+        bot.sendMessage(userId, `✅ پرداخت شما برای سفارش ${orderId} با موفقیت تایید شد.\n\n😇 ابتدا بر روی لینک آپدیت زیر کلیک کرده تا کپی شود و سپس برای مشاهده نحوه اتصال، در منو اصلی ربات بر روی دکمه <b>👨🏼‍🏫 آموزش اتصال 👨🏼‍🏫</b> کلیک کنید\n\n<code>${subLink}</code>`, { parse_mode: "HTML" });
         res.status(200).json({ msg: "verified", success: true });
         return
       }

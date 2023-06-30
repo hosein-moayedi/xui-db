@@ -6,4 +6,5 @@ XUI=http://vpn.torgod.site:44090
 XUI_API=http://vpn.torgod.site:44090/panel/api/inbounds
 XUI_USERNAME=C3cZaYP7
 XUI_PASSWORD=Ht9w4rLF
+XUI_SECRET_KEY=VFZSLRUTG8bRKW8lMEQn5Yg0Zl19iqJ6Bj2T18jSwtGhOMimntvsDWJkzpl22V0M
 IPN_SECRET_KEY=RjaUuQk5q3uDTGAed3ca4nqw7RzKutPY
