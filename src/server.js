@@ -8,9 +8,10 @@ import cron from 'node-cron';
 import TelegramBot from "node-telegram-bot-api";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import sqlite3 from 'sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 
-const iranTimezone = "Asia/Tehran";
+moment.tz.setDefault('Asia/Tehran');
 
 const environment = process.env.NODE_ENV || "dev";
 dotenv.config({
@@ -20,9 +21,11 @@ dotenv.config({
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const file = join(__dirname, "./db.json");
 const adapter = new JSONFileSync(file);
-const defaultData = { users: [] };
+const defaultData = { users: {}, orders: { waiting: {}, verified: {}, expired: {} } };
 const db = new LowSync(adapter, defaultData);
 db.read();
+
+const xuiDbPath = '/etc/x-ui/x-ui.db';
 
 const app = express();
 app.use(express.json());
@@ -34,7 +37,7 @@ const bot = new TelegramBot(token, { polling: true });
 const plans = [
   {
     id: 101,
-    name: "🥇${TRAFFIC} گیگ - ${PERIOD} ماهه - 💳 ${PRICE} تومان",
+    name: "🥇${TRAFFIC} گیگ - ${PERIOD} روزه - 💳 ${PRICE} تومان",
     traffic: 100,
     period: 30,
     original_price: 229,
@@ -44,7 +47,7 @@ const plans = [
   },
   {
     id: 102,
-    name: "🥇${TRAFFIC} گیگ - ${PERIOD} ماهه - 💳 ${PRICE} تومان",
+    name: "🥇${TRAFFIC} گیگ - ${PERIOD} روزه - 💳 ${PRICE} تومان",
     traffic: 200,
     period: 30,
     original_price: 419,
@@ -63,7 +66,7 @@ const INBOUND = {
   path: "%2F",
   security: 'none',
 }
-const LIMIT_IP = 5
+const LIMIT_IP = 2
 
 let api = {
   nowPayment: {
@@ -208,10 +211,30 @@ let api = {
             resolve(response.data.obj);
           })
           .catch((error) => {
-            reject(`API call error [xui/addClient]: ${error}`);
+            reject(`API call error [xui/getClientInfo]: ${error}`);
           });
       });
-    }
+    },
+    depletedClients: async () => {
+      return new Promise(async (resolve, reject) => {
+        const options = {
+          headers: {
+            Cookie: `session=${api.xui.session.token}=`
+          }
+        }
+        await axios
+          .post(process.env.XUI_API + `/delDepletedClients/${INBOUND.id}`, null, options)
+          .then((response) => {
+            if (!response.data.success) {
+              throw response.data.msg;
+            }
+            resolve();
+          })
+          .catch((error) => {
+            reject(`API call error [xui/depletedClients]: ${error}`);
+          });
+      });
+    },
   }
 };
 
@@ -228,12 +251,12 @@ const vpn = {
   },
   createConfigObj: (userId, orderId, traffic, period, isTest = false) => {
     const uuid = uuidv4()
-    const nowtime = Date.now()
+    const expiryTime = moment().add(period * 24 * 60 * 60 * 1000).valueOf()
     return {
       alterId: 0,
-      email: `${userId}-${isTest ? "test" : orderId}🚀`,
+      email: `${userId}-${isTest ? "test" : orderId}`,
       enable: true,
-      expiryTime: nowtime + (period * 86400000),
+      expiryTime,
       id: uuid,
       limitIp: LIMIT_IP,
       subId: isTest ? `test-${userId}` : orderId,
@@ -242,7 +265,7 @@ const vpn = {
     }
   },
   getSubLink: (subId) => {
-    return `https://ir.torgod.site:2096/sub/${subId}`
+    return `${process.env.XUI_SUB}/${subId}`
   }
 }
 
@@ -250,16 +273,16 @@ let cooldowns = {};
 const COOLDOWN_PERIOD = 1000;
 
 const isOnCooldown = (userId) => {
-  if (cooldowns[userId] && cooldowns[userId] > Date.now())
+  if (cooldowns[userId] && cooldowns[userId] > moment().valueOf())
     return true;
-  cooldowns[userId] = Date.now() + COOLDOWN_PERIOD;
+  cooldowns[userId] = moment().valueOf() + COOLDOWN_PERIOD;
   return false;
 }
 
 const cleanExpiredCooldown = () => {
   const cooldownUsers = Object.getOwnPropertyNames(cooldowns)
   cooldownUsers.map((cooldownUserId) => {
-    if (cooldowns[cooldownUserId] < Date.now())
+    if (cooldowns[cooldownUserId] < moment().valueOf())
       delete cooldowns[cooldownUserId]
   })
 }
@@ -270,13 +293,13 @@ const cleanExpiredOrders = async () => {
     let userId, messageId
     for (const orderId in orders.waiting) {
       const order = orders.waiting[orderId];
-      if (order.limit_time < Date.now()) {
+      if (order.payment_limit_time < moment().valueOf()) {
         [userId, messageId] = [order.user_id, order.message_id]
         delete order.message_id
         orders.expired[order.id] = { ...order }
         delete orders.waiting[orderId]
         bot.deleteMessage(userId, messageId);
-        bot.sendMessage(userId, `❌ زمان انجام تراکنش برای سفارش ${orderId} به اتمام رسید.\n\n✅ درصورتی که هزینه سرویس را به درستی به کارت مقصد ارسال نمودین  اما به صورت خودکار از سمت ما تایید نشده، لطفا رسید پرداخت را برای پشتیبانی ارسال بفرمایید. \nدر غیر این صورت لطفا با زدن دکمه «🚀 خرید سرویس VPN» از منوی اصلی اقدام به ثبت و پرداخت سفارش جدید بفرمایید.`, { parse_mode: "HTML" })
+        bot.sendMessage(userId, `❌ زمان انجام تراکنش برای سفارش ${orderId} به اتمام رسید.\n\n✅ درصورتی که هزینه سرویس را به درستی به کارت مقصد ارسال نمودین اما به صورت خودکار از سمت ما تایید نشده، لطفا رسید پرداخت را برای پشتیبانی ارسال بفرمایید. \n\nدر غیر این صورت لطفا با زدن دکمه <b>«🚀 خرید سرویس VPN»</b> از منوی اصلی اقدام به ثبت و پرداخت سفارش جدید بفرمایید.`, { parse_mode: "HTML" })
         db.write()
       }
     }
@@ -286,15 +309,40 @@ const cleanExpiredOrders = async () => {
   }
 }
 
-const convertTimestampToIran = (time) => {
-  let iranTime = new Date(time);
-  iranTime = moment(iranTime.toISOString())
-    .tz(iranTimezone)
-    .format()
-    .replace("T", " ")
-    .replace(/-/g, '/')
-    .slice(0, 19)
-  return iranTime
+const cleanExpiredConfigs = () => {
+  try {
+    const xuiDb = new sqlite3.Database(xuiDbPath, (err) => {
+      if (err)
+        throw `Error connecting to the database: ${err}`;
+      const query = 'SELECT email FROM client_traffics WHERE enable = 0';
+      xuiDb.all(query, async (error, rows) => {
+        if (error)
+          throw `Error executing query: ${err}`;
+        const expiredConfigs = rows.map((row) => row.email);
+        if (expiredConfigs.length > 0) {
+          try {
+            await api.xui.depletedClients()
+          } catch (err) {
+            console.log("Error in cleanExpiredConfigs>api.xui.depletedClients: ", err);
+          }
+          expiredConfigs.map((email) => {
+            const [userId, orderId] = email.split('-')
+            if (orderId != 'test') {
+              const configs = db.data.users[userId].configs
+              db.data.users[userId].configs = configs.filter((config) => config.email !== email)
+            }
+          })
+          db.write()
+        }
+        xuiDb.close((err) => {
+          if (err)
+            throw `Error closing the database connection: ${err}`;
+        });
+      });
+    });
+  } catch (err) {
+    console.log(err);
+  }
 }
 
 bot.onText(/\/start/, ({ from }) => {
@@ -310,7 +358,7 @@ bot.onText(/\/start/, ({ from }) => {
       tg_username: from.username,
       test_config: null,
       configs: [],
-      created_at: convertTimestampToIran(Date.now()),
+      created_at: moment().format().slice(0, 19)
     }
     db.write();
   }
@@ -319,7 +367,7 @@ bot.onText(/\/start/, ({ from }) => {
       keyboard: [
         ["🎁 دریافت تست رایگان", "🚀 خرید سرویس VPN"],
         ["🛒 سفارشات من", "👨🏼‍🏫 آموزش اتصال"],
-        ["😇 پشتیبانی (فنی و مالی)"],
+        ["💰 پشتیبانی مالی", "👨🏻‍💻 پشتیبانی فنی"],
       ],
       resize_keyboard: true,
     }),
@@ -345,7 +393,7 @@ bot.onText(/🎁 دریافت تست رایگان/, async ({ from }) => {
     const subLink = vpn.getSubLink(testConfig.subId)
     user.test_config = testConfig
     db.write()
-    bot.sendMessage(from.id, `"✅ کانفیگ تست با موفقیت ساخته شده.\n\n⚠️ این کانفیگ شامل ۵۰۰ مگابایت حجم رایگان بوده و تنها ۲۴ ساعت اعتبار دارد.\n\n📡 از کانفیگ تست میتوانید برای بررسی ارتباط، سرعت و پایداری سرویس با اوپراتور خود استفاده کنید.\n\n🌈 بر روی لینک آپدیت زیر کلیک کرده تا کپی شود و از طریق دکمه «👨🏻‍🏫 آموزش اتصال» در منو اصلی به کانفیگ زیر متصل شوید."\n\n<code>${subLink}</code>`, { parse_mode: "HTML" });
+    bot.sendMessage(from.id, `✅ کانفیگ تست با موفقیت ساخته شده.\n\n⚠️ این کانفیگ شامل ۵۰۰ مگابایت حجم رایگان بوده و تنها ۲۴ ساعت اعتبار دارد.\n\n📡 از کانفیگ تست میتوانید برای بررسی ارتباط، سرعت و پایداری سرویس با اپراتور خود استفاده کنید.\n\n🌈 بر روی لینک آپدیت زیر کلیک کرده تا کپی شود و از طریق دکمه <b>«👨🏻‍🏫 آموزش اتصال»</b> در منو اصلی به کانفیگ زیر متصل شوید."\n\n<code>${subLink}</code>`, { parse_mode: "HTML" });
   } catch (e) {
     console.error("❌ Error: test_config_generation> ", e);
     bot.sendMessage(from.id, "❌ مشکلی در ساخت کافیگ تست رخ داده است. لطفا دوباره تلاش کنید 🙏");
@@ -361,7 +409,7 @@ bot.onText(/🚀 خرید سرویس VPN/, ({ from }) => {
   }
   bot.sendMessage(
     from.id,
-    "🔻 شرایط و قوانین استفاده از سرویس:\n\n۱) 🌟حتما قبل از خرید سرویس، از منو اصلی بات، کانفیگ تست را دریافت نموده تا از توانایی اتصال به سرویس های ما با استفاده از اوپراتور خودتان مطمئن شوید. (در غیر این صورت مسئولیت خرید بر عهده کاربر است)\n\n۲) 📡  سرویس ما در تمام ساعات روز برای شما عزیزان قابل دسترس است مگر اینکه اختلال کلی در زیرساخت کشور وجود داشته باشد که در این صورت باید صبر کنید تا اختلال های زیرساخت کشور برطرف شود.\n\n۳) 🕵🏻‍♂️ خرید سرویس از طریق کارت به کارت صورت میگیرد و از تکنولوژی تایید خودکار تراکنش استفاده میشود (به این صورت که پس از دریافت تراکنش از سمت شما به کارت مقصد، کانفیگ ها به صورت خودکار ساخته و تحویل داده میشود. (اما کاربر همچنان موظف به ذخیره رسید کارت به کارت برای مواقع خاص میباشد)\n\n۴) ❌ کاربران حق فروش و یا اجاره سرویس به افراد دیگر را نداشته و باید حتما سرویس را از بات تهیه کنند.\n\n😇 ایا شرایط را می پذیرید؟",
+    "🔻 شرایط و قوانین استفاده از سرویس:\n\n۱) 🌟حتما قبل از خرید سرویس، از منو اصلی بات، کانفیگ تست را دریافت نموده تا از توانایی اتصال به سرویس های ما با استفاده از اپراتور خودتان مطمئن شوید. (در غیر این صورت مسئولیت خرید بر عهده کاربر است)\n\n۲) 📡  سرویس ما در تمام ساعات روز برای شما عزیزان قابل دسترس است مگر اینکه اختلال کلی در زیرساخت کشور وجود داشته باشد که در این صورت باید صبر کنید تا اختلال های زیرساخت کشور برطرف شود.\n\n۳) 🕵🏻‍♂️ خرید سرویس از طریق کارت به کارت صورت میگیرد و از تکنولوژی تایید خودکار تراکنش استفاده میشود (به این صورت که پس از دریافت تراکنش از سمت شما به کارت مقصد، کانفیگ ها به صورت خودکار ساخته و تحویل داده میشود. (اما کاربر همچنان موظف به ذخیره رسید کارت به کارت برای مواقع خاص میباشد)\n\n۴) ❌ کاربران حق فروش و یا اجاره سرویس به افراد دیگر را نداشته و باید حتما سرویس را از بات تهیه کنند.\n\n😇 ایا شرایط را می پذیرید؟",
     {
       reply_markup: JSON.stringify({
         inline_keyboard: [
@@ -394,7 +442,7 @@ bot.onText(/🛒 سفارشات من/, async ({ from }) => {
       const { paid_at, expire_at } = db.data.orders.verified[orderId]
       const subLink = vpn.getSubLink(subId)
       const remainingTraffic = ((total - up - down) / 1000000000).toFixed(2)
-      botMsg = `\n\n\n🌈 شماره سفارش: ${orderId}\n🥇 حجم باقیمانده: ${remainingTraffic} گیگ\n⏱️ زمان تحویل: ${paid_at.slice(0, 16)}\n📅 زمان انقضا: ${expire_at.slice(0, 16)}\n♻️لینک اپدیت: \n<code>${subLink}</code>` + botMsg
+      botMsg = `\n\n\n🌈 <b>شماره سفارش: </b>${orderId}\n🥇 <b>حجم باقیمانده: </b>${remainingTraffic} گیگ\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n♻️ <b>لینک اپدیت: </b>\n<code>${subLink}</code>` + botMsg
     }
     bot.sendMessage(from.id, botMsg, { parse_mode: "HTML" });
   } catch (err) {
@@ -406,10 +454,25 @@ bot.onText(/👨🏼‍🏫 آموزش اتصال/, async ({ from }) => {
 
 });
 
-bot.onText(/😇 پشتیبانی/, ({ from }) => {
+bot.onText(/👨🏻‍💻 پشتیبانی فنی/, ({ from }) => {
+  if (isOnCooldown(from.id)) return
+  const user = db.data.users[from.id]
+  if (!user) {
+    bot.sendMessage(from.id, "❌ متاسفانه مشکلی پیش آمده.\n لطفا بر روی /start بزنید.");
+    return
+  }
+  if (user.configs.length == 0) {
+    bot.sendMessage(from.id, "❌ تنها با داشتن سرویس فعال امکان ارتباط با پشتیبانی وجود دارد.\n🙏 لطفا از بخش خرید سرویس اقدام بفرمایید.");
+    return
+  }
+  const botMsg = `⚠️ ابتدا مراحل اتصال را از بخش <b>«👨🏻‍🏫 آموزش اتصال»</b> چک بفرمایید و بعد این موارد را بررسی کنید:\n\n۱) از بخش سفارشات من حجم و زمان باقی مانده سفارش را بررسی کنید.\n\n۲) اتصال به اینترنت را بدون استفاده از vpn چک کنید.\n\n۳) حتما از فایل نرم افزارهایی که ربات برای شما ارسال میکند استفاده کنید (زیرا تفاوت نسخه ها بعضا باعث عدم اتصال میشود)\n\n۴) درصورتی که برای اندروید از v2rayNG استفاده میکنید حتما درقسمت ادیت کانفیگ گزینه ی allowInsecure را true کنید\n\n\nاگر همچنان در اتصال مشکل دارین در گروه زیر مشکلتون رو مطرح بفرمایید:\n\n👥 <a href="https://t.me/+9Ry1urzfT-owMzVk">برای عضویت در گروه کلیک کنید</a> 👥`
+  bot.sendMessage(from.id, botMsg, { parse_mode: "HTML" });
+});
+
+bot.onText(/💰 پشتیبانی مالی/, ({ from }) => {
   if (isOnCooldown(from.id)) return
   const botMsg =
-    "😇🙏🏻 قبل از ارتباط با پشتیبانی لطف کنید و ابتدا در گروه سوال خود را مطرح کنید و درصورتی که مشکلتان حل نشد ،حتما آموزش های نحوه اتصال به سرویس را از طریق منو اصلی بات دریافت و مشاهده بفرمایید.\n\n🔗 لینک گروه: \n@dedicated_vpn_group\n\n💸 درصورتی که مبلغ دقیق سرویس را با موفقیت به کارت مقصد ارسال کردین ولی کانفیگ را پس از گذشت حداکثر ۱۵ دقیقه دریافت نکردین، میتوانید به پشتیبانی پیام داده و رسید خود را ارسال بفرمایید تا در اسرع وقت بررسی شود.\n\n🫂 پشتیبانی مالی و فنی: @dedicated_vpn_support";
+    "درصورتی که مبلغ دقیق سرویس را با موفقیت به کارت مقصد ارسال کردین ولی کانفیگ را پس از گذشت حداکثر ۱۵ دقیقه دریافت نکردین، میتوانید به پشتیبانی پیام داده و رسید خود را ارسال بفرمایید تا در اسرع وقت بررسی شود.\n\n🫂 پشتیبانی مالی : @dedicated_vpn_support";
   bot.sendMessage(from.id, botMsg);
 });
 
@@ -434,10 +497,9 @@ bot.on("callback_query", async (query) => {
     try {
       const orderId = Math.floor(Math.random() * (999999999 - 100000000 + 1)) + 100000000;
       const code = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000
-      let amount = (plan.final_price * 10000) + code
-      amount = amount.toLocaleString()
-      const now = Date.now()
-      const expireAt = now + 7200000 // 2 hours
+      const amount = ((plan.final_price * 10000) + code).toLocaleString()
+      const createdAt = moment().format().slice(0, 19)
+      const paymentLimitTime = moment().add(7200000) // 2 hours
 
       const order = {
         id: orderId,
@@ -447,20 +509,19 @@ bot.on("callback_query", async (query) => {
           ...plan,
           name: plan.name
             .replace("${TRAFFIC}", plan.traffic)
-            .replace("${PERIOD}", plan.period / 30)
+            .replace("${PERIOD}", plan.period)
             .replace("${PRICE}", plan.final_price),
         },
         amount,
-        created_at: convertTimestampToIran(now),
-        expire_at: convertTimestampToIran(expireAt),
-        limit_time: expireAt
+        created_at: createdAt,
+        expire_at: moment().add(plan.period * 24 * 60 * 60 * 1000).format().slice(0, 19),
+        payment_limit_time: paymentLimitTime.valueOf()
       };
       db.data.orders.waiting[orderId] = order;
       db.write();
 
-      //--> enter card number for transaction
       bot.editMessageText(
-        `🌟 جهت پرداخت هزینه سرویس مبلغ دقیق زیر را به شماره کارت ذکر شده حداکثر تا ساعت ${convertTimestampToIran(expireAt).slice(11, 16)} ارسال بفرمایید.\n\n💳 شماره کارت: 6219-8619-0430-8318\n\n👤 صاحب حساب: محمد حسین مویدی\n\n💸 مبلغ نهایی: ${amount} ریال (بر روی عدد مبلغ بزنید تا کپی شود)\n\n❌ توجه: تمامی اعداد مبلغ نهایی سرویس جهت تایید خودکار تراکنش بسیار مهم بوده و باید با دقت وارد شود\n\n✅  بین ۱ تا ۵ دقیقه پس از پرداخت موفق، سفارش شما به صورت خودکار و آنی تحویل داده میشود. (درصورت عدم دریافت سفارش، لطفا به پشتیبانی مراجعه فرمایید)\n\n🌈 شماره سفارش: ${orderId}\n\n🟡 آخرین وضعیت: درانتظار پرداخت`,
+        `🌟 جهت پرداخت هزینه سرویس مبلغ <u><b>دقیق</b></u> زیر را به شماره کارت ذکر شده حداکثر تا ساعت <u><b>${paymentLimitTime.format().slice(11, 16)}</b></u> ارسال بفرمایید.\n\n💳 <b>شماره کارت:\n</b>6219-8619-1150-4420\n\n👤 <b>صاحب حساب: </b>محمد امین مویدی\n\n💸 <b>مبلغ نهایی: </b><code>${amount}</code> ریال\n(بر روی اعداد مبلغ بزنید تا کپی شود)\n\n❌ <b><u>توجه: تمامی اعداد مبلغ نهایی سرویس جهت تایید خودکار تراکنش بسیار مهم بوده و باید با دقت وارد شود</u></b>\n\n✅  بین ۱ تا ۵ دقیقه پس از پرداخت موفق، سفارش شما به صورت خودکار و آنی تحویل داده میشود. (درصورت عدم دریافت سفارش، لطفا به پشتیبانی مراجعه فرمایید)\n\n🌈 <b>شماره سفارش: </b>${orderId}\n\n🟡 <b>آخرین وضعیت: </b>درانتظار پرداخت`,
         {
           parse_mode: "HTML",
           chat_id: chatId,
@@ -501,11 +562,12 @@ bot.on("callback_query", async (query) => {
   if (queryData.action === "plan_detailes") {
     const plan = plans.find((item) => item.id == queryData.data.planId);
 
-    const botMsg = `🥇 ${plan.traffic} گیگ   ⏰ ${plan.period / 30} ماهه\n🌟 چند کاربره (بدون محدودیت اتصال)\n💳 ${plan.original_price} تومان ⬅️ ${plan.final_price} تومان 🎉\n\nبرای صدور فاکتور و خرید نهایی روی دکمه \"صدور فاکتور ✅\" کلیک کنید.`
+    const botMsg = `🥇 <b>${plan.traffic} گیگ   ⏰ ${plan.period} روزه\n🌟 چند کاربره (تا 2 آی پی)\n💳 <s>${plan.original_price} تومان</s> ⬅️ ${plan.final_price} تومان 🎉</b>\n\nبرای صدور فاکتور و خرید نهایی روی دکمه \"✅ صدور فاکتور\" کلیک کنید.`
 
     bot.editMessageText(botMsg, {
       chat_id: chatId,
       message_id: messageId,
+      parse_mode: "HTML",
       reply_markup: {
         inline_keyboard: [
           [
@@ -528,7 +590,7 @@ bot.on("callback_query", async (query) => {
 
   if (queryData.action === "store") {
     const botMsg =
-      "🌟 توجه: تمامی پلن ها <b>چندکاربره</b> هستند 🌟\n🔻 لطفا طرح مورد نظر خود را انتخاب کنید 🔻";
+      "🌟 پلن ها <u><b>چند کاربره (تا 2 آی پی)</b></u> هستند 🌟\n🔻 لطفا طرح مورد نظر خود را انتخاب کنید 🔻";
     bot.editMessageText(botMsg, {
       chat_id: chatId,
       message_id: messageId,
@@ -538,7 +600,7 @@ bot.on("callback_query", async (query) => {
             {
               text: item.name
                 .replace("${TRAFFIC}", item.traffic)
-                .replace("${PERIOD}", item.period / 30)
+                .replace("${PERIOD}", item.period)
                 .replace("${PRICE}", item.final_price),
               callback_data: JSON.stringify({
                 action: "plan_detailes",
@@ -562,7 +624,11 @@ app.get("/", (req, res) => {
 });
 
 app.post("/c2c-transaction-verification", async (req, res) => {
-  const { amount } = req.body
+  const { amount, secret_key } = req.body
+  if (secret_key !== process.env.C2C_TRANSACTION_VERIFICATION_SECRET_KEY) {
+    res.status(403).json({ msg: "invalid secretkey!", success: false });
+    return
+  }
   const { orders } = db.data
   let userId, messageId
   console.log(req.body);
@@ -573,7 +639,7 @@ app.post("/c2c-transaction-verification", async (req, res) => {
       if (order.amount == amount) {
         [userId, messageId] = [order.user_id, order.message_id]
         delete order.message_id
-        orders.verified[order.id] = { ...order, paid_at: convertTimestampToIran(Date.now()) }
+        orders.verified[order.id] = { ...order, paid_at: moment().format().slice(0, 19) }
         delete orders.waiting[orderId]
         bot.deleteMessage(userId, messageId);
 
@@ -584,7 +650,7 @@ app.post("/c2c-transaction-verification", async (req, res) => {
         })
         db.write()
         const subLink = vpn.getSubLink(config.subId)
-        bot.sendMessage(userId, `✅ پرداخت شما برای سفارش ${orderId} با موفقیت تایید شد.\n\n😇 ابتدا بر روی لینک آپدیت زیر کلیک کرده تا کپی شود و سپس برای مشاهده نحوه اتصال، در منو اصلی ربات بر روی دکمه <b>👨🏼‍🏫 آموزش اتصال 👨🏼‍🏫</b> کلیک کنید\n\n<code>${subLink}</code>`, { parse_mode: "HTML" });
+        bot.sendMessage(userId, `✅ پرداخت شما برای سفارش ${orderId} با موفقیت تایید شد.\n\n😇 ابتدا بر روی لینک آپدیت زیر کلیک کرده تا کپی شود و سپس برای مشاهده نحوه اتصال، در منو اصلی ربات بر روی دکمه <b>«👨🏻‍🏫 آموزش اتصال»</b> کلیک کنید\n\n<code>${subLink}</code>`, { parse_mode: "HTML" });
         res.status(200).json({ msg: "verified", success: true });
         return
       }
@@ -616,5 +682,8 @@ app.listen(port, '0.0.0.0', async () => {
   cron.schedule('*/1 * * * * *', () => {
     cleanExpiredCooldown()
     cleanExpiredOrders()
+  }).start();
+  cron.schedule('0 */8 * * *', () => {
+    cleanExpiredConfigs()
   }).start();
 });
