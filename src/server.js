@@ -60,7 +60,7 @@ const plans = [
 const INBOUND = {
   id: 4,
   protocol: "vless",
-  domain: "ir.torgod.site",
+  domain: "turbo.torgod.site",
   port: 443,
   type: "ws",
   path: "%2F",
@@ -435,17 +435,34 @@ bot.onText(/🛒 سفارشات من/, async ({ from }) => {
     bot.sendMessage(from.id, "⚠️ شما درحال حاضر هیچ کانفیگ خریداری شده ای ندارید.\n\n🙏 لطفا با زدن دکمه خرید سرویس از منو اصلی اقدام به خرید کانفیگ کنید.");
     return
   }
-  let botMsg = ""
   try {
-    for (const { email, subId, orderId } of user.configs) {
-      const { up, down, total } = await api.xui.getClientInfo(email)
-      const { paid_at, expire_at } = db.data.orders.verified[orderId]
-      const subLink = vpn.getSubLink(subId)
-      const remainingTraffic = ((total - up - down) / 1000000000).toFixed(2)
-      botMsg = `\n\n\n🌈 <b>شماره سفارش: </b>${orderId}\n🥇 <b>حجم باقیمانده: </b>${remainingTraffic} گیگ\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n♻️ <b>لینک اپدیت: </b>\n<code>${subLink}</code>` + botMsg
-    }
-    bot.sendMessage(from.id, botMsg, { parse_mode: "HTML" });
+    let botMsg = ""
+    const xuiDb = new sqlite3.Database(xuiDbPath, (err) => {
+      if (err)
+        throw `Error connecting to the database: ${err}`;
+      const query = `SELECT email, up, down, total, enable FROM client_traffics WHERE email LIKE '${user.id}-%' AND email NOT LIKE '%-test'`;
+      xuiDb.all(query, async (error, rows) => {
+        if (error)
+          throw `Error executing query: ${err}`;
+        const configs = [...rows];
+        if (configs.length > 0) {
+          configs.map(({ email, up, down, total, enable }) => {
+            const orderId = email.split('-')[1]
+            const { paid_at, expire_at } = db.data.orders.verified[orderId]
+            const remainingTraffic = (total - up - down) > 0 ? ((total - up - down) / 1000000000).toFixed(2) : 0
+            const subLink = vpn.getSubLink(orderId)
+            botMsg = `\n\n\n🌈 <b>شماره سفارش: </b>${orderId}\n🥇 <b>حجم باقیمانده: </b>${remainingTraffic} گیگ\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n👀 <b>وضعیت سفارش: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n♻️ <b>لینک اپدیت: </b>\n<code>${subLink}</code>` : ''}` + botMsg
+          })
+          bot.sendMessage(from.id, botMsg, { parse_mode: "HTML" });
+        }
+        xuiDb.close((err) => {
+          if (err)
+            throw `Error closing the database connection: ${err}`;
+        });
+      });
+    });
   } catch (err) {
+    console.log(err);
     bot.sendMessage(from.id, "❌ متاسفانه مشکلی در دریافت سفارشات شما بوجود آمده است.\n🙏 لطفا پس از چند دقیقه دوباره تلاش کنید.");
   }
 });
@@ -683,7 +700,8 @@ app.listen(port, '0.0.0.0', async () => {
     cleanExpiredCooldown()
     cleanExpiredOrders()
   }).start();
-  cron.schedule('0 */8 * * *', () => {
+  cron.schedule('0 */24 * * *', () => {
     cleanExpiredConfigs()
   }).start();
+  cleanExpiredConfigs()
 });
