@@ -345,11 +345,33 @@ const cleanExpiredConfigs = () => {
   }
 }
 
-bot.onText(/\/start/, ({ from }) => {
-  if (isOnCooldown(from.id)) return
+const baseChecking = async (userId, isStartCommand) => {
+  if (isOnCooldown(userId)) return false
+  if (!isStartCommand) {
+    const user = db.data.users[userId]
+    if (!user) {
+      bot.sendMessage(userId, "❌ متاسفانه مشکلی پیش آمده.\n لطفا بر روی /start بزنید.");
+      return false
+    }
+  }
+  try {
+    const channelSubscription = await bot.getChatMember('@dedicated_vpn_channel', userId)
+    if (channelSubscription.status !== 'member' && channelSubscription.status !== 'creator' && channelSubscription.status !== 'administrator') {
+      bot.sendMessage(userId, "⚠️ برای استفاده از ربات باید ابتدا در کانال و گروه ما عضو شوید و سپس بر روی /start بزنید.\n\n💎 👈 <u><a href='https://t.me/dedicated_vpn_channel'>عضویت در کانال</a></u> 👉 💎\n\n👥 👈 <u><a href='https://t.me/+9Ry1urzfT-owMzVk'>عضویت در گروه</a></u> 👉 👥\n\n--------------------------------------", { parse_mode: 'HTML' });
+      return false
+    }
+  } catch (err) {
+    console.error('Error:', err);
+    return false
+  }
+  return true
+}
+
+bot.onText(/\/start/, async ({ from }) => {
   if (from.is_bot)
     return;
-
+  const baseCheckingStatus = await baseChecking(from.id, true)
+  if (!baseCheckingStatus) return
   const user = db.data.users[from.id];
   if (!user) {
     db.data.users[from.id] = {
@@ -375,12 +397,9 @@ bot.onText(/\/start/, ({ from }) => {
 });
 
 bot.onText(/🎁 دریافت تست رایگان/, async ({ from }) => {
-  if (isOnCooldown(from.id)) return
+  const baseCheckingStatus = await baseChecking(from.id)
+  if (!baseCheckingStatus) return
   const user = db.data.users[from.id]
-  if (!user) {
-    bot.sendMessage(from.id, "❌ متاسفانه مشکلی پیش آمده.\n لطفا بر روی /start بزنید.");
-    return
-  }
   if (user.test_config) {
     bot.sendMessage(
       from.id,
@@ -400,8 +419,9 @@ bot.onText(/🎁 دریافت تست رایگان/, async ({ from }) => {
   }
 });
 
-bot.onText(/🚀 خرید سرویس VPN/, ({ from }) => {
-  if (isOnCooldown(from.id)) return
+bot.onText(/🚀 خرید سرویس VPN/, async ({ from }) => {
+  const baseCheckingStatus = await baseChecking(from.id)
+  if (!baseCheckingStatus) return
   const user = db.data.users[from.id]
   if (!user) {
     bot.sendMessage(from.id, "❌ متاسفانه مشکلی پیش آمده.\n لطفا بر روی /start بزنید.");
@@ -425,7 +445,8 @@ bot.onText(/🚀 خرید سرویس VPN/, ({ from }) => {
 });
 
 bot.onText(/🛒 سفارشات من/, async ({ from }) => {
-  if (isOnCooldown(from.id)) return
+  const baseCheckingStatus = await baseChecking(from.id)
+  if (!baseCheckingStatus) return
   const user = db.data.users[from.id]
   if (!user) {
     bot.sendMessage(from.id, "❌ متاسفانه مشکلی پیش آمده.\n لطفا بر روی /start بزنید.");
@@ -468,26 +489,49 @@ bot.onText(/🛒 سفارشات من/, async ({ from }) => {
 });
 
 bot.onText(/👨🏼‍🏫 آموزش اتصال/, async ({ from }) => {
-
+  const baseCheckingStatus = await baseChecking(from.id)
+  if (!baseCheckingStatus) return
+  const botMsg = '😇 سیستم عامل مورد نظر را انتخاب کنید 🔻'
+  bot.sendMessage(from.id, botMsg, {
+    reply_markup: {
+      inline_keyboard: [
+        [{
+          text: '📱 اندروید - Android 📱',
+          url: 'https://t.me/dedicated_vpn_channel/20'
+        }],
+        [{
+          text: '📱 آی او اس - IOS 📱',
+          url: 'https://t.me/dedicated_vpn_channel/19'
+        }],
+        [{
+          text: '🖥️ ویندوز - Windows 🖥️',
+          url: 'https://t.me/dedicated_vpn_channel/21'
+        }],
+        [{
+          text: '💻 مک او اس - MacOS 💻',
+          url: 'https://t.me/dedicated_vpn_channel/18'
+        }],
+      ],
+    },
+    parse_mode: "HTML"
+  });
 });
 
-bot.onText(/👨🏻‍💻 پشتیبانی فنی/, ({ from }) => {
-  if (isOnCooldown(from.id)) return
+bot.onText(/👨🏻‍💻 پشتیبانی فنی/, async ({ from }) => {
+  const baseCheckingStatus = await baseChecking(from.id)
+  if (!baseCheckingStatus) return
   const user = db.data.users[from.id]
   if (!user) {
     bot.sendMessage(from.id, "❌ متاسفانه مشکلی پیش آمده.\n لطفا بر روی /start بزنید.");
-    return
-  }
-  if (user.configs.length == 0) {
-    bot.sendMessage(from.id, "❌ تنها با داشتن سرویس فعال امکان ارتباط با پشتیبانی وجود دارد.\n🙏 لطفا از بخش خرید سرویس اقدام بفرمایید.");
     return
   }
   const botMsg = `⚠️ ابتدا مراحل اتصال را از بخش <b>«👨🏻‍🏫 آموزش اتصال»</b> چک بفرمایید و بعد این موارد را بررسی کنید:\n\n۱) از بخش سفارشات من حجم و زمان باقی مانده سفارش را بررسی کنید.\n\n۲) اتصال به اینترنت را بدون استفاده از vpn چک کنید.\n\n۳) حتما از فایل نرم افزارهایی که ربات برای شما ارسال میکند استفاده کنید (زیرا تفاوت نسخه ها بعضا باعث عدم اتصال میشود)\n\n۴) درصورتی که برای اندروید از v2rayNG استفاده میکنید حتما درقسمت ادیت کانفیگ گزینه ی allowInsecure را true کنید\n\n\nاگر همچنان در اتصال مشکل دارین در گروه زیر مشکلتون رو مطرح بفرمایید:\n\n👥 <a href="https://t.me/+9Ry1urzfT-owMzVk">برای عضویت در گروه کلیک کنید</a> 👥`
   bot.sendMessage(from.id, botMsg, { parse_mode: "HTML" });
 });
 
-bot.onText(/💰 پشتیبانی مالی/, ({ from }) => {
-  if (isOnCooldown(from.id)) return
+bot.onText(/💰 پشتیبانی مالی/, async ({ from }) => {
+  const baseCheckingStatus = await baseChecking(from.id)
+  if (!baseCheckingStatus) return
   const botMsg =
     "درصورتی که مبلغ دقیق سرویس را با موفقیت به کارت مقصد ارسال کردین ولی کانفیگ را پس از گذشت حداکثر ۱۵ دقیقه دریافت نکردین، میتوانید به پشتیبانی پیام داده و رسید خود را ارسال بفرمایید تا در اسرع وقت بررسی شود.\n\n🫂 پشتیبانی مالی : @dedicated_vpn_support";
   bot.sendMessage(from.id, botMsg);
