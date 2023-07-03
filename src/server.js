@@ -470,7 +470,8 @@ bot.onText(/🛒 سفارشات من/, async ({ from }) => {
           configs.map(({ email, up, down, total, enable }) => {
             const orderId = email.split('-')[1]
             const { paid_at, expire_at } = db.data.orders.verified[orderId]
-            const remainingTraffic = (total - up - down) > 0 ? ((total - up - down) / 1000000000).toFixed(2) : 0
+            let remainingTraffic = ((total - up - down) / 1024 / 1024 / 1024).toFixed(2)
+            remainingTraffic = remainingTraffic > 0 ? remainingTraffic : 0
             const subLink = vpn.getSubLink(orderId)
             botMsg = `\n\n\n🌈 <b>شماره سفارش: </b>${orderId}\n🥇 <b>حجم باقیمانده: </b>${remainingTraffic} گیگ\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n👀 <b>وضعیت سفارش: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n♻️ <b>لینک اپدیت: </b>\n<code>${subLink}</code>` : ''}` + botMsg
           })
