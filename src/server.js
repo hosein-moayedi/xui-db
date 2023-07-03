@@ -261,7 +261,7 @@ const vpn = {
       limitIp: LIMIT_IP,
       subId: isTest ? `test-${userId}` : orderId,
       tgId: "",
-      totalGB: traffic * 1000000000
+      totalGB: traffic * 1024 * 1024 * 1024
     }
   },
   getSubLink: (subId) => {
