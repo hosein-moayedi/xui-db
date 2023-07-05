@@ -506,7 +506,7 @@ bot.onText(/👨🏼‍🏫 آموزش اتصال/, async ({ from }) => {
         }],
         [{
           text: '🖥️ ویندوز - Windows 🖥️',
-          url: 'https://t.me/dedicated_vpn_channel/21'
+          url: 'https://t.me/dedicated_vpn_channel/24'
         }],
         [{
           text: '💻 مک او اس - MacOS 💻',
@@ -734,7 +734,7 @@ const checkXuiSessionExpiration = () => {
   }
 }
 
-const port = process.env.PORT || 80;
+const port = process.env.PORT || 9090;
 app.listen(port, '0.0.0.0', async () => {
   console.log(`Server listening on port ${port}`);
   await api.xui.login()
