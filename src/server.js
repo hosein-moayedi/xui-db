@@ -498,7 +498,7 @@ bot.onText(/👨🏼‍🏫 آموزش اتصال/, async ({ from }) => {
       inline_keyboard: [
         [{
           text: '📱 اندروید - Android 📱',
-          url: 'https://t.me/dedicated_vpn_channel/20'
+          url: 'https://t.me/dedicated_vpn_channel/25'
         }],
         [{
           text: '📱 آی او اس - IOS 📱',
@@ -583,7 +583,7 @@ bot.on("callback_query", async (query) => {
       db.write();
 
       bot.editMessageText(
-        `🌟 جهت پرداخت هزینه سرویس مبلغ <u><b>دقیق</b></u> زیر را به شماره کارت ذکر شده حداکثر تا ساعت <u><b>${paymentLimitTime.format().slice(11, 16)}</b></u> ارسال بفرمایید.\n\n💳 <b>شماره کارت:\n</b>6219-8619-1150-4420\n\n👤 <b>صاحب حساب: </b>محمد امین مویدی\n\n💸 <b>مبلغ نهایی: </b><code>${amount}</code> ریال\n(بر روی اعداد مبلغ بزنید تا کپی شود)\n\n❌ <b><u>توجه: تمامی اعداد مبلغ نهایی سرویس جهت تایید خودکار تراکنش بسیار مهم بوده و باید با دقت وارد شود</u></b>\n\n✅  بین ۱ تا ۵ دقیقه پس از پرداخت موفق، سفارش شما به صورت خودکار و آنی تحویل داده میشود. (درصورت عدم دریافت سفارش، لطفا به پشتیبانی مراجعه فرمایید)\n\n🌈 <b>شماره سفارش: </b>${orderId}\n\n🟡 <b>آخرین وضعیت: </b>درانتظار پرداخت`,
+        `🌟 جهت پرداخت هزینه سرویس مبلغ <u><b>دقیق</b></u> زیر را به شماره کارت ذکر شده حداکثر تا ساعت <u><b>${paymentLimitTime.format().slice(11, 16)}</b></u> ارسال بفرمایید.\n\n💳 <b>شماره کارت:\n</b>6219-8619-1150-4420\n\n👤 <b>صاحب حساب: </b>محمدامین مویدی\n\n💸 <b>مبلغ نهایی: </b><code>${amount}</code> ریال\n(بر روی اعداد مبلغ بزنید تا کپی شود)\n\n❌ <b><u>توجه: تمامی اعداد مبلغ نهایی سرویس جهت تایید خودکار تراکنش بسیار مهم بوده و باید با دقت وارد شود</u></b>\n\n✅  بین ۱ تا ۵ دقیقه پس از پرداخت موفق، سفارش شما به صورت خودکار و آنی تحویل داده میشود. (درصورت عدم دریافت سفارش، لطفا به پشتیبانی مراجعه فرمایید)\n\n🌈 <b>شماره سفارش: </b>${orderId}\n\n🟡 <b>آخرین وضعیت: </b>درانتظار پرداخت`,
         {
           parse_mode: "HTML",
           chat_id: chatId,
@@ -686,41 +686,65 @@ app.get("/", (req, res) => {
 });
 
 app.post("/c2c-transaction-verification", async (req, res) => {
-  const { amount, secret_key } = req.body
+  const { content, secret_key } = req.body
   if (secret_key !== process.env.C2C_TRANSACTION_VERIFICATION_SECRET_KEY) {
     res.status(403).json({ msg: "invalid secretkey!", success: false });
     return
   }
-  const { orders } = db.data
-  let userId, messageId
-  console.log(req.body);
+  console.log("content: ", content);
 
-  try {
-    for (const orderId in orders.waiting) {
-      const order = orders.waiting[orderId];
-      if (order.amount == amount) {
-        [userId, messageId] = [order.user_id, order.message_id]
-        delete order.message_id
-        orders.verified[order.id] = { ...order, paid_at: moment().format().slice(0, 19) }
-        delete orders.waiting[orderId]
-        bot.deleteMessage(userId, messageId);
-
-        const config = await vpn.addConfig(userId, orderId, order.plan)
-        db.data.users[userId].configs.push({
-          ...config,
-          orderId: order.id
-        })
-        db.write()
-        const subLink = vpn.getSubLink(config.subId)
-        bot.sendMessage(userId, `✅ پرداخت شما برای سفارش ${orderId} با موفقیت تایید شد.\n\n😇 ابتدا بر روی لینک آپدیت زیر کلیک کرده تا کپی شود و سپس برای مشاهده نحوه اتصال، در منو اصلی ربات بر روی دکمه <b>«👨🏻‍🏫 آموزش اتصال»</b> کلیک کنید\n\n<code>${subLink}</code>`, { parse_mode: "HTML" });
-        res.status(200).json({ msg: "verified", success: true });
-        return
-      }
-    }
-  } catch (err) {
-    console.error("❌ Error: config_generation> ", err);
-    bot.sendMessage(userId, "❌ متاسفانه مشکلی در تایید پرداخت یا ساخت کانفیگ به وجود آمده. لطفا به پشتیبانی پیام دهید 🙏");
+  let formattedMessage = "";
+  for (let i = 0; i < content.length; i += 4) {
+    formattedMessage += "\\u" + content.substr(i, 4);
   }
+  console.log(formattedMessage);
+
+  const persianText = formattedMessage.replace(/\\u([\d\w]{4})/gi, (match, grp) => {
+    return String.fromCharCode(parseInt(grp, 16));
+  });
+  console.log(persianText);
+
+  const bankRegex = /بلو\nواریز پول\n محمدحسین عزیز، ([\d,]+)/;
+
+  const bankMatch = persianText.match(bankRegex);
+
+  if (bankMatch) {
+    let price = bankMatch[1];
+    console.log(price);
+
+    const { orders } = db.data
+    let userId, messageId
+
+    try {
+      for (const orderId in orders.waiting) {
+        const order = orders.waiting[orderId];
+        if (order.amount == price) {
+          [userId, messageId] = [order.user_id, order.message_id]
+          delete order.message_id
+          orders.verified[order.id] = { ...order, paid_at: moment().format().slice(0, 19) }
+          delete orders.waiting[orderId]
+          bot.deleteMessage(userId, messageId);
+
+          const config = await vpn.addConfig(userId, orderId, order.plan)
+          db.data.users[userId].configs.push({
+            ...config,
+            orderId: order.id
+          })
+          db.write()
+          const subLink = vpn.getSubLink(config.subId)
+          bot.sendMessage(userId, `✅ پرداخت شما برای سفارش ${orderId} با موفقیت تایید شد.\n\n😇 ابتدا بر روی لینک آپدیت زیر کلیک کرده تا کپی شود و سپس برای مشاهده نحوه اتصال، در منو اصلی ربات بر روی دکمه <b>«👨🏻‍🏫 آموزش اتصال»</b> کلیک کنید\n\n<code>${subLink}</code>`, { parse_mode: "HTML" });
+          res.status(200).json({ msg: "verified", success: true });
+          return
+        }
+      }
+    } catch (err) {
+      console.error("❌ Error: config_generation> ", err);
+      bot.sendMessage(userId, "❌ متاسفانه مشکلی در تایید پرداخت یا ساخت کانفیگ به وجود آمده. لطفا به پشتیبانی پیام دهید 🙏");
+    }
+  } else {
+    console.log('No match found.');
+  }
+
   res.status(404).json({ msg: "transaction not found!", success: false });
 });
 
