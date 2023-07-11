@@ -36,22 +36,74 @@ const bot = new TelegramBot(token, { polling: true });
 
 const plans = [
   {
+    id: 97,
+    name: "${SYMBOL} ${TRAFFIC} گیگ - ${PERIOD} روزه - 💳 ${PRICE} تومان",
+    symbol: "🥉",
+    traffic: 15,
+    period: 30,
+    original_price: 75,
+    final_price: 55,
+    limit_ip: 1,
+    version: 1,
+    active: true,
+  },
+  {
+    id: 98,
+    name: "${SYMBOL} ${TRAFFIC} گیگ - ${PERIOD} روزه - 💳 ${PRICE} تومان",
+    symbol: "🥈",
+    traffic: 25,
+    period: 30,
+    original_price: 95,
+    final_price: 75,
+    limit_ip: 1,
+    version: 1,
+    active: true,
+  },
+  {
+    id: 99,
+    name: "${SYMBOL} ${TRAFFIC} گیگ - ${PERIOD} روزه - 💳 ${PRICE} تومان",
+    symbol: "🥇",
+    traffic: 50,
+    period: 30,
+    original_price: 150,
+    final_price: 125,
+    limit_ip: 1,
+    version: 1,
+    active: true,
+  },
+  {
+    id: 100,
+    name: "${SYMBOL} ${TRAFFIC} گیگ - ${PERIOD} روزه - 💳 ${PRICE} تومان",
+    symbol: "🏅",
+    traffic: 75,
+    period: 30,
+    original_price: 200,
+    final_price: 180,
+    limit_ip: 2,
+    version: 1,
+    active: true,
+  },
+  {
     id: 101,
-    name: "🥇${TRAFFIC} گیگ - ${PERIOD} روزه - 💳 ${PRICE} تومان",
+    name: "${SYMBOL} ${TRAFFIC} گیگ - ${PERIOD} روزه - 💳 ${PRICE} تومان",
+    symbol: "🎖️",
     traffic: 100,
     period: 30,
     original_price: 229,
     final_price: 199,
+    limit_ip: 2,
     version: 1,
     active: true,
   },
   {
     id: 102,
-    name: "🥇${TRAFFIC} گیگ - ${PERIOD} روزه - 💳 ${PRICE} تومان",
+    name: "${SYMBOL} ${TRAFFIC} گیگ - ${PERIOD} روزه - 💳 ${PRICE} تومان",
+    symbol: "🎖️",
     traffic: 200,
     period: 30,
     original_price: 419,
     final_price: 379,
+    limit_ip: 2,
     version: 1,
     active: true,
   },
@@ -66,7 +118,6 @@ const INBOUND = {
   path: "%2F",
   security: 'none',
 }
-const LIMIT_IP = 2
 
 let api = {
   nowPayment: {
@@ -240,16 +291,16 @@ let api = {
 
 const vpn = {
   addConfig: async (userId, orderId, plan) => {
-    const config = vpn.createConfigObj(userId, orderId, plan.traffic, plan.period)
+    const config = vpn.createConfigObj(userId, orderId, plan.traffic, plan.period, plan.limit_ip)
     await api.xui.addClient(INBOUND.id, config)
     return { inbound_id: INBOUND.id, ...config }
   },
   addTestConfig: async (userId) => {
-    const testConfig = vpn.createConfigObj(userId, null, 0.5, 1, true)
+    const testConfig = vpn.createConfigObj(userId, null, 0.5, 1, 1, true)
     await api.xui.addClient(INBOUND.id, testConfig)
     return { inbound_id: INBOUND.id, ...testConfig }
   },
-  createConfigObj: (userId, orderId, traffic, period, isTest = false) => {
+  createConfigObj: (userId, orderId, traffic, period, limitIp, isTest = false) => {
     const uuid = uuidv4()
     const expiryTime = moment().add(period * 24 * 60 * 60 * 1000).valueOf()
     return {
@@ -258,7 +309,7 @@ const vpn = {
       enable: true,
       expiryTime,
       id: uuid,
-      limitIp: LIMIT_IP,
+      limitIp,
       subId: isTest ? `test-${userId}` : orderId,
       tgId: "",
       totalGB: traffic * 1024 * 1024 * 1024
@@ -357,7 +408,7 @@ const baseChecking = async (userId, isStartCommand) => {
   try {
     const channelSubscription = await bot.getChatMember('@dedicated_vpn_channel', userId)
     if (channelSubscription.status !== 'member' && channelSubscription.status !== 'creator' && channelSubscription.status !== 'administrator') {
-      bot.sendMessage(userId, "⚠️ برای استفاده از ربات باید ابتدا در کانال و گروه ما عضو شوید و سپس بر روی /start بزنید.\n\n💎 👈 <u><a href='https://t.me/dedicated_vpn_channel'>عضویت در کانال</a></u> 👉 💎\n\n👥 👈 <u><a href='https://t.me/+9Ry1urzfT-owMzVk'>عضویت در گروه</a></u> 👉 👥\n\n--------------------------------------", { parse_mode: 'HTML' });
+      bot.sendMessage(userId, "⚠️ برای استفاده از ربات ابتدا در کانال ما عضو شوید و سپس بر روی /start بزنید.\n\n💎 👈 <u><a href='https://t.me/dedicated_vpn_channel'>عضویت در کانال</a></u> 👉 💎", { parse_mode: 'HTML' });
       return false
     }
   } catch (err) {
@@ -384,7 +435,7 @@ bot.onText(/\/start/, async ({ from }) => {
     }
     db.write();
   }
-  bot.sendMessage(from.id, "😇 به بات فروش سرویس VPN اختصاصی خوش آمدید\n\n😋 برای دریافت تست رایگان ۲۴ ساعته، روی دکمه «🎁 دریافت تست رایگان» در منو اصلی بزنید تا کانفیگ تست را دریافت نمایید (۵۰۰ مگابایت)", {
+  bot.sendMessage(from.id, "😇 به بات فروش سرویس VPN اختصاصی خوش آمدید\n\n😋 برای دریافت کانفیگ رایگان، روی دکمه «🎁 دریافت تست رایگان» در منو اصلی بزنید تا کانفیگ تست را دریافت نمایید", {
     reply_markup: JSON.stringify({
       keyboard: [
         ["🎁 دریافت تست رایگان", "🚀 خرید سرویس VPN"],
@@ -425,12 +476,41 @@ bot.onText(/ok/, async ({ from, text }) => {
           })
           db.write()
           const subLink = vpn.getSubLink(config.subId)
-          bot.sendMessage(userId, `✅ پرداخت شما برای سفارش ${orderId} با موفقیت تایید شد.\n\n😇 ابتدا بر روی لینک آپدیت زیر کلیک کرده تا کپی شود و سپس برای مشاهده نحوه اتصال، در منو اصلی ربات بر روی دکمه <b>«👨🏻‍🏫 آموزش اتصال»</b> کلیک کنید\n\n<code>${subLink}</code>`, { parse_mode: "HTML" });
+          bot.sendMessage(userId, `✅ پرداخت شما برای سفارش ${orderId} با موفقیت تایید شد.\n\n♻️ <b>لینک آپدیت خودکار:</b>\n<code>${subLink}</code>`, { parse_mode: "HTML" });
+          const botMsg = '😇 جهت مشاهده نحوه اتصال به سرویس سیستم عامل خود را انتخاب کنید 🔻'
+          setTimeout(() => bot.sendMessage(userId, botMsg, {
+            reply_markup: {
+              inline_keyboard: [
+                [{
+                  text: '📱 اندروید - Android 📱',
+                  url: 'https://t.me/dedicated_vpn_channel/25'
+                }],
+                [{
+                  text: '📱 آی او اس - IOS 📱',
+                  url: 'https://t.me/dedicated_vpn_channel/19'
+                }],
+                [{
+                  text: '🖥️ ویندوز - Windows 🖥️',
+                  url: 'https://t.me/dedicated_vpn_channel/24'
+                }],
+                [{
+                  text: '💻 مک او اس - MacOS 💻',
+                  url: 'https://t.me/dedicated_vpn_channel/18'
+                }],
+              ],
+            },
+            parse_mode: "HTML"
+          }), 500)
+
+          bot.sendMessage(from.id, '✅ Done ✅')
+          return
         }
       }
+      bot.sendMessage(from.id, '⚠️ Not Found ⚠️')
     } catch (err) {
       console.error("❌ Error: config_generation> ", err);
       bot.sendMessage(userId, "❌ متاسفانه مشکلی در تایید پرداخت یا ساخت کانفیگ به وجود آمده. لطفا به پشتیبانی پیام دهید 🙏");
+      bot.sendMessage(from.id, '❌ Failed ❌')
     }
   }
 });
@@ -451,7 +531,31 @@ bot.onText(/🎁 دریافت تست رایگان/, async ({ from }) => {
     const subLink = vpn.getSubLink(testConfig.subId)
     user.test_config = testConfig
     db.write()
-    bot.sendMessage(from.id, `✅ کانفیگ تست با موفقیت ساخته شده.\n\n⚠️ این کانفیگ شامل ۵۰۰ مگابایت حجم رایگان بوده و تنها ۲۴ ساعت اعتبار دارد.\n\n📡 از کانفیگ تست میتوانید برای بررسی ارتباط، سرعت و پایداری سرویس با اپراتور خود استفاده کنید.\n\n🌈 بر روی لینک آپدیت زیر کلیک کرده تا کپی شود و از طریق دکمه <b>«👨🏻‍🏫 آموزش اتصال»</b> در منو اصلی به کانفیگ زیر متصل شوید."\n\n<code>${subLink}</code>`, { parse_mode: "HTML" });
+    bot.sendMessage(from.id, `✅ کانفیگ تست با موفقیت ساخته شده.\n\n⚠️ این کانفیگ شامل ۵۰۰ مگابایت حجم رایگان بوده و ۲۴ ساعت اعتبار دارد.\n\n📡 از کانفیگ تست میتوانید برای بررسی ارتباط، سرعت و پایداری سرویس با اپراتور خود استفاده کنید.\n\n♻️ لینک آپدیت خودکار:\n<code>${subLink}</code>`, { parse_mode: "HTML" });
+    const botMsg = '😇 جهت مشاهده نحوه اتصال به سرویس سیستم عامل خود را انتخاب کنید 🔻'
+    setTimeout(() => bot.sendMessage(from.id, botMsg, {
+      reply_markup: {
+        inline_keyboard: [
+          [{
+            text: '📱 اندروید - Android 📱',
+            url: 'https://t.me/dedicated_vpn_channel/25'
+          }],
+          [{
+            text: '📱 آی او اس - IOS 📱',
+            url: 'https://t.me/dedicated_vpn_channel/19'
+          }],
+          [{
+            text: '🖥️ ویندوز - Windows 🖥️',
+            url: 'https://t.me/dedicated_vpn_channel/24'
+          }],
+          [{
+            text: '💻 مک او اس - MacOS 💻',
+            url: 'https://t.me/dedicated_vpn_channel/18'
+          }],
+        ],
+      },
+      parse_mode: "HTML"
+    }), 500)
   } catch (e) {
     console.error("❌ Error: test_config_generation> ", e);
     bot.sendMessage(from.id, "❌ مشکلی در ساخت کافیگ تست رخ داده است. لطفا دوباره تلاش کنید 🙏");
@@ -468,7 +572,7 @@ bot.onText(/🚀 خرید سرویس VPN/, async ({ from }) => {
   }
   bot.sendMessage(
     from.id,
-    "🔻 شرایط و قوانین استفاده از سرویس:\n\n۱) 🌟حتما قبل از خرید سرویس، از منو اصلی بات، کانفیگ تست را دریافت نموده تا از توانایی اتصال به سرویس های ما با استفاده از اپراتور خودتان مطمئن شوید. (در غیر این صورت مسئولیت خرید بر عهده کاربر است)\n\n۲) 📡  سرویس ما در تمام ساعات روز برای شما عزیزان قابل دسترس است مگر اینکه اختلال کلی در زیرساخت کشور وجود داشته باشد که در این صورت باید صبر کنید تا اختلال های زیرساخت کشور برطرف شود.\n\n۳) 🕵🏻‍♂️ خرید سرویس از طریق کارت به کارت صورت میگیرد و از تکنولوژی تایید خودکار تراکنش استفاده میشود (به این صورت که پس از دریافت تراکنش از سمت شما به کارت مقصد، کانفیگ ها به صورت خودکار ساخته و تحویل داده میشود. (اما کاربر همچنان موظف به ذخیره رسید کارت به کارت برای مواقع خاص میباشد)\n\n۴) ❌ کاربران حق فروش و یا اجاره سرویس به افراد دیگر را نداشته و باید حتما سرویس را از بات تهیه کنند.\n\n😇 ایا شرایط را می پذیرید؟",
+    "🔻 شرایط و قوانین استفاده از سرویس:\n\n۱) 🌟حتما قبل از خرید سرویس، از منو اصلی بات، کانفیگ تست را دریافت نموده تا از توانایی اتصال به سرویس های ما با استفاده از اپراتور خودتان مطمئن شوید. (در غیر این صورت مسئولیت خرید بر عهده کاربر است)\n\n۲) 📡  سرویس ما در تمام ساعات روز برای شما عزیزان قابل دسترس است مگر اینکه اختلال کلی در زیرساخت کشور وجود داشته باشد که در این صورت باید صبر کنید تا اختلال های زیرساخت کشور برطرف شود.\n\n۳) 🕵🏻‍♂️ خرید سرویس از طریق کارت به کارت صورت میگیرد و از تکنولوژی تایید خودکار تراکنش استفاده میشود (به این صورت که پس از دریافت تراکنش از سمت شما به کارت مقصد، کانفیگ ها به صورت خودکار ساخته و تحویل داده میشود. (اما کاربر همچنان موظف به ذخیره رسید کارت به کارت برای مواقع خاص میباشد).\n\n😇 ایا شرایط را می پذیرید؟",
     {
       reply_markup: JSON.stringify({
         inline_keyboard: [
@@ -531,7 +635,7 @@ bot.onText(/🛒 سفارشات من/, async ({ from }) => {
 bot.onText(/👨🏼‍🏫 آموزش اتصال/, async ({ from }) => {
   const baseCheckingStatus = await baseChecking(from.id)
   if (!baseCheckingStatus) return
-  const botMsg = '😇 سیستم عامل مورد نظر را انتخاب کنید 🔻'
+  const botMsg = '😇 جهت مشاهده نحوه اتصال به سرویس سیستم عامل خود را انتخاب کنید 🔻'
   bot.sendMessage(from.id, botMsg, {
     reply_markup: {
       inline_keyboard: [
@@ -607,6 +711,7 @@ bot.on("callback_query", async (query) => {
           name: plan.name
             .replace("${TRAFFIC}", plan.traffic)
             .replace("${PERIOD}", plan.period)
+            .replace("${SYMBOL}", plan.symbol)
             .replace("${PRICE}", plan.final_price),
         },
         amount,
@@ -659,7 +764,7 @@ bot.on("callback_query", async (query) => {
   if (queryData.action === "plan_detailes") {
     const plan = plans.find((item) => item.id == queryData.data.planId);
 
-    const botMsg = `🥇 <b>${plan.traffic} گیگ   ⏰ ${plan.period} روزه\n🌟 چند کاربره (تا 2 آی پی)\n💳 <s>${plan.original_price} تومان</s> ⬅️ ${plan.final_price} تومان 🎉</b>\n\nبرای صدور فاکتور و خرید نهایی روی دکمه \"✅ صدور فاکتور\" کلیک کنید.`
+    const botMsg = `${plan.symbol} <b>حجم:</b> ${plan.traffic} گیگ\n⏰ <b>مدت:</b> ${plan.period} روزه\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح:</b> ${plan.limit_ip > 1 ? "چند" : "تک"} کاربره\n💳 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\nبرای صدور فاکتور و خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`
 
     bot.editMessageText(botMsg, {
       chat_id: chatId,
@@ -687,24 +792,27 @@ bot.on("callback_query", async (query) => {
 
   if (queryData.action === "store") {
     const botMsg =
-      "🌟 پلن ها <u><b>چند کاربره (تا 2 آی پی)</b></u> هستند 🌟\n🔻 لطفا طرح مورد نظر خود را انتخاب کنید 🔻";
+      "🔻 لطفا طرح مورد نظر خود را انتخاب کنید 🔻";
     bot.editMessageText(botMsg, {
       chat_id: chatId,
       message_id: messageId,
       reply_markup: {
         inline_keyboard: plans.map((item) => {
-          return [
-            {
-              text: item.name
-                .replace("${TRAFFIC}", item.traffic)
-                .replace("${PERIOD}", item.period)
-                .replace("${PRICE}", item.final_price),
-              callback_data: JSON.stringify({
-                action: "plan_detailes",
-                data: { planId: item.id },
-              }),
-            },
-          ];
+          if (item.active) {
+            return [
+              {
+                text: item.name
+                  .replace("${TRAFFIC}", item.traffic)
+                  .replace("${PERIOD}", item.period)
+                  .replace("${SYMBOL}", item.symbol)
+                  .replace("${PRICE}", item.final_price),
+                callback_data: JSON.stringify({
+                  action: "plan_detailes",
+                  data: { planId: item.id },
+                }),
+              },
+            ];
+          }
         }),
       },
       parse_mode: "HTML"
