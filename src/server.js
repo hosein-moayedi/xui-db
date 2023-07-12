@@ -110,13 +110,7 @@ const plans = [
 ];
 
 const INBOUND = {
-  id: 4,
-  protocol: "vless",
-  domain: "turbo.torgod.site",
-  port: 443,
-  type: "ws",
-  path: "%2F",
-  security: 'none',
+  id: 1,
 }
 
 let api = {

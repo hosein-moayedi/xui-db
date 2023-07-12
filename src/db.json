@@ -48,7 +48,18 @@
       "id": 1085276188,
       "tg_name": "Support",
       "tg_username": "dedicated_vpn_support",
-      "test_config": null,
+      "test_config": {
+        "inbound_id": 1,
+        "alterId": 0,
+        "email": "1085276188-test",
+        "enable": true,
+        "expiryTime": 1689208731652,
+        "id": "e2e1eb31-b0d5-4068-be05-484d3b6814e1",
+        "limitIp": 1,
+        "subId": "test-1085276188",
+        "tgId": "",
+        "totalGB": 536870912
+      },
       "configs": [],
       "created_at": "2023-07-05T06:41:01"
     },
