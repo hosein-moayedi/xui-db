@@ -27,6 +27,8 @@ db.read();
 
 const xuiDbPath = '/etc/x-ui/x-ui.db';
 
+const TRXWalletAddress = "TLNKTPvGCu5v6KvPuHQ8VN5Pvqwz115UvJ"
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -110,7 +112,7 @@ const plans = [
 ];
 
 const INBOUND = {
-  id: 1,
+  id: 2,
 }
 
 let api = {
@@ -173,19 +175,25 @@ let api = {
       });
     },
   },
-  weswap: {
+  digiswap: {
     getRates: async () => {
       return new Promise(async (resolve, reject) => {
         await axios
-          .get(process.env.WESWAP + "/rate")
+          .get(process.env.DIGISWAP)
           .then((response) => {
-            if (response.data.status != 200) {
-              throw response.data.msg;
+            if (!response.data?.assets?.length == 2 || !response.data?.usd_buy_price) {
+              throw response.data
             }
-            resolve(response.data.result);
+            const { assets, usd_buy_price } = response.data
+            const { usd_price, transfer_fee } = assets[1]
+
+            resolve({
+              tronPrice: usd_price * usd_buy_price,
+              fee: transfer_fee
+            });
           })
           .catch((error) => {
-            reject(`API call error [weswap/getRates]: ${error}`);
+            reject(`API call error [digiswap/getRates]: ${error}`);
           });
       });
     },
@@ -687,14 +695,73 @@ bot.on("callback_query", async (query) => {
   const messageId = message.message_id;
   const queryData = JSON.parse(data);
 
+  if (queryData.action === "store") {
+    const botMsg =
+      "🔻 لطفا طرح مورد نظر خود را انتخاب کنید 🔻";
+    bot.editMessageText(botMsg, {
+      chat_id: chatId,
+      message_id: messageId,
+      reply_markup: {
+        inline_keyboard: plans.map((item) => {
+          if (item.active) {
+            return [
+              {
+                text: item.name
+                  .replace("${TRAFFIC}", item.traffic)
+                  .replace("${PERIOD}", item.period)
+                  .replace("${SYMBOL}", item.symbol)
+                  .replace("${PRICE}", item.final_price),
+                callback_data: JSON.stringify({
+                  action: "plan_detailes",
+                  data: { planId: item.id },
+                }),
+              },
+            ];
+          }
+        }),
+      },
+      parse_mode: "HTML"
+    });
+  }
+
+  if (queryData.action === "plan_detailes") {
+    const plan = plans.find((item) => item.id == queryData.data.planId);
+
+    const botMsg = `${plan.symbol} <b>حجم:</b> ${plan.traffic} گیگ\n⏰ <b>مدت:</b> ${plan.period} روزه\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح:</b> ${plan.limit_ip > 1 ? "چند" : "تک"} کاربره\n💳 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\nبرای صدور فاکتور و خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`
+
+    bot.editMessageText(botMsg, {
+      chat_id: chatId,
+      message_id: messageId,
+      parse_mode: "HTML",
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: "⬅️ بازگشت",
+              callback_data: JSON.stringify({ action: "store" }),
+            },
+            {
+              text: "✅ صدور فاکتور",
+              callback_data: JSON.stringify({
+                action: "generate_order",
+                data: { planId: plan.id },
+              }),
+            },
+          ],
+        ],
+      },
+    });
+  }
+
   if (queryData.action === "generate_order") {
     const plan = plans.find((item) => item.id == queryData.data.planId);
     try {
       const orderId = Math.floor(Math.random() * (999999999 - 100000000 + 1)) + 100000000;
-      const code = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000
-      const amount = ((plan.final_price * 10000) + code).toLocaleString()
-      const createdAt = moment().format().slice(0, 19)
-      const paymentLimitTime = moment().add(7200000) // 2 hours
+      const rate = await api.digiswap.getRates()
+      const amount = (((plan.final_price * 1000) - rate.fee) / rate.tronPrice).toFixed(2)
+      const paymentLimitTime = moment().add(1800000) // 30 min
+
+      const paymentLink = `https://digiswap.org/quick?amount=${amount}&address=${TRXWalletAddress}`
 
       const order = {
         id: orderId,
@@ -709,7 +776,9 @@ bot.on("callback_query", async (query) => {
             .replace("${PRICE}", plan.final_price),
         },
         amount,
-        created_at: createdAt,
+        rate,
+        wallet_address: TRXWalletAddress,
+        created_at: moment().format().slice(0, 19),
         expire_at: moment().add(plan.period * 24 * 60 * 60 * 1000).format().slice(0, 19),
         payment_limit_time: paymentLimitTime.valueOf()
       };
@@ -721,7 +790,22 @@ bot.on("callback_query", async (query) => {
         {
           parse_mode: "HTML",
           chat_id: chatId,
-          message_id: messageId
+          message_id: messageId,
+          reply_markup: {
+            inline_keyboard: [[
+              {
+                text: "⬆️ ارسال TXID",
+                callback_data: JSON.stringify({
+                  action: "check_payment",
+                  data: { orderId },
+                }),
+              },
+              {
+                text: "💸 لینک پرداخت",
+                url: paymentLink,
+              }
+            ]]
+          },
         }
       );
     } catch (e) {
@@ -755,62 +839,24 @@ bot.on("callback_query", async (query) => {
     }
   }
 
-  if (queryData.action === "plan_detailes") {
-    const plan = plans.find((item) => item.id == queryData.data.planId);
-
-    const botMsg = `${plan.symbol} <b>حجم:</b> ${plan.traffic} گیگ\n⏰ <b>مدت:</b> ${plan.period} روزه\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح:</b> ${plan.limit_ip > 1 ? "چند" : "تک"} کاربره\n💳 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\nبرای صدور فاکتور و خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`
-
-    bot.editMessageText(botMsg, {
-      chat_id: chatId,
-      message_id: messageId,
-      parse_mode: "HTML",
+  if (queryData.action === "check_payment") {
+    bot.sendMessage(chatId, "🔻 لطفا TXID که پس از پرداخت موفق دریافت نمودید را وارد کنید 🔻", {
       reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: "⬅️ بازگشت",
-              callback_data: JSON.stringify({ action: "store" }),
-            },
-            {
-              text: "✅ صدور فاکتور",
-              callback_data: JSON.stringify({
-                action: "generate_order",
-                data: { planId: plan.id },
-              }),
-            },
-          ],
-        ],
-      },
-    });
-  }
-
-  if (queryData.action === "store") {
-    const botMsg =
-      "🔻 لطفا طرح مورد نظر خود را انتخاب کنید 🔻";
-    bot.editMessageText(botMsg, {
-      chat_id: chatId,
-      message_id: messageId,
-      reply_markup: {
-        inline_keyboard: plans.map((item) => {
-          if (item.active) {
-            return [
-              {
-                text: item.name
-                  .replace("${TRAFFIC}", item.traffic)
-                  .replace("${PERIOD}", item.period)
-                  .replace("${SYMBOL}", item.symbol)
-                  .replace("${PRICE}", item.final_price),
-                callback_data: JSON.stringify({
-                  action: "plan_detailes",
-                  data: { planId: item.id },
-                }),
-              },
-            ];
-          }
-        }),
-      },
-      parse_mode: "HTML"
-    });
+        force_reply: true,
+      }
+    }).then((sentMessage) => {
+      const { orderId } = queryData.data
+      bot.onReplyToMessage(chatId, sentMessage.message_id, ({ text: txid }) => {
+        let order = db.data.orders.waiting[orderId]
+        if (order) {
+          order.txid = txid
+          db.write()
+          bot.sendMessage(chatId, `🌈 <b>شماره سفارش:</b> ${orderId}\n\n🏷️ <b>ای دی تراکنش: </b>${txid}\n\n🔰 <b>آخرین وضعیت: 🟡 در انتظار تایید</b>\n\n‼️ به محض تایید در شبکه بلاک چین، سفارش شما <u><b>بصورت خودکار</b></u> تحویل داده خواهد شد.\n\n⚠️ درصورتی که مقدار TXID را اشتباه وارد کردید میتوانید با زدن دکمه \"<b>⬆️ ارسال TXID</b>\" که در زیر فاکتور سفارش قرار دارد، TXID جدید را ارسال بفرمایید.`,
+            { parse_mode: "HTML" }
+          )
+        }
+      })
+    })
   }
 });
 
@@ -822,70 +868,7 @@ app.get("/", (req, res) => {
   res.send("🚀 Bot is running ✅");
 });
 
-app.post("/c2c-transaction-verification", async (req, res) => {
-  const { content, secret_key } = req.body
-  if (secret_key !== process.env.C2C_TRANSACTION_VERIFICATION_SECRET_KEY) {
-    res.status(403).json({ msg: "invalid secretkey!", success: false });
-    return
-  }
-  console.log("content: ", content);
-
-  let formattedMessage = "";
-  for (let i = 0; i < content.length; i += 4) {
-    formattedMessage += "\\u" + content.substr(i, 4);
-  }
-  console.log(formattedMessage);
-
-  const persianText = formattedMessage.replace(/\\u([\d\w]{4})/gi, (match, grp) => {
-    return String.fromCharCode(parseInt(grp, 16));
-  });
-  console.log(persianText);
-
-  const bankRegex = /بلو\nواریز پول\n محمدحسین عزیز، ([\d,]+)/;
-
-  const bankMatch = persianText.match(bankRegex);
-
-  if (bankMatch) {
-    let price = bankMatch[1];
-    console.log(price);
-
-    const { orders } = db.data
-    let userId, messageId
-
-    try {
-      for (const orderId in orders.waiting) {
-        const order = orders.waiting[orderId];
-        if (order.amount == price) {
-          [userId, messageId] = [order.user_id, order.message_id]
-          delete order.message_id
-          orders.verified[order.id] = { ...order, paid_at: moment().format().slice(0, 19) }
-          delete orders.waiting[orderId]
-          bot.deleteMessage(userId, messageId);
-
-          const config = await vpn.addConfig(userId, orderId, order.plan)
-          db.data.users[userId].configs.push({
-            ...config,
-            orderId: order.id
-          })
-          db.write()
-          const subLink = vpn.getSubLink(config.subId)
-          bot.sendMessage(userId, `✅ پرداخت شما برای سفارش ${orderId} با موفقیت تایید شد.\n\n😇 ابتدا بر روی لینک آپدیت زیر کلیک کرده تا کپی شود و سپس برای مشاهده نحوه اتصال، در منو اصلی ربات بر روی دکمه <b>«👨🏻‍🏫 آموزش اتصال»</b> کلیک کنید\n\n<code>${subLink}</code>`, { parse_mode: "HTML" });
-          res.status(200).json({ msg: "verified", success: true });
-          return
-        }
-      }
-    } catch (err) {
-      console.error("❌ Error: config_generation> ", err);
-      bot.sendMessage(userId, "❌ متاسفانه مشکلی در تایید پرداخت یا ساخت کانفیگ به وجود آمده. لطفا به پشتیبانی پیام دهید 🙏");
-    }
-  } else {
-    console.log('No match found.');
-  }
-
-  res.status(404).json({ msg: "transaction not found!", success: false });
-});
-
-const checkXuiSessionExpiration = () => {
+const checkXUISessionExpiration = () => {
   if (api.xui.session && api.xui.session.expires) {
     const currentTime = Date.now();
     const expirationTime = api.xui.session.expires;
@@ -900,14 +883,16 @@ app.listen(port, '0.0.0.0', async () => {
   console.log(`Server listening on port ${port}`);
   await api.xui.login()
   cron.schedule('0 0 */25 * *', () => {
-    checkXuiSessionExpiration()
+    checkXUISessionExpiration()
   }).start();
   cron.schedule('*/1 * * * * *', () => {
     cleanExpiredCooldown()
     cleanExpiredOrders()
+
+    // check waiting tx that contain txid with "https://apilist.tronscan.org/api/transaction-info?hash="
   }).start();
-  cron.schedule('0 */24 * * *', () => {
-    cleanExpiredConfigs()
-  }).start();
-  cleanExpiredConfigs()
+  // cron.schedule('0 */24 * * *', () => {
+  //   cleanExpiredConfigs()
+  // }).start();
+  // cleanExpiredConfigs()
 });
