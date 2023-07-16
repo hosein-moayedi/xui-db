@@ -2,6 +2,7 @@ BOT_TOKEN=5743271049:AAGexB8ngY70Boh_Gz5B3W0jbMewoDNnQiE
 NOW_PAYMENT_API_KEY=VGHNN98-RKCMF73-PXDKGD4-J4NNNCV
 NOW_PAYMENT_URL=https://api.nowpayments.io/v1
 DIGISWAP=http://api.digiswap.org/api/v1/asset/getPrices
+TRON_SCAN=https://apilist.tronscan.org/api/transaction-info?hash=
 XUI=http://turbo.torgod.site:44090
 XUI_SUB=https://turbo.torgod.site:2096/sub
 XUI_API=http://turbo.torgod.site:44090/panel/api/inbounds

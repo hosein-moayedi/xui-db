@@ -288,6 +288,20 @@ let api = {
           });
       });
     },
+  },
+  tronScan: {
+    getTransactionInfoByID: async (txid) => {
+      return new Promise(async (resolve, reject) => {
+        await axios
+          .get(process.env.TRON_SCAN + txid)
+          .then((response) => {
+            resolve(response.data);
+          })
+          .catch((error) => {
+            reject(`API call error [tronScan/getTxInfoByTXID]: ${error}`);
+          });
+      });
+    }
   }
 };
 
@@ -359,6 +373,84 @@ const cleanExpiredOrders = async () => {
   } catch (err) {
     console.error("❌ Error: config_generation> ", err);
     bot.sendMessage(userId, "❌ متاسفانه مشکلی در تایید پرداخت یا ساخت کانفیگ به وجود آمده. لطفا به پشتیبانی پیام دهید 🙏");
+  }
+}
+
+
+const checkWaitingOrdersWithTXID = async () => {
+  const { orders } = db.data
+  try {
+    for (const orderId in orders.waiting) {
+      const order = orders.waiting[orderId];
+      if (order?.txid) {
+        const transactionInfo = await api.tronScan.getTransactionInfoByID(order.txid)
+        const orderCreatedtime = moment.tz(order.created_at, 'Asia/Tehran').valueOf();
+        const { confirmed, contractData, timestamp } = transactionInfo
+
+        if (
+          !contractData ||
+          timestamp <= orderCreatedtime ||
+          contractData.to_address != TRXWalletAddress ||
+          contractData.amount * 1e-6 != order.amount
+        ) {
+          delete order.txid
+          db.write()
+          bot.sendMessage(order.user_id,
+            `❌ متاسفانه TXID وارد شده در شبکه یافت نشد و یا مربوط به سفارش ${order.id} نبوده است.\n\n🙏 لطفا TXID وارد شده را مجدد بررسی نموده و از طریق دکمه "<b>⬆️ ارسال TXID</b>" که در زیر فاکتور شما قرار داشت اقدام به ارسال مجدد مقدار درست TXID بفرمایید.`,
+            { parse_mode: "HTML" }
+          );
+          continue
+        }
+
+        if (confirmed) {
+          const [userId, messageId] = [order.user_id, order.message_id]
+          delete order.message_id
+          order.trashMessages.map((msgId) => {
+            bot.deleteMessage(userId, msgId);
+          })
+          delete order.trashMessages
+          orders.verified[order.id] = { ...order, paid_at: moment().format().slice(0, 19) }
+          delete orders.waiting[orderId]
+          bot.deleteMessage(userId, messageId);
+
+          const config = await vpn.addConfig(userId, orderId, order.plan)
+          db.data.users[userId].configs.push({
+            ...config,
+            orderId: order.id
+          })
+          db.write()
+          const subLink = vpn.getSubLink(config.subId)
+          bot.sendMessage(userId, `✅ پرداخت شما برای سفارش ${orderId} با موفقیت تایید شد.\n\n♻️ <b>لینک آپدیت خودکار:</b>\n<code>${subLink}</code>`, { parse_mode: "HTML" });
+          const botMsg = '😇 جهت مشاهده نحوه اتصال به سرویس سیستم عامل خود را انتخاب کنید 🔻'
+          setTimeout(() => bot.sendMessage(userId, botMsg, {
+            reply_markup: {
+              inline_keyboard: [
+                [{
+                  text: '📱 اندروید - Android 📱',
+                  url: 'https://t.me/dedicated_vpn_channel/25'
+                }],
+                [{
+                  text: '📱 آی او اس - IOS 📱',
+                  url: 'https://t.me/dedicated_vpn_channel/19'
+                }],
+                [{
+                  text: '🖥️ ویندوز - Windows 🖥️',
+                  url: 'https://t.me/dedicated_vpn_channel/24'
+                }],
+                [{
+                  text: '💻 مک او اس - MacOS 💻',
+                  url: 'https://t.me/dedicated_vpn_channel/18'
+                }],
+              ],
+            },
+            parse_mode: "HTML"
+          }), 500)
+        }
+      }
+    }
+  } catch (err) {
+    console.error("❌ Error: checkWaitingOrdersWithTXID> ", err);
+    bot.sendMessage(orders.user_id, "❌ متاسفانه مشکلی در تایید پرداخت یا ساخت کانفیگ به وجود آمده. لطفا به پشتیبانی پیام دهید 🙏");
   }
 }
 
@@ -758,7 +850,7 @@ bot.on("callback_query", async (query) => {
     try {
       const orderId = Math.floor(Math.random() * (999999999 - 100000000 + 1)) + 100000000;
       const rate = await api.digiswap.getRates()
-      const amount = (((plan.final_price * 1000) - rate.fee) / rate.tronPrice).toFixed(2)
+      const amount = ((((plan.final_price * 1000) - rate.fee) / rate.tronPrice) - ((Math.floor(Math.random() * 20) + 1) * 0.01)).toFixed(2)
       const paymentLimitTime = moment().add(1800000) // 30 min
 
       const paymentLink = `https://digiswap.org/quick?amount=${amount}&address=${TRXWalletAddress}`
@@ -767,6 +859,7 @@ bot.on("callback_query", async (query) => {
         id: orderId,
         user_id: from.id,
         message_id: messageId,
+        trashMessages: [],
         plan: {
           ...plan,
           name: plan.name
@@ -796,7 +889,7 @@ bot.on("callback_query", async (query) => {
               {
                 text: "⬆️ ارسال TXID",
                 callback_data: JSON.stringify({
-                  action: "check_payment",
+                  action: "send_txid",
                   data: { orderId },
                 }),
               },
@@ -839,22 +932,26 @@ bot.on("callback_query", async (query) => {
     }
   }
 
-  if (queryData.action === "check_payment") {
+  if (queryData.action === "send_txid") {
+    const { orderId } = queryData.data
+    let order = db.data.orders.waiting[orderId]
+
     bot.sendMessage(chatId, "🔻 لطفا TXID که پس از پرداخت موفق دریافت نمودید را وارد کنید 🔻", {
       reply_markup: {
         force_reply: true,
       }
-    }).then((sentMessage) => {
-      const { orderId } = queryData.data
-      bot.onReplyToMessage(chatId, sentMessage.message_id, ({ text: txid }) => {
-        let order = db.data.orders.waiting[orderId]
-        if (order) {
-          order.txid = txid
+    }).then((sentBotMsg) => {
+      order.trashMessages.push(sentBotMsg.message_id)
+      db.write()
+
+      bot.onReplyToMessage(chatId, sentBotMsg.message_id, (userMsg) => {
+        order.txid = userMsg.text
+        bot.sendMessage(chatId, `🌈 <b>شماره سفارش:</b> ${orderId}\n\n🏷️ <b>ای دی تراکنش: </b>${userMsg.text}\n\n🔰 <b>آخرین وضعیت: 🟡 در انتظار تایید</b>\n\n‼️ به محض تایید در شبکه بلاک چین، سفارش شما <u><b>بصورت خودکار</b></u> تحویل داده خواهد شد.\n\n⚠️ درصورتی که مقدار TXID را اشتباه وارد کردید میتوانید با زدن دکمه \"<b>⬆️ ارسال TXID</b>\" که در زیر فاکتور سفارش قرار دارد، TXID جدید را ارسال بفرمایید.`,
+          { parse_mode: "HTML" }
+        ).then((sentMessage) => {
+          order.trashMessages.push(sentMessage.message_id, userMsg.message_id)
           db.write()
-          bot.sendMessage(chatId, `🌈 <b>شماره سفارش:</b> ${orderId}\n\n🏷️ <b>ای دی تراکنش: </b>${txid}\n\n🔰 <b>آخرین وضعیت: 🟡 در انتظار تایید</b>\n\n‼️ به محض تایید در شبکه بلاک چین، سفارش شما <u><b>بصورت خودکار</b></u> تحویل داده خواهد شد.\n\n⚠️ درصورتی که مقدار TXID را اشتباه وارد کردید میتوانید با زدن دکمه \"<b>⬆️ ارسال TXID</b>\" که در زیر فاکتور سفارش قرار دارد، TXID جدید را ارسال بفرمایید.`,
-            { parse_mode: "HTML" }
-          )
-        }
+        })
       })
     })
   }
@@ -888,9 +985,11 @@ app.listen(port, '0.0.0.0', async () => {
   cron.schedule('*/1 * * * * *', () => {
     cleanExpiredCooldown()
     cleanExpiredOrders()
-
-    // check waiting tx that contain txid with "https://apilist.tronscan.org/api/transaction-info?hash="
   }).start();
+
+  cron.schedule('* * * * *', () => {
+    checkWaitingOrdersWithTXID()
+  })
   // cron.schedule('0 */24 * * *', () => {
   //   cleanExpiredConfigs()
   // }).start();
