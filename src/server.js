@@ -19,13 +19,11 @@ dotenv.config({
 });
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const file = join(__dirname, "./db.json");
+const file = join(__dirname, environment == "dev" ? "./db-dev.json" : "./db-pro.json");
 const adapter = new JSONFileSync(file);
 const defaultData = { users: {}, orders: { waiting: {}, verified: {}, expired: {} } };
 const db = new LowSync(adapter, defaultData);
 db.read();
-
-const xuiDbPath = '/etc/x-ui/x-ui.db';
 
 const TRXWalletAddress = "TLNKTPvGCu5v6KvPuHQ8VN5Pvqwz115UvJ"
 
@@ -111,9 +109,7 @@ const plans = [
   },
 ];
 
-const INBOUND = {
-  id: 2,
-}
+const INBOUND_ID = environment == 'dev' ? 3 : 2
 
 let api = {
   nowPayment: {
@@ -140,7 +136,6 @@ let api = {
             if (response.status != 201) {
               throw `Status code should be 201 but that is ${response.status}`;
             }
-            console.log("Response:", response.data);
             resolve(response.data);
           })
           .catch((error) => {
@@ -164,7 +159,6 @@ let api = {
             if (response.status != 200) {
               throw `Status code should be 200 but that is ${response.status}`;
             }
-            console.log("Response:", response.data);
             resolve(response.data);
           })
           .catch((error) => {
@@ -214,7 +208,7 @@ let api = {
             const expires = expirationMatch ? Date.parse(expirationMatch[1]) : null;
             const token = setCookieHeader.split(';')[0].split('=')[1];
             api.xui.session = { token, expires }
-            console.log('\n\n✅ [X-UI panel] login successfully \n\n');
+            console.log('\n ✅ Connected to X-UI panel \n\n');
             resolve();
           })
           .catch((error) => {
@@ -276,7 +270,7 @@ let api = {
           }
         }
         await axios
-          .post(process.env.XUI_API + `/delDepletedClients/${INBOUND.id}`, null, options)
+          .post(process.env.XUI_API + `/delDepletedClients/${INBOUND_ID}`, null, options)
           .then((response) => {
             if (!response.data.success) {
               throw response.data.msg;
@@ -302,19 +296,40 @@ let api = {
           });
       });
     }
-  }
+  },
+  db: {
+    iran: async (query) => {
+      return new Promise(async (resolve, reject) => {
+        const options = {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        };
+        await axios
+          .post(process.env.XUI_DB_API, { query }, options)
+          .then((response) => {
+            resolve(response.data);
+          })
+          .catch((error) => {
+            reject(
+              `API call error [db/iran]: ${error.response.data.message}`
+            );
+          });
+      });
+    },
+  },
 };
 
 const vpn = {
   addConfig: async (userId, orderId, plan) => {
     const config = vpn.createConfigObj(userId, orderId, plan.traffic, plan.period, plan.limit_ip)
-    await api.xui.addClient(INBOUND.id, config)
-    return { inbound_id: INBOUND.id, ...config }
+    await api.xui.addClient(INBOUND_ID, config)
+    return { inbound_id: INBOUND_ID, ...config }
   },
   addTestConfig: async (userId) => {
     const testConfig = vpn.createConfigObj(userId, null, 0.5, 1, 1, true)
-    await api.xui.addClient(INBOUND.id, testConfig)
-    return { inbound_id: INBOUND.id, ...testConfig }
+    await api.xui.addClient(INBOUND_ID, testConfig)
+    return { inbound_id: INBOUND_ID, ...testConfig }
   },
   createConfigObj: (userId, orderId, traffic, period, limitIp, isTest = false) => {
     const uuid = uuidv4()
@@ -338,6 +353,33 @@ const vpn = {
 
 let cooldowns = {};
 const COOLDOWN_PERIOD = 1000;
+
+const buttons = {
+  mainMenu: [
+    ["🛍️ خرید سرویس"],
+    ["🔮 سرویس‌ های فعال", "🎁 دریافت تست رایگان",],
+    ["👨🏼‍🏫 آموزش اتصال"],
+    ["💸 پشتیبانی مالی", "🫂 پشتیبانی فنی"],
+  ],
+  education: [
+    [{
+      text: '🍀 اندروید - Android 🍀',
+      url: 'https://t.me/dedicated_vpn_channel/25'
+    }],
+    [{
+      text: '🍎 آیفون - IOS 🍎',
+      url: 'https://t.me/dedicated_vpn_channel/19'
+    }],
+    [{
+      text: '🖥️ ویندوز - Windows 🖥️',
+      url: 'https://t.me/dedicated_vpn_channel/24'
+    }],
+    [{
+      text: '💻 مک او اس - MacOS 💻',
+      url: 'https://t.me/dedicated_vpn_channel/18'
+    }],
+  ]
+}
 
 const isOnCooldown = (userId) => {
   if (cooldowns[userId] && cooldowns[userId] > moment().valueOf())
@@ -366,7 +408,7 @@ const cleanExpiredOrders = async () => {
         orders.expired[order.id] = { ...order }
         delete orders.waiting[orderId]
         bot.deleteMessage(userId, messageId);
-        bot.sendMessage(userId, `❌ زمان انجام تراکنش برای سفارش ${orderId} به اتمام رسید.\n\n✅ درصورتی که هزینه سرویس را به درستی به کارت مقصد ارسال نمودین اما به صورت خودکار از سمت ما تایید نشده، لطفا رسید پرداخت را برای پشتیبانی ارسال بفرمایید. \n\nدر غیر این صورت لطفا با زدن دکمه <b>«🚀 خرید سرویس VPN»</b> از منوی اصلی اقدام به ثبت و پرداخت سفارش جدید بفرمایید.`, { parse_mode: "HTML" })
+        bot.sendMessage(userId, `❌ زمان انجام تراکنش برای سفارش ${orderId} به اتمام رسید.\n\n✅ درصورتی که هزینه سرویس را به درستی به کارت مقصد ارسال نمودین اما به صورت خودکار از سمت ما تایید نشده، لطفا رسید پرداخت را برای پشتیبانی ارسال بفرمایید. \n\nدر غیر این صورت لطفا با زدن دکمه <b>«🛍️ خرید سرویس»</b> از منوی اصلی اقدام به ثبت و پرداخت سفارش جدید بفرمایید.`, { parse_mode: "HTML" })
         db.write()
       }
     }
@@ -398,7 +440,10 @@ const checkWaitingOrdersWithTXID = async () => {
           bot.sendMessage(order.user_id,
             `❌ متاسفانه TXID وارد شده در شبکه یافت نشد و یا مربوط به سفارش ${order.id} نبوده است.\n\n🙏 لطفا TXID وارد شده را مجدد بررسی نموده و از طریق دکمه "<b>⬆️ ارسال TXID</b>" که در زیر فاکتور شما قرار داشت اقدام به ارسال مجدد مقدار درست TXID بفرمایید.`,
             { parse_mode: "HTML" }
-          );
+          ).then((botMsg) => {
+            order.trashMessages.push(botMsg.message_id)
+            db.write()
+          });
           continue
         }
 
@@ -420,28 +465,20 @@ const checkWaitingOrdersWithTXID = async () => {
           })
           db.write()
           const subLink = vpn.getSubLink(config.subId)
-          bot.sendMessage(userId, `✅ پرداخت شما برای سفارش ${orderId} با موفقیت تایید شد.\n\n♻️ <b>لینک آپدیت خودکار:</b>\n<code>${subLink}</code>`, { parse_mode: "HTML" });
-          const botMsg = '😇 جهت مشاهده نحوه اتصال به سرویس سیستم عامل خود را انتخاب کنید 🔻'
+          bot.sendMessage(userId,
+            `✅ پرداخت شما برای سفارش ${orderId} با موفقیت تایید شد.\n\n♻️ <b>لینک آپدیت خودکار:</b>\n<code>${subLink}</code>`,
+            {
+              parse_mode: "HTML",
+              reply_markup: JSON.stringify({
+                keyboard: buttons.mainMenu,
+                resize_keyboard: true,
+              }),
+            }
+          );
+          const botMsg = '👇 لینک‌های آموزش اتصال به سرویس 👇'
           setTimeout(() => bot.sendMessage(userId, botMsg, {
             reply_markup: {
-              inline_keyboard: [
-                [{
-                  text: '📱 اندروید - Android 📱',
-                  url: 'https://t.me/dedicated_vpn_channel/25'
-                }],
-                [{
-                  text: '📱 آی او اس - IOS 📱',
-                  url: 'https://t.me/dedicated_vpn_channel/19'
-                }],
-                [{
-                  text: '🖥️ ویندوز - Windows 🖥️',
-                  url: 'https://t.me/dedicated_vpn_channel/24'
-                }],
-                [{
-                  text: '💻 مک او اس - MacOS 💻',
-                  url: 'https://t.me/dedicated_vpn_channel/18'
-                }],
-              ],
+              inline_keyboard: buttons.education,
             },
             parse_mode: "HTML"
           }), 500)
@@ -454,37 +491,26 @@ const checkWaitingOrdersWithTXID = async () => {
   }
 }
 
-const cleanExpiredConfigs = () => {
+const cleanExpiredConfigs = async () => {
   try {
-    const xuiDb = new sqlite3.Database(xuiDbPath, (err) => {
-      if (err)
-        throw `Error connecting to the database: ${err}`;
-      const query = 'SELECT email FROM client_traffics WHERE enable = 0';
-      xuiDb.all(query, async (error, rows) => {
-        if (error)
-          throw `Error executing query: ${err}`;
-        const expiredConfigs = rows.map((row) => row.email);
-        if (expiredConfigs.length > 0) {
-          try {
-            await api.xui.depletedClients()
-          } catch (err) {
-            console.log("Error in cleanExpiredConfigs>api.xui.depletedClients: ", err);
-          }
-          expiredConfigs.map((email) => {
-            const [userId, orderId] = email.split('-')
-            if (orderId != 'test') {
-              const configs = db.data.users[userId].configs
-              db.data.users[userId].configs = configs.filter((config) => config.email !== email)
-            }
-          })
-          db.write()
+    const query = 'SELECT email FROM client_traffics WHERE enable = 0';
+    const rows = await api.db.iran(query)
+    const expiredConfigs = rows.map((row) => row.email);
+    if (expiredConfigs.length > 0) {
+      try {
+        await api.xui.depletedClients()
+      } catch (err) {
+        console.log("Error in cleanExpiredConfigs>api.xui.depletedClients: ", err);
+      }
+      expiredConfigs.map((email) => {
+        const [userId, orderId] = email.split('-')
+        if (orderId != 'test') {
+          const configs = db.data.users[userId].configs
+          db.data.users[userId].configs = configs.filter((config) => config.email !== email)
         }
-        xuiDb.close((err) => {
-          if (err)
-            throw `Error closing the database connection: ${err}`;
-        });
-      });
-    });
+      })
+      db.write()
+    }
   } catch (err) {
     console.log(err);
   }
@@ -500,7 +526,7 @@ const baseChecking = async (userId, isStartCommand) => {
     }
   }
   try {
-    const channelSubscription = await bot.getChatMember('@dedicated_vpn_channel', userId)
+    const channelSubscription = await bot.getChatMember('@nova_vpn_channel', userId)
     if (channelSubscription.status !== 'member' && channelSubscription.status !== 'creator' && channelSubscription.status !== 'administrator') {
       bot.sendMessage(userId, "⚠️ برای استفاده از ربات ابتدا در کانال ما عضو شوید و سپس بر روی /start بزنید.\n\n💎 👈 <u><a href='https://t.me/dedicated_vpn_channel'>عضویت در کانال</a></u> 👉 💎", { parse_mode: 'HTML' });
       return false
@@ -531,11 +557,7 @@ bot.onText(/\/start/, async ({ from }) => {
   }
   bot.sendMessage(from.id, "😇 به بات فروش سرویس VPN اختصاصی خوش آمدید\n\n😋 برای دریافت کانفیگ رایگان، روی دکمه «🎁 دریافت تست رایگان» در منو اصلی بزنید تا کانفیگ تست را دریافت نمایید", {
     reply_markup: JSON.stringify({
-      keyboard: [
-        ["🎁 دریافت تست رایگان", "🚀 خرید سرویس VPN"],
-        ["🛒 سفارشات من", "👨🏼‍🏫 آموزش اتصال"],
-        ["💰 پشتیبانی مالی", "👨🏻‍💻 پشتیبانی فنی"],
-      ],
+      keyboard: buttons.mainMenu,
       resize_keyboard: true,
     }),
   });
@@ -571,27 +593,10 @@ bot.onText(/ok/, async ({ from, text }) => {
           db.write()
           const subLink = vpn.getSubLink(config.subId)
           bot.sendMessage(userId, `✅ پرداخت شما برای سفارش ${orderId} با موفقیت تایید شد.\n\n♻️ <b>لینک آپدیت خودکار:</b>\n<code>${subLink}</code>`, { parse_mode: "HTML" });
-          const botMsg = '😇 جهت مشاهده نحوه اتصال به سرویس سیستم عامل خود را انتخاب کنید 🔻'
+          const botMsg = '👇 لینک‌های آموزش اتصال به سرویس 👇'
           setTimeout(() => bot.sendMessage(userId, botMsg, {
             reply_markup: {
-              inline_keyboard: [
-                [{
-                  text: '📱 اندروید - Android 📱',
-                  url: 'https://t.me/dedicated_vpn_channel/25'
-                }],
-                [{
-                  text: '📱 آی او اس - IOS 📱',
-                  url: 'https://t.me/dedicated_vpn_channel/19'
-                }],
-                [{
-                  text: '🖥️ ویندوز - Windows 🖥️',
-                  url: 'https://t.me/dedicated_vpn_channel/24'
-                }],
-                [{
-                  text: '💻 مک او اس - MacOS 💻',
-                  url: 'https://t.me/dedicated_vpn_channel/18'
-                }],
-              ],
+              inline_keyboard: buttons.education,
             },
             parse_mode: "HTML"
           }), 500)
@@ -626,7 +631,7 @@ bot.onText(/🎁 دریافت تست رایگان/, async ({ from }) => {
     user.test_config = testConfig
     db.write()
     bot.sendMessage(from.id, `✅ کانفیگ تست با موفقیت ساخته شده.\n\n⚠️ این کانفیگ شامل ۵۰۰ مگابایت حجم رایگان بوده و ۲۴ ساعت اعتبار دارد.\n\n📡 از کانفیگ تست میتوانید برای بررسی ارتباط، سرعت و پایداری سرویس با اپراتور خود استفاده کنید.\n\n♻️ لینک آپدیت خودکار:\n<code>${subLink}</code>`, { parse_mode: "HTML" });
-    const botMsg = '😇 جهت مشاهده نحوه اتصال به سرویس سیستم عامل خود را انتخاب کنید 🔻'
+    const botMsg = '👇 لینک‌های آموزش اتصال به سرویس 👇'
     setTimeout(() => bot.sendMessage(from.id, botMsg, {
       reply_markup: {
         inline_keyboard: [
@@ -656,7 +661,7 @@ bot.onText(/🎁 دریافت تست رایگان/, async ({ from }) => {
   }
 });
 
-bot.onText(/🚀 خرید سرویس VPN/, async ({ from }) => {
+bot.onText(/🛍️ خرید سرویس/, async ({ from }) => {
   const baseCheckingStatus = await baseChecking(from.id)
   if (!baseCheckingStatus) return
   const user = db.data.users[from.id]
@@ -681,7 +686,7 @@ bot.onText(/🚀 خرید سرویس VPN/, async ({ from }) => {
     });
 });
 
-bot.onText(/🛒 سفارشات من/, async ({ from }) => {
+bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
   const baseCheckingStatus = await baseChecking(from.id)
   if (!baseCheckingStatus) return
   const user = db.data.users[from.id]
@@ -695,31 +700,20 @@ bot.onText(/🛒 سفارشات من/, async ({ from }) => {
   }
   try {
     let botMsg = ""
-    const xuiDb = new sqlite3.Database(xuiDbPath, (err) => {
-      if (err)
-        throw `Error connecting to the database: ${err}`;
-      const query = `SELECT email, up, down, total, enable FROM client_traffics WHERE email LIKE '${user.id}-%' AND email NOT LIKE '%-test'`;
-      xuiDb.all(query, async (error, rows) => {
-        if (error)
-          throw `Error executing query: ${err}`;
-        const configs = [...rows];
-        if (configs.length > 0) {
-          configs.map(({ email, up, down, total, enable }) => {
-            const orderId = email.split('-')[1]
-            const { paid_at, expire_at } = db.data.orders.verified[orderId]
-            let remainingTraffic = ((total - up - down) / 1024 / 1024 / 1024).toFixed(2)
-            remainingTraffic = remainingTraffic > 0 ? remainingTraffic : 0
-            const subLink = vpn.getSubLink(orderId)
-            botMsg = `\n\n\n🌈 <b>شماره سفارش: </b>${orderId}\n🥇 <b>حجم باقیمانده: </b>${remainingTraffic} گیگ\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n👀 <b>وضعیت سفارش: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n♻️ <b>لینک اپدیت: </b>\n<code>${subLink}</code>` : ''}` + botMsg
-          })
-          bot.sendMessage(from.id, botMsg, { parse_mode: "HTML" });
-        }
-        xuiDb.close((err) => {
-          if (err)
-            throw `Error closing the database connection: ${err}`;
-        });
-      });
-    });
+    const query = `SELECT email, up, down, total, enable FROM client_traffics WHERE email LIKE '${user.id}-%' AND email NOT LIKE '%-test'`;
+    const rows = await api.db.iran(query)
+    const configs = [...rows];
+    if (configs.length > 0) {
+      configs.map(({ email, up, down, total, enable }) => {
+        const orderId = email.split('-')[1]
+        const { paid_at, expire_at } = db.data.orders.verified[orderId]
+        let remainingTraffic = ((total - up - down) / 1024 / 1024 / 1024).toFixed(2)
+        remainingTraffic = remainingTraffic > 0 ? remainingTraffic : 0
+        const subLink = vpn.getSubLink(orderId)
+        botMsg = `\n\n\n🌈 <b>شماره سفارش: </b>${orderId}\n🥇 <b>حجم باقیمانده: </b>${remainingTraffic} گیگ\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n👀 <b>وضعیت سفارش: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n♻️ <b>لینک اپدیت: </b>\n<code>${subLink}</code>` : ''}` + botMsg
+      })
+      bot.sendMessage(from.id, botMsg, { parse_mode: "HTML" });
+    }
   } catch (err) {
     console.log(err);
     bot.sendMessage(from.id, "❌ متاسفانه مشکلی در دریافت سفارشات شما بوجود آمده است.\n🙏 لطفا پس از چند دقیقه دوباره تلاش کنید.");
@@ -729,33 +723,16 @@ bot.onText(/🛒 سفارشات من/, async ({ from }) => {
 bot.onText(/👨🏼‍🏫 آموزش اتصال/, async ({ from }) => {
   const baseCheckingStatus = await baseChecking(from.id)
   if (!baseCheckingStatus) return
-  const botMsg = '😇 جهت مشاهده نحوه اتصال به سرویس سیستم عامل خود را انتخاب کنید 🔻'
+  const botMsg = '👇 لینک‌های آموزش اتصال به سرویس 👇'
   bot.sendMessage(from.id, botMsg, {
     reply_markup: {
-      inline_keyboard: [
-        [{
-          text: '📱 اندروید - Android 📱',
-          url: 'https://t.me/dedicated_vpn_channel/25'
-        }],
-        [{
-          text: '📱 آی او اس - IOS 📱',
-          url: 'https://t.me/dedicated_vpn_channel/19'
-        }],
-        [{
-          text: '🖥️ ویندوز - Windows 🖥️',
-          url: 'https://t.me/dedicated_vpn_channel/24'
-        }],
-        [{
-          text: '💻 مک او اس - MacOS 💻',
-          url: 'https://t.me/dedicated_vpn_channel/18'
-        }],
-      ],
+      inline_keyboard: buttons.education,
     },
     parse_mode: "HTML"
   });
 });
 
-bot.onText(/👨🏻‍💻 پشتیبانی فنی/, async ({ from }) => {
+bot.onText(/🫂 پشتیبانی فنی/, async ({ from }) => {
   const baseCheckingStatus = await baseChecking(from.id)
   if (!baseCheckingStatus) return
   const user = db.data.users[from.id]
@@ -767,11 +744,11 @@ bot.onText(/👨🏻‍💻 پشتیبانی فنی/, async ({ from }) => {
   bot.sendMessage(from.id, botMsg, { parse_mode: "HTML" });
 });
 
-bot.onText(/💰 پشتیبانی مالی/, async ({ from }) => {
+bot.onText(/💸 پشتیبانی مالی/, async ({ from }) => {
   const baseCheckingStatus = await baseChecking(from.id)
   if (!baseCheckingStatus) return
   const botMsg =
-    "درصورتی که مبلغ دقیق سرویس را با موفقیت به کارت مقصد ارسال کردین ولی کانفیگ را پس از گذشت حداکثر ۱۵ دقیقه دریافت نکردین، میتوانید به پشتیبانی پیام داده و رسید خود را ارسال بفرمایید تا در اسرع وقت بررسی شود.\n\n🫂 پشتیبانی مالی : @dedicated_vpn_support";
+    "درصورتی که مبلغ دقیق سرویس را با موفقیت به کارت مقصد ارسال کردین ولی کانفیگ را پس از گذشت حداکثر ۱۵ دقیقه دریافت نکردین، میتوانید به پشتیبانی پیام داده و رسید خود را ارسال بفرمایید تا در اسرع وقت بررسی شود.\n\n🫂 پشتیبانی مالی : @nova_vpn_support";
   bot.sendMessage(from.id, botMsg);
 });
 
@@ -870,7 +847,6 @@ bot.on("callback_query", async (query) => {
         },
         amount,
         rate,
-        wallet_address: TRXWalletAddress,
         created_at: moment().format().slice(0, 19),
         expire_at: moment().add(plan.period * 24 * 60 * 60 * 1000).format().slice(0, 19),
         payment_limit_time: paymentLimitTime.valueOf()
@@ -879,7 +855,7 @@ bot.on("callback_query", async (query) => {
       db.write();
 
       bot.editMessageText(
-        `🌟 جهت پرداخت هزینه سرویس مبلغ <u><b>دقیق</b></u> زیر را به شماره کارت ذکر شده حداکثر تا ساعت <u><b>${paymentLimitTime.format().slice(11, 16)}</b></u> ارسال بفرمایید.\n\n💳 <b>شماره کارت:\n</b>6219-8619-1150-4420\n\n👤 <b>صاحب حساب: </b>محمدامین مویدی\n\n💸 <b>مبلغ نهایی: </b><code>${amount}</code> ریال\n(بر روی اعداد مبلغ بزنید تا کپی شود)\n\n❌ <b><u>توجه: تمامی اعداد مبلغ نهایی سرویس جهت تایید تراکنش بسیار مهم بوده و باید با دقت وارد شود</u></b>\n\n✅  لطفا تصویر رسید واریزی خود را برای آی دی زیر ارسال بفرمایید\n👉 @dedicated_vpn_support\n\n🌈 <b>شماره سفارش: </b>${orderId}\n\n🟡 <b>آخرین وضعیت: </b>درانتظار پرداخت`,
+        `🌟 جهت پرداخت هزینه سرویس مبلغ <u><b>دقیق</b></u> زیر را به شماره کارت ذکر شده حداکثر تا ساعت <u><b>${paymentLimitTime.format().slice(11, 16)}</b></u> ارسال بفرمایید.\n\n💳 <b>شماره کارت:\n</b>6219-8619-1150-4420\n\n👤 <b>صاحب حساب: </b>محمدامین مویدی\n\n💸 <b>مبلغ نهایی: </b><code>${amount}</code> ریال\n(بر روی اعداد مبلغ بزنید تا کپی شود)\n\n❌ <b><u>توجه: تمامی اعداد مبلغ نهایی سرویس جهت تایید تراکنش بسیار مهم بوده و باید با دقت وارد شود</u></b>\n\n✅  لطفا تصویر رسید واریزی خود را برای آی دی زیر ارسال بفرمایید\n👉 @nova_vpn_support\n\n🌈 <b>شماره سفارش: </b>${orderId}\n\n🟡 <b>آخرین وضعیت: </b>درانتظار پرداخت`,
         {
           parse_mode: "HTML",
           chat_id: chatId,
@@ -947,7 +923,13 @@ bot.on("callback_query", async (query) => {
       bot.onReplyToMessage(chatId, sentBotMsg.message_id, (userMsg) => {
         order.txid = userMsg.text
         bot.sendMessage(chatId, `🌈 <b>شماره سفارش:</b> ${orderId}\n\n🏷️ <b>ای دی تراکنش: </b>${userMsg.text}\n\n🔰 <b>آخرین وضعیت: 🟡 در انتظار تایید</b>\n\n‼️ به محض تایید در شبکه بلاک چین، سفارش شما <u><b>بصورت خودکار</b></u> تحویل داده خواهد شد.\n\n⚠️ درصورتی که مقدار TXID را اشتباه وارد کردید میتوانید با زدن دکمه \"<b>⬆️ ارسال TXID</b>\" که در زیر فاکتور سفارش قرار دارد، TXID جدید را ارسال بفرمایید.`,
-          { parse_mode: "HTML" }
+          {
+            reply_markup: JSON.stringify({
+              keyboard: buttons.mainMenu,
+              resize_keyboard: true,
+            }),
+            parse_mode: "HTML"
+          }
         ).then((sentMessage) => {
           order.trashMessages.push(sentMessage.message_id, userMsg.message_id)
           db.write()
@@ -977,7 +959,7 @@ const checkXUISessionExpiration = () => {
 
 const port = process.env.PORT || 9090;
 app.listen(port, '0.0.0.0', async () => {
-  console.log(`Server listening on port ${port}`);
+  console.log('\n\n', `${environment == 'dev' ? "🧪 DEVELOPMENT" : "🚨 PRODUCTION"}  ⛩️ PORT: ${port}`);
   await api.xui.login()
   cron.schedule('0 0 */25 * *', () => {
     checkXUISessionExpiration()
@@ -990,8 +972,8 @@ app.listen(port, '0.0.0.0', async () => {
   cron.schedule('* * * * *', () => {
     checkWaitingOrdersWithTXID()
   })
-  // cron.schedule('0 */24 * * *', () => {
-  //   cleanExpiredConfigs()
-  // }).start();
-  // cleanExpiredConfigs()
+  cron.schedule('0 */24 * * *', () => {
+    cleanExpiredConfigs()
+  }).start();
+  cleanExpiredConfigs()
 });
