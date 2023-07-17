@@ -358,25 +358,25 @@ const buttons = {
   mainMenu: [
     ["🛍️ خرید سرویس"],
     ["🔮 سرویس‌ های فعال", "🎁 دریافت تست رایگان",],
-    ["👨🏼‍🏫 آموزش اتصال"],
-    ["💸 پشتیبانی مالی", "🫂 پشتیبانی فنی"],
+    ["🔰 آموزش اتصال"],
+    ["☎️ پشتیبانی مالی", "🫂 پشتیبانی فنی"],
   ],
   education: [
     [{
       text: '🍀 اندروید - Android 🍀',
-      url: 'https://t.me/dedicated_vpn_channel/25'
+      url: 'https://t.me/nova_vpn_channel/25'
     }],
     [{
       text: '🍎 آیفون - IOS 🍎',
-      url: 'https://t.me/dedicated_vpn_channel/19'
+      url: 'https://t.me/nova_vpn_channel/19'
     }],
     [{
       text: '🖥️ ویندوز - Windows 🖥️',
-      url: 'https://t.me/dedicated_vpn_channel/24'
+      url: 'https://t.me/nova_vpn_channel/24'
     }],
     [{
       text: '💻 مک او اس - MacOS 💻',
-      url: 'https://t.me/dedicated_vpn_channel/18'
+      url: 'https://t.me/nova_vpn_channel/18'
     }],
   ]
 }
@@ -408,16 +408,14 @@ const cleanExpiredOrders = async () => {
         orders.expired[order.id] = { ...order }
         delete orders.waiting[orderId]
         bot.deleteMessage(userId, messageId);
-        bot.sendMessage(userId, `❌ زمان انجام تراکنش برای سفارش ${orderId} به اتمام رسید.\n\n✅ درصورتی که هزینه سرویس را به درستی به کارت مقصد ارسال نمودین اما به صورت خودکار از سمت ما تایید نشده، لطفا رسید پرداخت را برای پشتیبانی ارسال بفرمایید. \n\nدر غیر این صورت لطفا با زدن دکمه <b>«🛍️ خرید سرویس»</b> از منوی اصلی اقدام به ثبت و پرداخت سفارش جدید بفرمایید.`, { parse_mode: "HTML" })
+        bot.sendMessage(userId, `🫠 متاسفانه زمان انجام تراکنش برای سفارش ${orderId} به اتمام رسید.\n\n😇 لطفا از منو زیر مجددا اقدام به خرید سرویس بفرمایید 👇`, { parse_mode: "HTML" })
         db.write()
       }
     }
   } catch (err) {
-    console.error("❌ Error: config_generation> ", err);
-    bot.sendMessage(userId, "❌ متاسفانه مشکلی در تایید پرداخت یا ساخت کانفیگ به وجود آمده. لطفا به پشتیبانی پیام دهید 🙏");
+    console.error("❌ Error: cleanExpiredOrders> ", err);
   }
 }
-
 
 const checkWaitingOrdersWithTXID = async () => {
   const { orders } = db.data
@@ -521,14 +519,20 @@ const baseChecking = async (userId, isStartCommand) => {
   if (!isStartCommand) {
     const user = db.data.users[userId]
     if (!user) {
-      bot.sendMessage(userId, "❌ متاسفانه مشکلی پیش آمده.\n لطفا بر روی /start بزنید.");
+      bot.sendMessage(userId, "🤕 اوه اوه!\n🤔 فکر کنم مشکلی پیش اومده\n\n😇 لطفا بر روی /start بزنید.");
       return false
     }
   }
   try {
     const channelSubscription = await bot.getChatMember('@nova_vpn_channel', userId)
     if (channelSubscription.status !== 'member' && channelSubscription.status !== 'creator' && channelSubscription.status !== 'administrator') {
-      bot.sendMessage(userId, "⚠️ برای استفاده از ربات ابتدا در کانال ما عضو شوید و سپس بر روی /start بزنید.\n\n💎 👈 <u><a href='https://t.me/dedicated_vpn_channel'>عضویت در کانال</a></u> 👉 💎", { parse_mode: 'HTML' });
+      bot.sendMessage(userId, "😊 جهت استفاده از ربات، ابتدا در کانال زیر عضو شده و سپس بر روی /start کلیک 👇",
+        {
+          reply_markup: {
+            inline_keyboard: [[{ text: "🪐 NOVA VPN 🪐", url: "https://t.me/nova_vpn_channel" }]]
+          }, parse_mode: 'HTML'
+        }
+      );
       return false
     }
   } catch (err) {
@@ -555,63 +559,13 @@ bot.onText(/\/start/, async ({ from }) => {
     }
     db.write();
   }
-  bot.sendMessage(from.id, "😇 به بات فروش سرویس VPN اختصاصی خوش آمدید\n\n😋 برای دریافت کانفیگ رایگان، روی دکمه «🎁 دریافت تست رایگان» در منو اصلی بزنید تا کانفیگ تست را دریافت نمایید", {
+  bot.sendMessage(from.id, "😇 به ربات <b>NOVA</b> خوش آمدید 🌹\n\n🎁 جهت دریافت تست <b>رایگان</b>، از منوی زیر اقدام بفرمایید 👇", {
     reply_markup: JSON.stringify({
       keyboard: buttons.mainMenu,
       resize_keyboard: true,
     }),
+    parse_mode: 'HTML'
   });
-});
-
-bot.onText(/ok/, async ({ from, text }) => {
-  const baseCheckingStatus = await baseChecking(from.id, true)
-  if (!baseCheckingStatus) return
-
-  if (from.id == 1085276188) {
-    const { orders } = db.data
-    let userId, messageId
-
-    try {
-      const pattern = /ok\s(\d{1,3}(,\d{3})*)/;
-      const match = text.match(pattern);
-      const price = match[1]
-
-      for (const orderId in orders.waiting) {
-        const order = orders.waiting[orderId];
-        if (order.amount == price) {
-          [userId, messageId] = [order.user_id, order.message_id]
-          delete order.message_id
-          orders.verified[order.id] = { ...order, paid_at: moment().format().slice(0, 19) }
-          delete orders.waiting[orderId]
-          bot.deleteMessage(userId, messageId);
-
-          const config = await vpn.addConfig(userId, orderId, order.plan)
-          db.data.users[userId].configs.push({
-            ...config,
-            orderId: order.id
-          })
-          db.write()
-          const subLink = vpn.getSubLink(config.subId)
-          bot.sendMessage(userId, `✅ پرداخت شما برای سفارش ${orderId} با موفقیت تایید شد.\n\n♻️ <b>لینک آپدیت خودکار:</b>\n<code>${subLink}</code>`, { parse_mode: "HTML" });
-          const botMsg = '👇 لینک‌های آموزش اتصال به سرویس 👇'
-          setTimeout(() => bot.sendMessage(userId, botMsg, {
-            reply_markup: {
-              inline_keyboard: buttons.education,
-            },
-            parse_mode: "HTML"
-          }), 500)
-
-          bot.sendMessage(from.id, '✅ Done ✅')
-          return
-        }
-      }
-      bot.sendMessage(from.id, '⚠️ Not Found ⚠️')
-    } catch (err) {
-      console.error("❌ Error: config_generation> ", err);
-      bot.sendMessage(userId, "❌ متاسفانه مشکلی در تایید پرداخت یا ساخت کانفیگ به وجود آمده. لطفا به پشتیبانی پیام دهید 🙏");
-      bot.sendMessage(from.id, '❌ Failed ❌')
-    }
-  }
 });
 
 bot.onText(/🎁 دریافت تست رایگان/, async ({ from }) => {
@@ -621,7 +575,7 @@ bot.onText(/🎁 دریافت تست رایگان/, async ({ from }) => {
   if (user.test_config) {
     bot.sendMessage(
       from.id,
-      "❌ امکان دریافت کانفیگ تست برای شما مقدور نیست. (شما قبلا کانفیگ تست را دریافت نموده‌ای)"
+      "🙃 شما قبلا تست رایگان را دریافت نموده‌اید.\n\n😇 لطفا درصورت رضایت از کیفیت سرویس، از منو پایین اقدام به خرید سرویس بفرمایید 👇"
     );
     return;
   }
@@ -630,34 +584,17 @@ bot.onText(/🎁 دریافت تست رایگان/, async ({ from }) => {
     const subLink = vpn.getSubLink(testConfig.subId)
     user.test_config = testConfig
     db.write()
-    bot.sendMessage(from.id, `✅ کانفیگ تست با موفقیت ساخته شده.\n\n⚠️ این کانفیگ شامل ۵۰۰ مگابایت حجم رایگان بوده و ۲۴ ساعت اعتبار دارد.\n\n📡 از کانفیگ تست میتوانید برای بررسی ارتباط، سرعت و پایداری سرویس با اپراتور خود استفاده کنید.\n\n♻️ لینک آپدیت خودکار:\n<code>${subLink}</code>`, { parse_mode: "HTML" });
+    bot.sendMessage(from.id, `🥳 تبریک میگم!\n✅ کانفیگ تست شما با موفقیت ساخته شده\n\n🎁 حجم: ۵۰۰ مگابایت\n⏰ مدت استفاده: ۲۴ ساعت\n\n♻️ لینک آپدیت خودکار:\n<code>${subLink}</code>`, { parse_mode: "HTML" });
     const botMsg = '👇 لینک‌های آموزش اتصال به سرویس 👇'
     setTimeout(() => bot.sendMessage(from.id, botMsg, {
       reply_markup: {
-        inline_keyboard: [
-          [{
-            text: '📱 اندروید - Android 📱',
-            url: 'https://t.me/dedicated_vpn_channel/25'
-          }],
-          [{
-            text: '📱 آی او اس - IOS 📱',
-            url: 'https://t.me/dedicated_vpn_channel/19'
-          }],
-          [{
-            text: '🖥️ ویندوز - Windows 🖥️',
-            url: 'https://t.me/dedicated_vpn_channel/24'
-          }],
-          [{
-            text: '💻 مک او اس - MacOS 💻',
-            url: 'https://t.me/dedicated_vpn_channel/18'
-          }],
-        ],
+        inline_keyboard: buttons.education,
       },
       parse_mode: "HTML"
     }), 500)
   } catch (e) {
     console.error("❌ Error: test_config_generation> ", e);
-    bot.sendMessage(from.id, "❌ مشکلی در ساخت کافیگ تست رخ داده است. لطفا دوباره تلاش کنید 🙏");
+    bot.sendMessage(from.id, "🤕 اواو!\n🤔 فکر کنم یه مشکلی پیش اومده\n\n😇 لطفا بعد از چند دقیقا مجددا تلاش کنید");
   }
 });
 
@@ -666,24 +603,26 @@ bot.onText(/🛍️ خرید سرویس/, async ({ from }) => {
   if (!baseCheckingStatus) return
   const user = db.data.users[from.id]
   if (!user) {
-    bot.sendMessage(from.id, "❌ متاسفانه مشکلی پیش آمده.\n لطفا بر روی /start بزنید.");
+    bot.sendMessage(from.id, "🤕 اوه اوه!\n🤔 فکر کنم مشکلی پیش اومده\n\n😇 لطفا بر روی /start بزنید.");
     return
   }
   bot.sendMessage(
     from.id,
-    "🔻 شرایط و قوانین استفاده از سرویس:\n\n۱) 🌟حتما قبل از خرید سرویس، از منو اصلی بات، کانفیگ تست را دریافت نموده تا از توانایی اتصال به سرویس های ما با استفاده از اپراتور خودتان مطمئن شوید. (در غیر این صورت مسئولیت خرید بر عهده کاربر است)\n\n۲) 📡  سرویس ما در تمام ساعات روز برای شما عزیزان قابل دسترس است مگر اینکه اختلال کلی در زیرساخت کشور وجود داشته باشد که در این صورت باید صبر کنید تا اختلال های زیرساخت کشور برطرف شود.\n\n۳) 🕵🏻‍♂️ خرید سرویس از طریق کارت به کارت صورت میگیرد و از تکنولوژی تایید خودکار تراکنش استفاده میشود (به این صورت که پس از دریافت تراکنش از سمت شما به کارت مقصد، کانفیگ ها به صورت خودکار ساخته و تحویل داده میشود. (اما کاربر همچنان موظف به ذخیره رسید کارت به کارت برای مواقع خاص میباشد).\n\n😇 ایا شرایط را می پذیرید؟",
+    `😇 جهت اطمینان، حتما از منو اصلی اقدام به "<b>🎁 دریافت تست رایگان</b>" بفرمایید.\n\n😊 در غیر اینصورت جهت ادامه خرید بر روی دکمه زیر بزنید.`,
     {
       reply_markup: JSON.stringify({
         inline_keyboard: [
           [
             {
-              text: "🫡 شرایط را خوانده و میپذیرم",
+              text: "🛍️ ادامه خرید",
               callback_data: JSON.stringify({ action: "store" }),
             },
           ],
         ],
       }),
-    });
+      parse_mode: "HTML"
+    },
+  );
 });
 
 bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
@@ -691,18 +630,19 @@ bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
   if (!baseCheckingStatus) return
   const user = db.data.users[from.id]
   if (!user) {
-    bot.sendMessage(from.id, "❌ متاسفانه مشکلی پیش آمده.\n لطفا بر روی /start بزنید.");
+    bot.sendMessage(from.id, "🤕 اوه اوه!\n🤔 فکر کنم مشکلی پیش اومده\n\n😇 لطفا بر روی /start بزنید.");
     return
   }
-  if (user.configs.length == 0) {
-    bot.sendMessage(from.id, "⚠️ شما درحال حاضر هیچ کانفیگ خریداری شده ای ندارید.\n\n🙏 لطفا با زدن دکمه خرید سرویس از منو اصلی اقدام به خرید کانفیگ کنید.");
+  if (!user?.configs?.length != 0) {
+    bot.sendMessage(from.id, "🫠 در حال حاضر هیچ سرویس فعالی ندارید\n\n🛍️ جهت خرید از منو پایین اقدام بفرمایید 👇");
     return
   }
   try {
     let botMsg = ""
-    const query = `SELECT email, up, down, total, enable FROM client_traffics WHERE email LIKE '${user.id}-%' AND email NOT LIKE '%-test'`;
+    const query = `SELECT email, up, down, total, enable FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND email LIKE '${user.id}-%' AND email NOT LIKE '%-test'`;
     const rows = await api.db.iran(query)
     const configs = [...rows];
+    console.log("configs: ", configs);
     if (configs.length > 0) {
       configs.map(({ email, up, down, total, enable }) => {
         const orderId = email.split('-')[1]
@@ -710,17 +650,17 @@ bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
         let remainingTraffic = ((total - up - down) / 1024 / 1024 / 1024).toFixed(2)
         remainingTraffic = remainingTraffic > 0 ? remainingTraffic : 0
         const subLink = vpn.getSubLink(orderId)
-        botMsg = `\n\n\n🌈 <b>شماره سفارش: </b>${orderId}\n🥇 <b>حجم باقیمانده: </b>${remainingTraffic} گیگ\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n👀 <b>وضعیت سفارش: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n♻️ <b>لینک اپدیت: </b>\n<code>${subLink}</code>` : ''}` + botMsg
+        botMsg = `\n\n\n🛍️ <b>شماره سفارش: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${remainingTraffic} گیگ\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n👀 <b>وضعیت سفارش: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n♻️ <b>لینک اپدیت خودکار: </b>\n<code>${subLink}</code>` : ''}` + botMsg
       })
       bot.sendMessage(from.id, botMsg, { parse_mode: "HTML" });
     }
   } catch (err) {
     console.log(err);
-    bot.sendMessage(from.id, "❌ متاسفانه مشکلی در دریافت سفارشات شما بوجود آمده است.\n🙏 لطفا پس از چند دقیقه دوباره تلاش کنید.");
+    bot.sendMessage(from.id, "🤕 اوه اوه!\n🤔 فکر کنم مشکلی در دریافت سرویس های شما پیش اومده\n\n😇 لطفا بعد از چند دقیقه دوباره تلاش کنید.");
   }
 });
 
-bot.onText(/👨🏼‍🏫 آموزش اتصال/, async ({ from }) => {
+bot.onText(/🔰 آموزش اتصال/, async ({ from }) => {
   const baseCheckingStatus = await baseChecking(from.id)
   if (!baseCheckingStatus) return
   const botMsg = '👇 لینک‌های آموزش اتصال به سرویس 👇'
@@ -737,19 +677,30 @@ bot.onText(/🫂 پشتیبانی فنی/, async ({ from }) => {
   if (!baseCheckingStatus) return
   const user = db.data.users[from.id]
   if (!user) {
-    bot.sendMessage(from.id, "❌ متاسفانه مشکلی پیش آمده.\n لطفا بر روی /start بزنید.");
+    bot.sendMessage(from.id, "🤕 اوه اوه!\n🤔 فکر کنم مشکلی پیش اومده\n\n😇 لطفا بر روی /start بزنید.");
     return
   }
-  const botMsg = `⚠️ ابتدا مراحل اتصال را از بخش <b>«👨🏻‍🏫 آموزش اتصال»</b> چک بفرمایید و بعد این موارد را بررسی کنید:\n\n۱) از بخش سفارشات من حجم و زمان باقی مانده سفارش را بررسی کنید.\n\n۲) اتصال به اینترنت را بدون استفاده از vpn چک کنید.\n\n۳) حتما از فایل نرم افزارهایی که ربات برای شما ارسال میکند استفاده کنید (زیرا تفاوت نسخه ها بعضا باعث عدم اتصال میشود)\n\n۴) درصورتی که برای اندروید از v2rayNG استفاده میکنید حتما درقسمت ادیت کانفیگ گزینه ی allowInsecure را true کنید\n\n\nاگر همچنان در اتصال مشکل دارین در گروه زیر مشکلتون رو مطرح بفرمایید:\n\n👥 <a href="https://t.me/+9Ry1urzfT-owMzVk">برای عضویت در گروه کلیک کنید</a> 👥`
-  bot.sendMessage(from.id, botMsg, { parse_mode: "HTML" });
+  const botMsg = `😇 <b>لطفا ابتدا موارد زیر را بررسی بفرمایید 👇</b>\n\n1️⃣ از بخش "🔮سرویس‌های فعال" حجم و زمان باقی مانده سفارش را بررسی کنید.\n\n2️⃣ اتصال به اینترنت را بدون استفاده از vpn بفرمایید.\n\n3️⃣ ترجیحا از نرم افزارهایی که در کانال معرفی شده استفاده کنید.\n\n4️⃣ در نرم افزار v2rayNG طبق آموزش allowInsecure را true کنید.\n\n😇 همچنین میتوانید مشکل خود را در گروه NOVA ارسال بفرمایید 👇`
+  bot.sendMessage(from.id, botMsg,
+    {
+      reply_markup: {
+        inline_keyboard: [[{ text: "🫂 گروه پرسش و پاسخ", url: "https://t.me/+9Ry1urzfT-owMzVk" }]]
+      }, parse_mode: "HTML"
+    }
+  );
 });
 
-bot.onText(/💸 پشتیبانی مالی/, async ({ from }) => {
+bot.onText(/☎️ پشتیبانی مالی/, async ({ from }) => {
   const baseCheckingStatus = await baseChecking(from.id)
   if (!baseCheckingStatus) return
-  const botMsg =
-    "درصورتی که مبلغ دقیق سرویس را با موفقیت به کارت مقصد ارسال کردین ولی کانفیگ را پس از گذشت حداکثر ۱۵ دقیقه دریافت نکردین، میتوانید به پشتیبانی پیام داده و رسید خود را ارسال بفرمایید تا در اسرع وقت بررسی شود.\n\n🫂 پشتیبانی مالی : @nova_vpn_support";
-  bot.sendMessage(from.id, botMsg);
+  const botMsg = `<b>آیا فراموش کردین TXID را کپی کنید؟</b> 🙃\n\nدر سایت زیر وارد شده و مراحل ذکر شده را انجام دهید و TXID را از طریق دکمه "<b>⬆️ ارسال TXID</b>" که در زیر فاکتور شما قرار داشت، ارسال بفرمایید.\n\n🖥️ <b>آدرس سایت: </b><a href='https://digiswap.org'>digiswap.org</a>\n\n🟢 <b>مراحل: </b>ورود/ثبت نام =» حساب کاربری =» سفارشات =» جزئیات\n\n‼️ <b>حتما با همان شماره موبایلی که پرداخت را انجام دادید وارد سایت بشوید</b> ‼️`;
+  bot.sendMessage(from.id, botMsg, {
+    reply_markup: {
+      inline_keyboard: [[{ text: "☎️ پشتیبان مالی", url: "t.me/nova_vpn_support" }]]
+    },
+    parse_mode: "HTML",
+    disable_web_page_preview: true
+  });
 });
 
 bot.on("callback_query", async (query) => {
@@ -757,7 +708,7 @@ bot.on("callback_query", async (query) => {
   if (isOnCooldown(from.id)) return
   const user = db.data.users[from.id]
   if (!user) {
-    bot.sendMessage(from.id, "❌ متاسفانه مشکلی پیش آمده.\n لطفا بر روی /start بزنید.");
+    bot.sendMessage(from.id, "🤕 اوه اوه!\n🤔 فکر کنم مشکلی پیش اومده\n\n😇 لطفا بر روی /start بزنید.");
     return
   }
   const chatId = from.id;
