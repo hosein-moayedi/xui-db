@@ -1,0 +1,319 @@
+{
+  "users": {
+    "1085276188": {
+      "id": 1085276188,
+      "tg_name": "NOVA Support 👨🏻‍💻",
+      "tg_username": "nova_vpn_support",
+      "test_config": null,
+      "configs": [
+        {
+          "inbound_id": 3,
+          "alterId": 0,
+          "email": "1085276188-903654566",
+          "enable": true,
+          "expiryTime": 1692197640871,
+          "id": "35ef9fd1-0f57-4048-8c90-84dc69c1a8e3",
+          "limitIp": 1,
+          "subId": "903654566",
+          "tgId": "",
+          "totalGB": 53687091200,
+          "orderId": 903654566
+        }
+      ],
+      "created_at": "2023-07-17T18:14:50"
+    }
+  },
+  "orders": {
+    "waiting": {
+      "128648378": {
+        "id": 128648378,
+        "user_id": 1085276188,
+        "message_id": 3202,
+        "trashMessages": [],
+        "plan": {
+          "id": 99,
+          "name": "🥇 50 گیگ - 30 روزه - 💳 125 تومان",
+          "symbol": "🥇",
+          "traffic": 50,
+          "period": 30,
+          "original_price": 150,
+          "final_price": 125,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
+        },
+        "amount": "26.97",
+        "rate": {
+          "tronPrice": 4072,
+          "fee": 15000
+        },
+        "created_at": "2023-07-17T18:22:47",
+        "expire_at": "2023-08-16T18:22:47",
+        "payment_limit_time": 1689607367501
+      },
+      "166697320": {
+        "id": 166697320,
+        "user_id": 1085276188,
+        "message_id": 3202,
+        "trashMessages": [],
+        "plan": {
+          "id": 99,
+          "name": "🥇 50 گیگ - 30 روزه - 💳 125 تومان",
+          "symbol": "🥇",
+          "traffic": 50,
+          "period": 30,
+          "original_price": 150,
+          "final_price": 125,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
+        },
+        "amount": "26.93",
+        "rate": {
+          "tronPrice": 4072,
+          "fee": 15000
+        },
+        "created_at": "2023-07-17T18:22:46",
+        "expire_at": "2023-08-16T18:22:46",
+        "payment_limit_time": 1689607366180
+      },
+      "407278817": {
+        "id": 407278817,
+        "user_id": 1085276188,
+        "message_id": 3202,
+        "trashMessages": [],
+        "plan": {
+          "id": 99,
+          "name": "🥇 50 گیگ - 30 روزه - 💳 125 تومان",
+          "symbol": "🥇",
+          "traffic": 50,
+          "period": 30,
+          "original_price": 150,
+          "final_price": 125,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
+        },
+        "amount": "26.87",
+        "rate": {
+          "tronPrice": 4072,
+          "fee": 15000
+        },
+        "created_at": "2023-07-17T18:22:44",
+        "expire_at": "2023-08-16T18:22:44",
+        "payment_limit_time": 1689607364559
+      },
+      "447795179": {
+        "id": 447795179,
+        "user_id": 1085276188,
+        "message_id": 3202,
+        "trashMessages": [],
+        "plan": {
+          "id": 99,
+          "name": "🥇 50 گیگ - 30 روزه - 💳 125 تومان",
+          "symbol": "🥇",
+          "traffic": 50,
+          "period": 30,
+          "original_price": 150,
+          "final_price": 125,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
+        },
+        "amount": "26.90",
+        "rate": {
+          "tronPrice": 4072,
+          "fee": 15000
+        },
+        "created_at": "2023-07-17T18:22:53",
+        "expire_at": "2023-08-16T18:22:53",
+        "payment_limit_time": 1689607373531
+      },
+      "464616280": {
+        "id": 464616280,
+        "user_id": 1085276188,
+        "message_id": 3202,
+        "trashMessages": [],
+        "plan": {
+          "id": 99,
+          "name": "🥇 50 گیگ - 30 روزه - 💳 125 تومان",
+          "symbol": "🥇",
+          "traffic": 50,
+          "period": 30,
+          "original_price": 150,
+          "final_price": 125,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
+        },
+        "amount": "26.88",
+        "rate": {
+          "tronPrice": 4072,
+          "fee": 15000
+        },
+        "created_at": "2023-07-17T18:22:50",
+        "expire_at": "2023-08-16T18:22:50",
+        "payment_limit_time": 1689607370469
+      },
+      "495078924": {
+        "id": 495078924,
+        "user_id": 1085276188,
+        "message_id": 3202,
+        "trashMessages": [],
+        "plan": {
+          "id": 99,
+          "name": "🥇 50 گیگ - 30 روزه - 💳 125 تومان",
+          "symbol": "🥇",
+          "traffic": 50,
+          "period": 30,
+          "original_price": 150,
+          "final_price": 125,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
+        },
+        "amount": "26.87",
+        "rate": {
+          "tronPrice": 4072,
+          "fee": 15000
+        },
+        "created_at": "2023-07-17T18:22:56",
+        "expire_at": "2023-08-16T18:22:56",
+        "payment_limit_time": 1689607376540
+      },
+      "677094972": {
+        "id": 677094972,
+        "user_id": 1085276188,
+        "message_id": 3202,
+        "trashMessages": [],
+        "plan": {
+          "id": 99,
+          "name": "🥇 50 گیگ - 30 روزه - 💳 125 تومان",
+          "symbol": "🥇",
+          "traffic": 50,
+          "period": 30,
+          "original_price": 150,
+          "final_price": 125,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
+        },
+        "amount": "27.00",
+        "rate": {
+          "tronPrice": 4072,
+          "fee": 15000
+        },
+        "created_at": "2023-07-17T18:22:42",
+        "expire_at": "2023-08-16T18:22:42",
+        "payment_limit_time": 1689607362291
+      },
+      "740769605": {
+        "id": 740769605,
+        "user_id": 1085276188,
+        "message_id": 3202,
+        "trashMessages": [],
+        "plan": {
+          "id": 99,
+          "name": "🥇 50 گیگ - 30 روزه - 💳 125 تومان",
+          "symbol": "🥇",
+          "traffic": 50,
+          "period": 30,
+          "original_price": 150,
+          "final_price": 125,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
+        },
+        "amount": "26.84",
+        "rate": {
+          "tronPrice": 4072,
+          "fee": 15000
+        },
+        "created_at": "2023-07-17T18:22:48",
+        "expire_at": "2023-08-16T18:22:48",
+        "payment_limit_time": 1689607368962
+      },
+      "801067502": {
+        "id": 801067502,
+        "user_id": 1085276188,
+        "message_id": 3202,
+        "trashMessages": [],
+        "plan": {
+          "id": 99,
+          "name": "🥇 50 گیگ - 30 روزه - 💳 125 تومان",
+          "symbol": "🥇",
+          "traffic": 50,
+          "period": 30,
+          "original_price": 150,
+          "final_price": 125,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
+        },
+        "amount": "26.98",
+        "rate": {
+          "tronPrice": 4072,
+          "fee": 15000
+        },
+        "created_at": "2023-07-17T18:22:54",
+        "expire_at": "2023-08-16T18:22:54",
+        "payment_limit_time": 1689607374910
+      },
+      "922276127": {
+        "id": 922276127,
+        "user_id": 1085276188,
+        "message_id": 3202,
+        "trashMessages": [],
+        "plan": {
+          "id": 99,
+          "name": "🥇 50 گیگ - 30 روزه - 💳 125 تومان",
+          "symbol": "🥇",
+          "traffic": 50,
+          "period": 30,
+          "original_price": 150,
+          "final_price": 125,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
+        },
+        "amount": "27.00",
+        "rate": {
+          "tronPrice": 4072,
+          "fee": 15000
+        },
+        "created_at": "2023-07-17T18:22:51",
+        "expire_at": "2023-08-16T18:22:51",
+        "payment_limit_time": 1689607371994
+      }
+    },
+    "verified": {
+      "903654566": {
+        "id": 903654566,
+        "user_id": 1085276188,
+        "plan": {
+          "id": 99,
+          "name": "🥇 50 گیگ - 30 روزه - 💳 125 تومان",
+          "symbol": "🥇",
+          "traffic": 50,
+          "period": 30,
+          "original_price": 150,
+          "final_price": 125,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
+        },
+        "amount": "27.00",
+        "rate": {
+          "tronPrice": 4072,
+          "fee": 15000
+        },
+        "created_at": "2023-07-17T18:23:23",
+        "expire_at": "2023-08-16T18:23:23",
+        "payment_limit_time": 1689607403497,
+        "txid": "34243",
+        "paid_at": "2023-07-17T18:24:00"
+      }
+    },
+    "expired": {}
+  }
+}

@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "pro": "NODE_ENV=pro nodemon src/server.js",
     "release": "sudo systemctl enable dedicated-vpn-bot && sudo systemctl start dedicated-vpn-bot",
     "stop": "sudo systemctl disable dedicated-vpn-bot && sudo systemctl stop dedicated-vpn-bot"
   },
