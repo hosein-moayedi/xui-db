@@ -4,6 +4,7 @@ TRON_SCAN=https://apilist.tronscan.org/api/transaction-info?hash=
 XUI=http://turbo.torgod.site:44090
 XUI_SUB=https://turbo.torgod.site:2096/sub
 XUI_API=http://turbo.torgod.site:44090/panel/api/inbounds
+XUI_DB_API=http://turbo.torgod.site:36749/db
 XUI_USERNAME=C3cZaYP7
 XUI_PASSWORD=Ht9w4rLF
 PORT=8080
