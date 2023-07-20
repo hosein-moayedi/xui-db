@@ -25,7 +25,6 @@ const defaultData = { users: {}, orders: { waiting: {}, verified: {}, expired: {
 const db = new LowSync(adapter, defaultData);
 db.read();
 
-const TRXWalletAddress = "TLNKTPvGCu5v6KvPuHQ8VN5Pvqwz115UvJ"
 const ownerId = "1085276188"
 
 const app = express();
@@ -112,6 +111,11 @@ const plans = [
 
 const INBOUND_ID = environment == 'dev' ? 3 : 2
 
+const BANK_ACCOUNT = {
+  OWNER_NAME: "محمد امین مویدی یکتا",
+  CARD_NUMBER: 6219861911504420
+}
+
 let api = {
   nowPayment: {
     createPayment: async (orderId, amount, currency) => {
@@ -124,7 +128,6 @@ let api = {
           ipn_callback_url: "http://vpn.torgod.site/update_payment",
           is_fixed_rate: true,
         };
-        console.log("requestData: ", requestData);
         const options = {
           headers: {
             "x-api-key": process.env.NOW_PAYMENT_API_KEY,
@@ -197,7 +200,7 @@ let api = {
     session: {},
     login: async () => {
       return new Promise(async (resolve, reject) => {
-        const requestData = { username: process.env.XUI_USERNAME, password: process.env.XUI_PASSWORD, loginsecret: process.env.XUI_SECRET_TOKEN };
+        const requestData = { username: process.env.XUI_USERNAME, password: process.env.XUI_PASSWORD };
         await axios
           .post(process.env.XUI + "/login", requestData)
           .then((response) => {
@@ -284,20 +287,6 @@ let api = {
       });
     },
   },
-  tronScan: {
-    getTransactionInfoByID: async (txid) => {
-      return new Promise(async (resolve, reject) => {
-        await axios
-          .get(process.env.TRON_SCAN + txid)
-          .then((response) => {
-            resolve(response.data);
-          })
-          .catch((error) => {
-            reject(`API call error [tronScan/getTxInfoByTXID]: ${error}`);
-          });
-      });
-    }
-  },
   db: {
     iran: async (query) => {
       return new Promise(async (resolve, reject) => {
@@ -382,15 +371,6 @@ const buttons = {
   ]
 }
 
-const superTXIDList = []
-
-const generateSuperTXID = () => {
-  const bytes = crypto.randomBytes(64);
-  const hash = bytes.toString('hex');
-  superTXIDList.push(hash)
-  return hash
-}
-
 const isOnCooldown = (userId) => {
   if (cooldowns[userId] && cooldowns[userId] > moment().valueOf())
     return true;
@@ -406,7 +386,7 @@ const cleanExpiredCooldown = () => {
   })
 }
 
-const cleanExpiredOrders = async () => {
+const checkOrdersTimeout = () => {
   try {
     const { orders } = db.data
     let userId, messageId
@@ -423,92 +403,22 @@ const cleanExpiredOrders = async () => {
       }
     }
   } catch (err) {
-    console.error("❌ Error: cleanExpiredOrders> ", err);
+    console.error("❌ Error: checkOrdersTimeout> ", err);
   }
 }
 
-const checkWaitingOrdersWithTXID = async () => {
-  const { orders } = db.data
+const cleanExpiredOrders = () => {
   try {
-    for (const orderId in orders.waiting) {
-      const order = orders.waiting[orderId];
-      if (order?.txid) {
-        const transactionInfo = await api.tronScan.getTransactionInfoByID(order.txid)
-        const orderCreatedtime = moment.tz(order.created_at, 'Asia/Tehran').valueOf();
-        const { confirmed, contractData, timestamp } = transactionInfo
-
-        const superTXID = superTXIDList.find((id) => id == order.txid)
-
-        if (
-          !contractData ||
-          timestamp <= orderCreatedtime ||
-          contractData.to_address != TRXWalletAddress ||
-          contractData.amount * 1e-6 != order.amount
-        ) {
-          if (!superTXID) {
-            bot.sendMessage(order.user_id,
-              `🤕 متاسفانه شناسه تراکنش ارسالی شما در شبکه یافت نشد و یا مربوط به سرویس ${orderId} نبوده است.\n\n😊 لطفا شناسه وارد شده را مجددا بررسی نموده و از طریق دکمه "<b>⬆️ ارسال شناسه تراکنش</b>" که در زیر فاکتور شما قرار داشت، اقدام به ارسال مقدار صحیح شناسه تراکنش بفرمایید.\n\n🧾 <b>شناسه نادرست: </b>${order.txid}`,
-              { parse_mode: "HTML" }
-            ).then((botMsg) => {
-              order.trashMessages.push(botMsg.message_id)
-              db.write()
-            });
-            delete order.txid
-            db.write()
-            continue
-          }
-        }
-
-        if (confirmed || superTXID) {
-          superTXIDList.splice(superTXID, 1)
-          const [userId, messageId] = [order.user_id, order.message_id]
-          delete order.message_id
-          order.trashMessages.map((msgId) => {
-            bot.deleteMessage(userId, msgId);
-          })
-          delete order.trashMessages
-          orders.verified[order.id] = { ...order, paid_at: moment().format().slice(0, 19) }
-          delete orders.waiting[orderId]
-          bot.deleteMessage(userId, messageId);
-
-          const config = await vpn.addConfig(userId, orderId, order.plan)
-          db.data.users[userId].configs.push({
-            ...config,
-            orderId: order.id
-          })
-          db.write()
-          const subLink = vpn.getSubLink(config.subId)
-          bot.sendMessage(userId,
-            `🥳 تبریک میگم!\n✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic} گیگ\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${order.ir_amount.toLocaleString()} تومان\n\n♻️ <b>لینک آپدیت خودکار:</b>\n${subLink}`,
-            {
-              parse_mode: "HTML",
-              reply_markup: JSON.stringify({
-                keyboard: buttons.mainMenu,
-                resize_keyboard: true,
-              }),
-            }
-          );
-          const botMsg = '👇 لینک‌های آموزش اتصال به سرویس 👇'
-          setTimeout(() => bot.sendMessage(userId, botMsg, {
-            reply_markup: {
-              inline_keyboard: buttons.education,
-            },
-            parse_mode: "HTML"
-          }), 500)
-        }
+    const { orders } = db.data
+    for (const orderId in orders.expired) {
+      const { payment_limit_time } = orders.expired[orderId];
+      if (payment_limit_time + 172800000 < moment().valueOf()) {
+        delete orders.expired[orderId]
+        db.write()
       }
     }
   } catch (err) {
-    console.error("❌ Error: checkWaitingOrdersWithTXID> ", err);
-    bot.sendMessage(
-      orders.user_id,
-      "🤕 اوه اوه!\n🤔 فکر کنم مشکلی در تایید پرداخت و یا تحویل سرویس پیش اومده\n\n😇 جهت بررسی لطفا شماره سرویس خود را برای پشتیبانی فنی ارسال نمایید 👇",
-      {
-        reply_markup: {
-          inline_keyboard: [[{ text: "👨🏻‍💻 پشتیبان فنی", url: "t.me/nova_vpn_support" }]]
-        },
-      }
-    );
+    console.error("❌ Error: cleanExpiredOrders> ", err);
   }
 }
 
@@ -549,10 +459,12 @@ const baseChecking = async (userId, isStartCommand) => {
   try {
     const channelSubscription = await bot.getChatMember('@nova_vpn_channel', userId)
     if (channelSubscription.status !== 'member' && channelSubscription.status !== 'creator' && channelSubscription.status !== 'administrator') {
-      bot.sendMessage(userId, "😊 جهت استفاده از ربات، ابتدا در کانال زیر عضو شده و سپس بر روی /start کلیک 👇",
+      bot.sendMessage(userId, `😇 به سرویس NOVA خوش آمدید 🌹\n\nلطفا جهت استفاده از ربات، ابتدا در کانال ما عضو شده و سپس بر روی 👈 /start 👉 ضربه بزنید`,
         {
           reply_markup: {
-            inline_keyboard: [[{ text: "🪐 NOVA VPN 🪐", url: "https://t.me/nova_vpn_channel" }]]
+            inline_keyboard: [
+              [{ text: "🪐 NOVA کانال اطلاع رسانی 📣", url: "https://t.me/nova_vpn_channel" }]
+            ]
           }, parse_mode: 'HTML'
         }
       );
@@ -576,7 +488,7 @@ bot.onText(/\/start/, async ({ from }) => {
       id: from.id,
       tg_name: from.first_name,
       tg_username: from.username,
-      test_config: null,
+      tested: false,
       configs: [],
       created_at: moment().format().slice(0, 19)
     }
@@ -591,10 +503,62 @@ bot.onText(/\/start/, async ({ from }) => {
   });
 });
 
-bot.onText(/gtxid/, async ({ from }) => {
+bot.onText(/ok/, async ({ from, text }) => {
+  const baseCheckingStatus = await baseChecking(from.id, true)
+  if (!baseCheckingStatus) return
+
   if (from.id == ownerId) {
-    const txid = generateSuperTXID()
-    bot.sendMessage(from.id, `🛍️ شناسه تراکنش:\n<code>${txid}</code>`, { parse_mode: "HTML" })
+    const { orders } = db.data
+    try {
+      const pattern = /ok\s(\d{1,3}(,\d{3})*)/;
+      const match = text.match(pattern);
+      const price = match[1]
+      for (const orderId in orders.waiting) {
+        const order = orders.waiting[orderId];
+        if (order.amount == price.replace(/\,/g, '')) {
+          const [userId, messageId] = [order.user_id, order.message_id]
+          delete order.message_id
+          order.trashMessages.map((msgId) => {
+            bot.deleteMessage(userId, msgId);
+          })
+          delete order.trashMessages
+          orders.verified[order.id] = { ...order, paid_at: moment().format().slice(0, 19) }
+          delete orders.waiting[orderId]
+          bot.deleteMessage(userId, messageId);
+
+          const config = await vpn.addConfig(userId, orderId, order.plan)
+          db.data.users[userId].configs.push({
+            ...config,
+            orderId: order.id
+          })
+          db.write()
+          const subLink = vpn.getSubLink(config.subId)
+          bot.sendMessage(userId,
+            `🥳 تبریک میگم!\n✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic} گیگ\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n♻️ <b>لینک آپدیت خودکار:</b>\n${subLink}`,
+            {
+              parse_mode: "HTML",
+              reply_markup: JSON.stringify({
+                keyboard: buttons.mainMenu,
+                resize_keyboard: true,
+              }),
+            }
+          );
+          const botMsg = '👇 لینک‌های آموزش اتصال به سرویس 👇'
+          setTimeout(() => bot.sendMessage(userId, botMsg, {
+            reply_markup: {
+              inline_keyboard: buttons.education,
+            },
+            parse_mode: "HTML"
+          }), 500)
+          bot.sendMessage(from.id, '✅ Done ✅')
+          return
+        }
+      }
+      bot.sendMessage(from.id, '⚠️ Not Found ⚠️')
+    } catch (err) {
+      console.error("❌ Error: config_generation> ", err);
+      bot.sendMessage(from.id, '❌ Failed ❌')
+    }
   }
 });
 
@@ -602,7 +566,7 @@ bot.onText(/🎁 دریافت تست رایگان/, async ({ from }) => {
   const baseCheckingStatus = await baseChecking(from.id)
   if (!baseCheckingStatus) return
   const user = db.data.users[from.id]
-  if (user.test_config) {
+  if (user.tested) {
     bot.sendMessage(
       from.id,
       "🙃 شما قبلا تست رایگان را دریافت نموده‌اید.\n\n😇 لطفا درصورت رضایت از کیفیت سرویس، از منو پایین اقدام به خرید سرویس بفرمایید 👇"
@@ -610,9 +574,9 @@ bot.onText(/🎁 دریافت تست رایگان/, async ({ from }) => {
     return;
   }
   try {
-    const testConfig = await vpn.addTestConfig(user.id)
-    const subLink = vpn.getSubLink(testConfig.subId)
-    user.test_config = testConfig
+    const { subId } = await vpn.addTestConfig(user.id)
+    const subLink = vpn.getSubLink(subId)
+    user.tested = true
     db.write()
     bot.sendMessage(from.id, `🥳 تبریک میگم!\n✅ کانفیگ تست شما با موفقیت ساخته شده\n\n🎁 حجم: ۵۰۰ مگابایت\n⏰ مدت استفاده: ۲۴ ساعت\n\n♻️ لینک آپدیت خودکار:\n<code>${subLink}</code>`, { parse_mode: "HTML" });
     const botMsg = '👇 لینک‌های آموزش اتصال به سرویس 👇'
@@ -672,7 +636,6 @@ bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
     const query = `SELECT email, up, down, total, enable FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND email LIKE '${user.id}-%' AND email NOT LIKE '%-test'`;
     const rows = await api.db.iran(query)
     const configs = [...rows];
-    console.log("configs: ", configs);
     if (configs.length > 0) {
       configs.map(({ email, up, down, total, enable }) => {
         const orderId = email.split('-')[1]
@@ -723,7 +686,7 @@ bot.onText(/🫂 پشتیبانی فنی/, async ({ from }) => {
 bot.onText(/☎️ پشتیبانی مالی/, async ({ from }) => {
   const baseCheckingStatus = await baseChecking(from.id)
   if (!baseCheckingStatus) return
-  const botMsg = `<b>آیا فراموش کردین که شناسه تراکنش را کپی کنید؟</b> 🙃\n\nدر سایت زیر وارد شده و مراحل ذکر شده را انجام دهید و شناسه تراکنش را از طریق دکمه "<b>⬆️ ارسال شناسه تراکنش</b>" که در زیر فاکتور شما قرار داشت، ارسال بفرمایید.\n\n🖥️ <b>آدرس سایت: </b><a href='https://digiswap.org'>digiswap.org</a>\n\n🟢 <b>مراحل: </b>ورود/ثبت نام =» حساب کاربری =» سفارشات =» جزئیات\n\n‼️ <b>حتما با همان شماره موبایلی که پرداخت را انجام دادید وارد سایت بشوید</b> ‼️`;
+  const botMsg = `✅ جهت تایید تراکنش، لطفا رسید خود را برای <u><b>پشتیبانی مالی</b></u> ارسال بفرمایید 👇`;
   bot.sendMessage(from.id, botMsg, {
     reply_markup: {
       inline_keyboard: [[{ text: "☎️ پشتیبان مالی", url: "t.me/nova_vpn_support" }]]
@@ -744,6 +707,10 @@ bot.on("callback_query", async (query) => {
   const chatId = from.id;
   const messageId = message.message_id;
   const queryData = JSON.parse(data);
+
+  if (queryData.action === "check_channel_subscription") {
+    baseChecking(chatId)
+  }
 
   if (queryData.action === "features") {
     const botMsg =
@@ -824,12 +791,8 @@ bot.on("callback_query", async (query) => {
     const plan = plans.find((item) => item.id == queryData.data.planId);
     try {
       const orderId = Math.floor(Math.random() * (999999999 - 100000000 + 1)) + 100000000;
-      const rate = await api.digiswap.getRates()
-      const IrAmount = plan.final_price * 1000
-      const amount = (((IrAmount - rate.fee) / rate.tronPrice) - ((Math.floor(Math.random() * 20) + 1) * 0.01)).toFixed(2)
-      const paymentLimitTime = moment().add(1800000) // 30 min
-
-      const paymentLink = `https://digiswap.org/quick?amount=${amount}&address=${TRXWalletAddress}`
+      const amount = (plan.final_price * 10000) - Math.floor(Math.random() * 1000);
+      const paymentLimitTime = moment().add(3600000) // 1 hour
 
       const order = {
         id: orderId,
@@ -844,9 +807,7 @@ bot.on("callback_query", async (query) => {
             .replace("${SYMBOL}", plan.symbol)
             .replace("${PRICE}", plan.final_price),
         },
-        ir_amount: IrAmount,
         amount,
-        rate,
         created_at: moment().format().slice(0, 19),
         expire_at: moment().add(plan.period * 24 * 60 * 60 * 1000).format().slice(0, 19),
         payment_limit_time: paymentLimitTime.valueOf()
@@ -855,7 +816,7 @@ bot.on("callback_query", async (query) => {
       db.write();
 
       bot.editMessageText(
-        `‼️ <u><b>توجه: شناسه‌ی تراکنش پس از پرداخت موفق در درگاه پرداخت به شما نمایش داده میشود که باید بصورت دقیق آن را کپی کرده و با زدن دکمه "⬆️ ارسال شناسه تراکنش" که در زیر این پست میباشد، شناسه تراکنشی که کپی کرده بودید را ارسال نمایید </b></u>‼️\n\n🛍️ <b>شماره سرویس: </b>${orderId}\n💳 <b>هزینه سرویس: </b>${IrAmount.toLocaleString()} تومان\n⏰ <b>مهلت پرداخت: </b> تا ساعت <u><b>${paymentLimitTime.format().slice(11, 16)}</b></u>\n\n🟡 <b>وضعیت: </b>درانتظار دریافت شناسه تراکنش از کاربر`,
+        `🛍️ <b>شماره سرویس: </b>${orderId}\n\n💳 <b>مبلغ نهایی: </b>\n<code>${amount.toLocaleString()}</code> ریال 👉 (روی اعداد ضربه بزنید تا کپی شود)\n\n🏦 <b>شماره کارت: </b>\n<code>${BANK_ACCOUNT.CARD_NUMBER}</code> 👉 (ضربه بزنید تا کپی شود)\n\n👤 <b>صاحب حساب: </b> ${BANK_ACCOUNT.OWNER_NAME}\n\n⚠️ <b>مهلت پرداخت: </b> تا ساعت <u><b>${paymentLimitTime.format().slice(11, 16)}</b></u> ⚠️\n\n‼️ <u><b>توجه: از رند کردن مبلغ نهایی خودداری کنید </b></u>‼️\n\n✅ جهت تکمیل خرید سرویس، مبلغ <u><b>دقیق</b></u> بالا را به شماره کارت ذکر شده واریز بفرمایید و رسید خود را برای <u><b>پشتیبانی مالی</b></u> ارسال کنید 👇`,
         {
           parse_mode: "HTML",
           chat_id: chatId,
@@ -863,15 +824,8 @@ bot.on("callback_query", async (query) => {
           reply_markup: {
             inline_keyboard: [[
               {
-                text: "⬆️ ارسال شناسه تراکنش",
-                callback_data: JSON.stringify({
-                  action: "send_txid",
-                  data: { orderId },
-                }),
-              },
-              {
-                text: "💸 لینک پرداخت",
-                url: paymentLink,
+                text: "☎️ پشتیبانی مالی",
+                url: "https://t.me/nova_vpn_support",
               }
             ]]
           },
@@ -907,36 +861,6 @@ bot.on("callback_query", async (query) => {
       );
     }
   }
-
-  if (queryData.action === "send_txid") {
-    const { orderId } = queryData.data
-    let order = db.data.orders.waiting[orderId]
-
-    bot.sendMessage(chatId, "😊 لطفا شناسه تراکنشی که پس از پرداخت موفق دریافت نموده‌اید را ارسال کنید 👇", {
-      reply_markup: {
-        force_reply: true,
-      }
-    }).then((sentBotMsg) => {
-      order.trashMessages.push(sentBotMsg.message_id)
-      db.write()
-
-      bot.onReplyToMessage(chatId, sentBotMsg.message_id, (userMsg) => {
-        order.txid = userMsg.text
-        bot.sendMessage(chatId, `😊 به محض تایید در شبکه بلاک چین، سرویس شما <u><b>بصورت خودکار</b></u> تحویل داده خواهد شد.\n\n⚠️ درصورتی که شناسه تراکنش را اشتباه وارد کرده‌اید میتوانید با زدن دکمه \"<b>⬆️ ارسال شناسه تراکنش</b>\" که در زیر فاکتور سرویس قرار دارد، شناسه صحیح را ارسال بفرمایید.\n\n🛍️ <b>شماره سرویس:</b> ${orderId}\n💳 <b>هزینه سرویس: </b>${order.ir_amount.toLocaleString()} تومان\n🧾 <b>شناسه تراکنش: </b>${userMsg.text}\n\n🟣 <b>وضعیت: </b>در انتظار تایید در شبکه`,
-          {
-            reply_markup: JSON.stringify({
-              keyboard: buttons.mainMenu,
-              resize_keyboard: true,
-            }),
-            parse_mode: "HTML"
-          }
-        ).then((sentMessage) => {
-          order.trashMessages.push(sentMessage.message_id, userMsg.message_id)
-          db.write()
-        })
-      })
-    })
-  }
 });
 
 bot.on("polling_error", (error) => {
@@ -966,14 +890,14 @@ app.listen(port, '0.0.0.0', async () => {
   }).start();
   cron.schedule('*/1 * * * * *', () => {
     cleanExpiredCooldown()
+    checkOrdersTimeout()
+  }).start();
+
+  cron.schedule('0 */24 * * *', () => {
+    cleanExpiredConfigs()
     cleanExpiredOrders()
   }).start();
 
-  cron.schedule('* * * * *', () => {
-    checkWaitingOrdersWithTXID()
-  })
-  cron.schedule('0 */24 * * *', () => {
-    cleanExpiredConfigs()
-  }).start();
   cleanExpiredConfigs()
+  cleanExpiredOrders()
 });
