@@ -4,198 +4,30 @@
       "id": 409431573,
       "tg_name": "Hosein",
       "tg_username": "xrois",
-      "test_config": null,
+      "tested": false,
       "configs": [
         {
           "inbound_id": 3,
           "alterId": 0,
-          "email": "409431573-686677473",
+          "email": "409431573-791136100",
           "enable": true,
-          "expiryTime": 1692461843289,
-          "id": "0caba968-3650-407d-9534-301b09f7a912",
-          "limitIp": 2,
-          "subId": "686677473",
-          "tgId": "",
-          "totalGB": 53687091200,
-          "orderId": 686677473
-        },
-        {
-          "inbound_id": 3,
-          "alterId": 0,
-          "email": "409431573-476023644",
-          "enable": true,
-          "expiryTime": 1692461930727,
-          "id": "5062daf0-93b4-4d86-aca8-066bd128c280",
-          "limitIp": 2,
-          "subId": "476023644",
-          "tgId": "",
-          "totalGB": 53687091200,
-          "orderId": 476023644
-        },
-        {
-          "inbound_id": 3,
-          "alterId": 0,
-          "email": "409431573-469557161",
-          "enable": true,
-          "expiryTime": 1692461978112,
-          "id": "9b8b775c-e95e-49d0-a1d7-1aeb86319fbb",
-          "limitIp": 4,
-          "subId": "469557161",
-          "tgId": "",
-          "totalGB": 107374182400,
-          "orderId": 469557161
-        },
-        {
-          "inbound_id": 3,
-          "alterId": 0,
-          "email": "409431573-452489353",
-          "enable": true,
-          "expiryTime": 1692462167865,
-          "id": "58e2ea15-73b4-4bfc-9a99-d2c7f838224c",
+          "expiryTime": 1692483766970,
+          "id": "7b347d7c-7985-4b39-863a-e628a550e8d5",
           "limitIp": 1,
-          "subId": "452489353",
+          "subId": "791136100",
           "tgId": "",
           "totalGB": 16106127360,
-          "orderId": 452489353
-        },
-        {
-          "inbound_id": 3,
-          "alterId": 0,
-          "email": "409431573-940347450",
-          "enable": true,
-          "expiryTime": 1692462290025,
-          "id": "85efe9de-1fde-48fa-b700-639b2181d915",
-          "limitIp": 2,
-          "subId": "940347450",
-          "tgId": "",
-          "totalGB": 53687091200,
-          "orderId": 940347450
-        },
-        {
-          "inbound_id": 3,
-          "alterId": 0,
-          "email": "409431573-697759343",
-          "enable": true,
-          "expiryTime": 1692481819152,
-          "id": "79df3438-e393-45d7-9d48-31bfc9e1b0f2",
-          "limitIp": 4,
-          "subId": "697759343",
-          "tgId": "",
-          "totalGB": 214748364800,
-          "orderId": 697759343
+          "orderId": 791136100
         }
       ],
-      "created_at": "2023-07-20T19:46:59"
-    },
-    "1085276188": {
-      "id": 1085276188,
-      "tg_name": "Support 👨🏻‍💻",
-      "tg_username": "nova_vpn_support",
-      "test_config": null,
-      "configs": [
-        {
-          "inbound_id": 3,
-          "alterId": 0,
-          "email": "1085276188-972143446",
-          "enable": true,
-          "expiryTime": 1692452580959,
-          "id": "7198d3df-18f7-45e0-b2a5-c063a6c2dd33",
-          "limitIp": 2,
-          "subId": "972143446",
-          "tgId": "",
-          "totalGB": 80530636800,
-          "orderId": 972143446
-        },
-        {
-          "inbound_id": 3,
-          "alterId": 0,
-          "email": "1085276188-497187363",
-          "enable": true,
-          "expiryTime": 1692461183638,
-          "id": "e5afff77-034b-47e6-b199-114d78cc7c51",
-          "limitIp": 1,
-          "subId": "497187363",
-          "tgId": "",
-          "totalGB": 26843545600,
-          "orderId": 497187363
-        },
-        {
-          "inbound_id": 3,
-          "alterId": 0,
-          "email": "1085276188-446933612",
-          "enable": true,
-          "expiryTime": 1692461708966,
-          "id": "aeeae377-5a6f-4c6e-914f-026928ab043b",
-          "limitIp": 2,
-          "subId": "446933612",
-          "tgId": "",
-          "totalGB": 53687091200,
-          "orderId": 446933612
-        },
-        {
-          "inbound_id": 3,
-          "alterId": 0,
-          "email": "1085276188-224267364",
-          "enable": true,
-          "expiryTime": 1692461791644,
-          "id": "3a2236b1-02ef-4834-b0ec-2ce2b495ee4a",
-          "limitIp": 1,
-          "subId": "224267364",
-          "tgId": "",
-          "totalGB": 26843545600,
-          "orderId": 224267364
-        }
-      ],
-      "created_at": "2023-07-20T15:58:57"
+      "created_at": "2023-07-21T01:45:07"
     }
   },
   "orders": {
     "waiting": {},
     "verified": {
-      "224267364": {
-        "id": 224267364,
-        "user_id": 1085276188,
-        "plan": {
-          "id": 98,
-          "name": "🟠 25 گیگ - 1 کاربره - 💳 75 تومان",
-          "symbol": "🟠",
-          "traffic": 25,
-          "period": 30,
-          "original_price": 95,
-          "final_price": 75,
-          "limit_ip": 1,
-          "version": 1,
-          "active": true
-        },
-        "amount": 750000,
-        "created_at": "2023-07-20T19:46:24",
-        "expire_at": "2023-08-19T19:46:24",
-        "payment_limit_time": 1689873384264,
-        "paid_at": "2023-07-20T19:46:31"
-      },
-      "446933612": {
-        "id": 446933612,
-        "user_id": 1085276188,
-        "plan": {
-          "id": 99,
-          "name": "🟡 50 گیگ - 2 کاربره - 💳 125 تومان",
-          "symbol": "🟡",
-          "traffic": 50,
-          "period": 30,
-          "original_price": 150,
-          "final_price": 125,
-          "limit_ip": 2,
-          "version": 1,
-          "active": true
-        },
-        "amount": 1250000,
-        "created_at": "2023-07-20T19:43:15",
-        "expire_at": "2023-08-19T19:43:15",
-        "payment_limit_time": 1689873195867,
-        "paid_at": "2023-07-20T19:45:08"
-      },
-      "452489353": {
-        "id": 452489353,
+      "791136100": {
+        "id": 791136100,
         "user_id": 409431573,
         "plan": {
           "id": 97,
@@ -209,137 +41,11 @@
           "version": 1,
           "active": true
         },
-        "amount": 549507,
-        "created_at": "2023-07-20T19:52:36",
-        "expire_at": "2023-08-19T19:52:36",
-        "payment_limit_time": 1689873756968,
-        "paid_at": "2023-07-20T19:52:47"
-      },
-      "469557161": {
-        "id": 469557161,
-        "user_id": 409431573,
-        "plan": {
-          "id": 101,
-          "name": "🔵 100 گیگ - 4 کاربره - 💳 199 تومان",
-          "symbol": "🔵",
-          "traffic": 100,
-          "period": 30,
-          "original_price": 229,
-          "final_price": 199,
-          "limit_ip": 4,
-          "version": 1,
-          "active": true
-        },
-        "amount": 1990000,
-        "created_at": "2023-07-20T19:49:28",
-        "expire_at": "2023-08-19T19:49:28",
-        "payment_limit_time": 1689873568766,
-        "paid_at": "2023-07-20T19:49:38"
-      },
-      "476023644": {
-        "id": 476023644,
-        "user_id": 409431573,
-        "plan": {
-          "id": 99,
-          "name": "🟡 50 گیگ - 2 کاربره - 💳 125 تومان",
-          "symbol": "🟡",
-          "traffic": 50,
-          "period": 30,
-          "original_price": 150,
-          "final_price": 125,
-          "limit_ip": 2,
-          "version": 1,
-          "active": true
-        },
-        "amount": 1250000,
-        "created_at": "2023-07-20T19:48:39",
-        "expire_at": "2023-08-19T19:48:39",
-        "payment_limit_time": 1689873519520,
-        "paid_at": "2023-07-20T19:48:50"
-      },
-      "497187363": {
-        "id": 497187363,
-        "user_id": 1085276188,
-        "plan": {
-          "id": 98,
-          "name": "🟠 25 گیگ - 1 کاربره - 💳 75 تومان",
-          "symbol": "🟠",
-          "traffic": 25,
-          "period": 30,
-          "original_price": 95,
-          "final_price": 75,
-          "limit_ip": 1,
-          "version": 1,
-          "active": true
-        },
-        "amount": 750000,
-        "created_at": "2023-07-20T19:33:23",
-        "expire_at": "2023-08-19T19:33:23",
-        "payment_limit_time": 1689872603322,
-        "paid_at": "2023-07-20T19:36:23"
-      },
-      "686677473": {
-        "id": 686677473,
-        "user_id": 409431573,
-        "plan": {
-          "id": 99,
-          "name": "🟡 50 گیگ - 2 کاربره - 💳 125 تومان",
-          "symbol": "🟡",
-          "traffic": 50,
-          "period": 30,
-          "original_price": 150,
-          "final_price": 125,
-          "limit_ip": 2,
-          "version": 1,
-          "active": true
-        },
-        "amount": 1250000,
-        "created_at": "2023-07-20T19:47:11",
-        "expire_at": "2023-08-19T19:47:11",
-        "payment_limit_time": 1689873431557,
-        "paid_at": "2023-07-20T19:47:23"
-      },
-      "697759343": {
-        "id": 697759343,
-        "user_id": 409431573,
-        "plan": {
-          "id": 102,
-          "name": "🟣 200 گیگ - 4 کاربره - 💳 379 تومان",
-          "symbol": "🟣",
-          "traffic": 200,
-          "period": 30,
-          "original_price": 419,
-          "final_price": 379,
-          "limit_ip": 4,
-          "version": 1,
-          "active": true
-        },
-        "amount": 3789687,
-        "created_at": "2023-07-21T01:19:29",
-        "expire_at": "2023-08-20T01:19:29",
-        "payment_limit_time": 1689893369371,
-        "paid_at": "2023-07-21T01:20:19"
-      },
-      "940347450": {
-        "id": 940347450,
-        "user_id": 409431573,
-        "plan": {
-          "id": 99,
-          "name": "🟡 50 گیگ - 2 کاربره - 💳 125 تومان",
-          "symbol": "🟡",
-          "traffic": 50,
-          "period": 30,
-          "original_price": 150,
-          "final_price": 125,
-          "limit_ip": 2,
-          "version": 1,
-          "active": true
-        },
-        "amount": 1250085,
-        "created_at": "2023-07-20T19:54:28",
-        "expire_at": "2023-08-19T19:54:28",
-        "payment_limit_time": 1689873868966,
-        "paid_at": "2023-07-20T19:54:50"
+        "amount": 549835,
+        "created_at": "2023-07-21T01:52:34",
+        "expire_at": "2023-08-20T01:52:34",
+        "payment_limit_time": 1689895354691,
+        "paid_at": "2023-07-21T01:52:46"
       }
     },
     "expired": {}
