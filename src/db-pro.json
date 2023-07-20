@@ -4,7 +4,7 @@
       "id": 51114942,
       "tg_name": "Asal",
       "tg_username": "Honeeyyy2725",
-      "test_config": null,
+      "tested": false,
       "configs": [],
       "created_at": "2023-07-19T19:13:40"
     },
@@ -12,18 +12,7 @@
       "id": 95614904,
       "tg_name": "Ali",
       "tg_username": "yarahmadi58",
-      "test_config": {
-        "inbound_id": 2,
-        "alterId": 0,
-        "email": "95614904-test",
-        "enable": true,
-        "expiryTime": 1689876331232,
-        "id": "e5af9fd8-2038-4097-8a68-2fd0d0f012df",
-        "limitIp": 1,
-        "subId": "test-95614904",
-        "tgId": "",
-        "totalGB": 536870912
-      },
+      "tested": true,
       "configs": [],
       "created_at": "2023-07-19T21:34:55"
     },
@@ -31,40 +20,15 @@
       "id": 409431573,
       "tg_name": "Hosein",
       "tg_username": "xrois",
-      "test_config": null,
-      "configs": [
-        {
-          "inbound_id": 2,
-          "alterId": 0,
-          "email": "409431573-597190414",
-          "enable": true,
-          "expiryTime": 1692242580663,
-          "id": "fb851d85-8f0f-413d-80f1-6eed6592993b",
-          "limitIp": 1,
-          "subId": "597190414",
-          "tgId": "",
-          "totalGB": 16106127360,
-          "orderId": 597190414
-        }
-      ],
-      "created_at": "2023-07-18T06:44:54"
+      "tested": false,
+      "configs": [],
+      "created_at": "2023-07-21T00:06:38"
     },
     "863196496": {
       "id": 863196496,
       "tg_name": "Kaniel",
       "tg_username": "otiskaniel",
-      "test_config": {
-        "inbound_id": 2,
-        "alterId": 0,
-        "email": "863196496-test",
-        "enable": true,
-        "expiryTime": 1689803480302,
-        "id": "c14ca29b-ff82-4d9d-822a-9a38e57156b3",
-        "limitIp": 1,
-        "subId": "test-863196496",
-        "tgId": "",
-        "totalGB": 536870912
-      },
+      "tested": true,
       "configs": [],
       "created_at": "2023-07-19T01:21:12"
     },
@@ -72,70 +36,15 @@
       "id": 884687256,
       "tg_name": "Amirali",
       "tg_username": "amiralifth",
-      "test_config": null,
+      "tested": false,
       "configs": [],
       "created_at": "2023-07-18T16:34:52"
-    },
-    "1085276188": {
-      "id": 1085276188,
-      "tg_name": "Support 👨🏻‍💻",
-      "tg_username": "nova_vpn_support",
-      "test_config": null,
-      "configs": [
-        {
-          "inbound_id": 2,
-          "alterId": 0,
-          "email": "1085276188-806230279",
-          "enable": true,
-          "expiryTime": 1692308581369,
-          "id": "b8278c14-7575-42bd-9a0c-ee31a931d9bb",
-          "limitIp": 4,
-          "subId": "806230279",
-          "tgId": "",
-          "totalGB": 214748364800,
-          "orderId": 806230279
-        }
-      ],
-      "created_at": "2023-07-18T06:43:28"
-    },
-    "1555382575": {
-      "id": 1555382575,
-      "tg_name": "M.H",
-      "tg_username": "Nafas4030qr",
-      "test_config": null,
-      "configs": [
-        {
-          "inbound_id": 2,
-          "alterId": 0,
-          "email": "1555382575-350039595",
-          "enable": true,
-          "expiryTime": 1692349980530,
-          "id": "ff7570b9-f03c-4361-af14-8c118ee108b9",
-          "limitIp": 1,
-          "subId": "350039595",
-          "tgId": "",
-          "totalGB": 16106127360,
-          "orderId": 350039595
-        }
-      ],
-      "created_at": "2023-07-19T12:41:06"
     },
     "2033359964": {
       "id": 2033359964,
       "tg_name": "Samane",
       "tg_username": "samane_mk65",
-      "test_config": {
-        "inbound_id": 2,
-        "alterId": 0,
-        "email": "2033359964-test",
-        "enable": true,
-        "expiryTime": 1689865175281,
-        "id": "e30430a0-07c3-41c6-b344-3b85b572b705",
-        "limitIp": 1,
-        "subId": "test-2033359964",
-        "tgId": "",
-        "totalGB": 536870912
-      },
+      "tested": true,
       "configs": [],
       "created_at": "2023-07-19T18:29:13"
     },
@@ -143,18 +52,7 @@
       "id": 5291183818,
       "tg_name": "Sajad",
       "tg_username": "Donsheidaei",
-      "test_config": {
-        "inbound_id": 2,
-        "alterId": 0,
-        "email": "5291183818-test",
-        "enable": true,
-        "expiryTime": 1689759941967,
-        "id": "44a326da-3390-48a0-858c-c37072397e5c",
-        "limitIp": 1,
-        "subId": "test-5291183818",
-        "tgId": "",
-        "totalGB": 536870912
-      },
+      "tested": true,
       "configs": [
         {
           "inbound_id": 2,
@@ -163,7 +61,7 @@
           "enable": true,
           "expiryTime": 1692271981264,
           "id": "cc737153-6fe7-491b-9926-6985564a0521",
-          "limitIp": 4,
+          "limitIp": 2,
           "subId": "438801399",
           "tgId": "",
           "totalGB": 80530636800,
@@ -176,39 +74,12 @@
   "orders": {
     "waiting": {},
     "verified": {
-      "350039595": {
-        "id": 350039595,
-        "user_id": 1555382575,
-        "plan": {
-          "id": 97,
-          "name": "🥉 15 گیگ - 30 روزه - 💳 55 تومان",
-          "symbol": "🥉",
-          "traffic": 15,
-          "period": 30,
-          "original_price": 75,
-          "final_price": 55,
-          "limit_ip": 1,
-          "version": 1,
-          "active": true
-        },
-        "ir_amount": 55000,
-        "amount": "9.81",
-        "rate": {
-          "tronPrice": 4072,
-          "fee": 15000
-        },
-        "created_at": "2023-07-19T12:41:50",
-        "expire_at": "2023-08-18T12:41:50",
-        "payment_limit_time": 1689759710794,
-        "txid": "2e574e839c3e8711f2d23b6d52368e64dd355a1a326b838101a2571edd1319fb607918b65af3f2cfc16ff30d320d43725041282d841816906e48a82f950f5f14",
-        "paid_at": "2023-07-19T12:43:00"
-      },
       "438801399": {
         "id": 438801399,
         "user_id": 5291183818,
         "plan": {
           "id": 100,
-          "name": "🏅 75 گیگ - 30 روزه - 💳 180 تومان",
+          "name": "🟢 75 گیگ - 2 کاربره - 💳 180 تومان",
           "symbol": "🏅",
           "traffic": 75,
           "period": 30,
@@ -218,71 +89,11 @@
           "version": 1,
           "active": true
         },
-        "ir_amount": 180000,
-        "amount": "40.34",
-        "rate": {
-          "tronPrice": 4072,
-          "fee": 15000
-        },
+        "amount": 1800000,
         "created_at": "2023-07-18T15:02:31",
         "expire_at": "2023-08-17T15:02:31",
         "payment_limit_time": 1689681751275,
-        "txid": "cf64256e04c5f93d132c950a6b7f88be4d5a2cc08adddcd1e6d21d4be9dcf93985a0cb2835da6f0c0a264e89fc58175d7d80575fab5e94a28e1d8201910ee1d0",
         "paid_at": "2023-07-18T15:03:01"
-      },
-      "597190414": {
-        "id": 597190414,
-        "user_id": 409431573,
-        "plan": {
-          "id": 97,
-          "name": "🥉 15 گیگ - 30 روزه - 💳 55 تومان",
-          "symbol": "🥉",
-          "traffic": 15,
-          "period": 30,
-          "original_price": 75,
-          "final_price": 55,
-          "limit_ip": 1,
-          "version": 1,
-          "active": true
-        },
-        "ir_amount": 55000,
-        "amount": "9.70",
-        "rate": {
-          "tronPrice": 4072,
-          "fee": 15000
-        },
-        "created_at": "2023-07-18T06:49:10",
-        "expire_at": "2023-08-17T06:49:10",
-        "payment_limit_time": 1689652150081,
-        "txid": "d367a0f7dab68479def2584b76aa2f518af6b3eff42bfd047f32658a1c1db089",
-        "paid_at": "2023-07-18T06:53:00"
-      },
-      "806230279": {
-        "id": 806230279,
-        "user_id": 1085276188,
-        "plan": {
-          "id": 102,
-          "name": "🎖️ 200 گیگ - 30 روزه - 💳 379 تومان",
-          "symbol": "🎖️",
-          "traffic": 200,
-          "period": 30,
-          "original_price": 419,
-          "final_price": 379,
-          "limit_ip": 4,
-          "version": 1,
-          "active": true
-        },
-        "ir_amount": 379000,
-        "amount": "89.29",
-        "rate": {
-          "tronPrice": 4072,
-          "fee": 15000
-        },
-        "created_at": "2023-07-19T01:11:28",
-        "expire_at": "2023-08-18T01:11:28",
-        "payment_limit_time": 1689718288807,
-        "txid": "feaf6d22892dd36c0544a58f4942467f25594077d81bd66d9724f4f59063bb3de6f0884e15fa816bab24c6d95072a9cbce43472235035e4161757f8c35fe30e9",
-        "paid_at": "2023-07-19T01:13:01"
       }
     },
     "expired": {
@@ -365,32 +176,6 @@
         "created_at": "2023-07-19T19:46:11",
         "expire_at": "2023-08-18T19:46:11",
         "payment_limit_time": 1689785171623
-      },
-      "568390838": {
-        "id": 568390838,
-        "user_id": 5291183818,
-        "trashMessages": [],
-        "plan": {
-          "id": 100,
-          "name": "🏅 75 گیگ - 30 روزه - 💳 180 تومان",
-          "symbol": "🏅",
-          "traffic": 75,
-          "period": 30,
-          "original_price": 200,
-          "final_price": 180,
-          "limit_ip": 4,
-          "version": 1,
-          "active": true
-        },
-        "ir_amount": 180000,
-        "amount": "40.50",
-        "rate": {
-          "tronPrice": 4072,
-          "fee": 15000
-        },
-        "created_at": "2023-07-18T13:18:35",
-        "expire_at": "2023-08-17T13:18:35",
-        "payment_limit_time": 1689675515408
       },
       "808701047": {
         "id": 808701047,
