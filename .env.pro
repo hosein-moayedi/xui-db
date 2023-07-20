@@ -2,6 +2,7 @@ BOT_TOKEN=6392127626:AAFtprPUWWMn2hVLpJZULwRLb7_HlTD-EDk
 DIGISWAP=http://api.digiswap.org/api/v1/asset/getPrices
 TRON_SCAN=https://apilist.tronscan.org/api/transaction-info?hash=
 XUI=http://turbo.torgod.site:44090
+XUI_SECRET_TOKEN=VFZSLRUTG8bRKW8lMEQn5Yg0Zl19iqJ6Bj2T18jSwtGhOMimntvsDWJkzpl22V0M
 XUI_SUB=https://turbo.torgod.site:2096/sub
 XUI_API=http://turbo.torgod.site:44090/panel/api/inbounds
 XUI_DB_API=http://turbo.torgod.site:36749/db

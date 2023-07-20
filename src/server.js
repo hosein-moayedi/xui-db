@@ -38,8 +38,8 @@ const bot = new TelegramBot(token, { polling: true });
 const plans = [
   {
     id: 97,
-    name: "${SYMBOL} ${TRAFFIC} گیگ - ${PERIOD} روزه - 💳 ${PRICE} تومان",
-    symbol: "🥉",
+    name: "${SYMBOL} ${TRAFFIC} گیگ - ${LIMIT_IP} کاربره - 💳 ${PRICE} تومان",
+    symbol: "🔴",
     traffic: 15,
     period: 30,
     original_price: 75,
@@ -50,8 +50,8 @@ const plans = [
   },
   {
     id: 98,
-    name: "${SYMBOL} ${TRAFFIC} گیگ - ${PERIOD} روزه - 💳 ${PRICE} تومان",
-    symbol: "🥈",
+    name: "${SYMBOL} ${TRAFFIC} گیگ - ${LIMIT_IP} کاربره - 💳 ${PRICE} تومان",
+    symbol: "🟠",
     traffic: 25,
     period: 30,
     original_price: 95,
@@ -62,32 +62,32 @@ const plans = [
   },
   {
     id: 99,
-    name: "${SYMBOL} ${TRAFFIC} گیگ - ${PERIOD} روزه - 💳 ${PRICE} تومان",
-    symbol: "🥇",
+    name: "${SYMBOL} ${TRAFFIC} گیگ - ${LIMIT_IP} کاربره - 💳 ${PRICE} تومان",
+    symbol: "🟡",
     traffic: 50,
     period: 30,
     original_price: 150,
     final_price: 125,
-    limit_ip: 1,
+    limit_ip: 2,
     version: 1,
     active: true,
   },
   {
     id: 100,
-    name: "${SYMBOL} ${TRAFFIC} گیگ - ${PERIOD} روزه - 💳 ${PRICE} تومان",
-    symbol: "🏅",
+    name: "${SYMBOL} ${TRAFFIC} گیگ - ${LIMIT_IP} کاربره - 💳 ${PRICE} تومان",
+    symbol: "🟢",
     traffic: 75,
     period: 30,
     original_price: 200,
     final_price: 180,
-    limit_ip: 4,
+    limit_ip: 2,
     version: 1,
     active: true,
   },
   {
     id: 101,
-    name: "${SYMBOL} ${TRAFFIC} گیگ - ${PERIOD} روزه - 💳 ${PRICE} تومان",
-    symbol: "🎖️",
+    name: "${SYMBOL} ${TRAFFIC} گیگ - ${LIMIT_IP} کاربره - 💳 ${PRICE} تومان",
+    symbol: "🔵",
     traffic: 100,
     period: 30,
     original_price: 229,
@@ -98,8 +98,8 @@ const plans = [
   },
   {
     id: 102,
-    name: "${SYMBOL} ${TRAFFIC} گیگ - ${PERIOD} روزه - 💳 ${PRICE} تومان",
-    symbol: "🎖️",
+    name: "${SYMBOL} ${TRAFFIC} گیگ - ${LIMIT_IP} کاربره - 💳 ${PRICE} تومان",
+    symbol: "🟣",
     traffic: 200,
     period: 30,
     original_price: 419,
@@ -197,7 +197,7 @@ let api = {
     session: {},
     login: async () => {
       return new Promise(async (resolve, reject) => {
-        const requestData = { username: process.env.XUI_USERNAME, password: process.env.XUI_PASSWORD };
+        const requestData = { username: process.env.XUI_USERNAME, password: process.env.XUI_PASSWORD, loginsecret: process.env.XUI_SECRET_TOKEN };
         await axios
           .post(process.env.XUI + "/login", requestData)
           .then((response) => {
@@ -479,7 +479,7 @@ const checkWaitingOrdersWithTXID = async () => {
           db.write()
           const subLink = vpn.getSubLink(config.subId)
           bot.sendMessage(userId,
-            `🥳 تبریک میگم!\n✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic} گیگ\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip > 1 ? "چند" : "تک"} کاربره\n💳 <b>هزینه پرداخت شده: </b>${order.ir_amount.toLocaleString()} تومان\n\n♻️ <b>لینک آپدیت خودکار:</b>\n${subLink}`,
+            `🥳 تبریک میگم!\n✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic} گیگ\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${order.ir_amount.toLocaleString()} تومان\n\n♻️ <b>لینک آپدیت خودکار:</b>\n${subLink}`,
             {
               parse_mode: "HTML",
               reply_markup: JSON.stringify({
@@ -645,7 +645,7 @@ bot.onText(/🛍️ خرید سرویس/, async ({ from }) => {
           [
             {
               text: "🛍️ ادامه خرید",
-              callback_data: JSON.stringify({ action: "store" }),
+              callback_data: JSON.stringify({ action: "features" }),
             },
           ],
         ],
@@ -676,11 +676,11 @@ bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
     if (configs.length > 0) {
       configs.map(({ email, up, down, total, enable }) => {
         const orderId = email.split('-')[1]
-        const { paid_at, expire_at } = db.data.orders.verified[orderId]
+        const { plan, paid_at, expire_at } = db.data.orders.verified[orderId]
         let remainingTraffic = ((total - up - down) / 1024 / 1024 / 1024).toFixed(2)
         remainingTraffic = remainingTraffic > 0 ? remainingTraffic : 0
         const subLink = vpn.getSubLink(orderId)
-        botMsg = `\n\n\n🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${remainingTraffic} گیگ\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n♻️ <b>لینک اپدیت خودکار: </b>\n<code>${subLink}</code>` : ''}` + botMsg
+        botMsg = `\n\n\n🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${remainingTraffic} گیگ\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n♻️ <b>لینک اپدیت خودکار: </b>\n<code>${subLink}</code>` : ''}` + botMsg
       })
       bot.sendMessage(from.id, botMsg, { parse_mode: "HTML" });
     }
@@ -745,9 +745,26 @@ bot.on("callback_query", async (query) => {
   const messageId = message.message_id;
   const queryData = JSON.parse(data);
 
+  if (queryData.action === "features") {
+    const botMsg =
+      `✅ <b>مزایای تمامی سرویس های 🪐 NOVA</b>\n\n💥 دور زدن اینترنت ملی\n💥 مناسب تمامی اپراتور ها\n💥 پشتیبانی از تمامی سیستم عامل ها\n💥مخصوص دانلود با سرعت بالا\n💥 رنج آی پی ثابت\n\n👇 جهت ادامه خرید، کلیک کنید 👇`;
+    bot.editMessageText(botMsg, {
+      chat_id: chatId,
+      message_id: messageId,
+      reply_markup: {
+        inline_keyboard: [[{
+          text: "🛍️ مشاهده سرویس ها", callback_data: JSON.stringify({
+            action: "store",
+          })
+        }]]
+      },
+      parse_mode: "HTML"
+    });
+  }
+
   if (queryData.action === "store") {
     const botMsg =
-      "🔘 سرویس موردنظر خود را انتخاب کنید\n\n💥 مناسب تمامی اپراتور ها\n💥 پشتیبانی از تمامی سیستم عامل ها\n💥 در دو دسته تک کاربره و چند کاربره\n💥مخصوص دانلود با سرعت بالا\n💥 رنج آی پی ثابت";
+      `<b>‼️ تمامی سرویس ها 30 روزه میباشد ‼️</b>\n\n🔻 سرویس مورد نظر خود را انتخاب کنید🔻`;
     bot.editMessageText(botMsg, {
       chat_id: chatId,
       message_id: messageId,
@@ -758,7 +775,7 @@ bot.on("callback_query", async (query) => {
               {
                 text: item.name
                   .replace("${TRAFFIC}", item.traffic)
-                  .replace("${PERIOD}", item.period)
+                  .replace("${LIMIT_IP}", item.limit_ip)
                   .replace("${SYMBOL}", item.symbol)
                   .replace("${PRICE}", item.final_price),
                 callback_data: JSON.stringify({
@@ -777,7 +794,7 @@ bot.on("callback_query", async (query) => {
   if (queryData.action === "plan_detailes") {
     const plan = plans.find((item) => item.id == queryData.data.planId);
 
-    const botMsg = `${plan.symbol} <b>حجم:</b> ${plan.traffic} گیگ\n⏰ <b>مدت:</b> ${plan.period} روزه\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح:</b> ${plan.limit_ip > 1 ? "چند" : "تک"} کاربره\n💳 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\n😊 برای خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`
+    const botMsg = `${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n${plan.symbol} <b>حجم:</b> ${plan.traffic} گیگ\n\n⏰ <b>مدت:</b> ${plan.period} روزه\n\n🎁 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\n😊 برای خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`
 
     bot.editMessageText(botMsg, {
       chat_id: chatId,
@@ -823,7 +840,7 @@ bot.on("callback_query", async (query) => {
           ...plan,
           name: plan.name
             .replace("${TRAFFIC}", plan.traffic)
-            .replace("${PERIOD}", plan.period)
+            .replace("${LIMIT_IP}", plan.limit_ip)
             .replace("${SYMBOL}", plan.symbol)
             .replace("${PRICE}", plan.final_price),
         },
