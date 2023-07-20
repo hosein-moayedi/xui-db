@@ -673,7 +673,7 @@ bot.onText(/🫂 پشتیبانی فنی/, async ({ from }) => {
     bot.sendMessage(from.id, "🤕 اوه اوه!\n🤔 فکر کنم مشکلی پیش اومده\n\n😇 لطفا بر روی /start بزنید.");
     return
   }
-  const botMsg = `😇 <b>لطفا ابتدا موارد زیر را بررسی بفرمایید 👇</b>\n\n1️⃣ از بخش "🔮سرویس‌های فعال" حجم و زمان باقی مانده سرویس را بررسی کنید.\n\n2️⃣ اتصال به اینترنت را بدون استفاده از vpn بفرمایید.\n\n3️⃣ ترجیحا از نرم افزارهایی که در کانال معرفی شده استفاده کنید.\n\n4️⃣ در نرم افزار v2rayNG طبق آموزش مقدار allowInsecure را true کنید.\n\n😇 همچنین میتوانید مشکل خود را در گروه NOVA ارسال بفرمایید 👇`
+  const botMsg = `😇 <b>لطفا ابتدا موارد زیر را بررسی بفرمایید 👇</b>\n\n1️⃣ از بخش "🔮سرویس‌های فعال" حجم و زمان باقی مانده سرویس را بررسی کنید.\n\n2️⃣ اتصال به اینترنت را بدون استفاده از vpn چک بفرمایید.\n\n3️⃣ ترجیحا از نرم افزارهایی که در کانال معرفی شده استفاده کنید.\n\n4️⃣ در نرم افزار v2rayNG طبق آموزش مقدار allowInsecure را true کنید.\n\n😇 همچنین میتوانید مشکل خود را در گروه NOVA ارسال بفرمایید 👇`
   bot.sendMessage(from.id, botMsg,
     {
       reply_markup: {
@@ -869,6 +869,69 @@ bot.on("polling_error", (error) => {
 
 app.get("/", (req, res) => {
   res.send("🚀 Bot is running ✅");
+});
+
+app.post("/c2c-transaction-verification", async (req, res) => {
+  // const { content, secret_key } = req.body
+  // if (secret_key !== process.env.C2C_TRANSACTION_VERIFICATION_SECRET_KEY) {
+  //   res.status(403).json({ msg: "invalid secretkey!", success: false });
+  //   return
+  // }
+  // console.log("content: ", content);
+
+  // let formattedMessage = "";
+  // for (let i = 0; i < content.length; i += 4) {
+  //   formattedMessage += "\\u" + content.substr(i, 4);
+  // }
+  // console.log(formattedMessage);
+
+  // const persianText = formattedMessage.replace(/\\u([\d\w]{4})/gi, (match, grp) => {
+  //   return String.fromCharCode(parseInt(grp, 16));
+  // });
+  // console.log(persianText);
+
+  // const bankRegex = /بلو\nواریز پول\n محمدحسین عزیز، ([\d,]+)/;
+
+  // const bankMatch = persianText.match(bankRegex);
+
+  // if (bankMatch) {
+  //   let price = bankMatch[1];
+  //   console.log(price.replace(/\,/g, ''));
+
+  //   const { orders } = db.data
+  //   let userId, messageId
+
+  //   try {
+  //     for (const orderId in orders.waiting) {
+  //       const order = orders.waiting[orderId];
+  //       if (order.amount == price.replace(/\,/g, '')) {
+  //         [userId, messageId] = [order.user_id, order.message_id]
+  //         delete order.message_id
+  //         orders.verified[order.id] = { ...order, paid_at: moment().format().slice(0, 19) }
+  //         delete orders.waiting[orderId]
+  //         bot.deleteMessage(userId, messageId);
+
+  //         const config = await vpn.addConfig(userId, orderId, order.plan)
+  //         db.data.users[userId].configs.push({
+  //           ...config,
+  //           orderId: order.id
+  //         })
+  //         db.write()
+  //         const subLink = vpn.getSubLink(config.subId)
+  //         bot.sendMessage(userId, `✅ پرداخت شما برای سفارش ${orderId} با موفقیت تایید شد.\n\n😇 ابتدا بر روی لینک آپدیت زیر کلیک کرده تا کپی شود و سپس برای مشاهده نحوه اتصال، در منو اصلی ربات بر روی دکمه <b>«👨🏻‍🏫 آموزش اتصال»</b> کلیک کنید\n\n<code>${subLink}</code>`, { parse_mode: "HTML" });
+  //         res.status(200).json({ msg: "verified", success: true });
+  //         return
+  //       }
+  //     }
+  //   } catch (err) {
+  //     console.error("❌ Error: config_generation> ", err);
+  //     bot.sendMessage(userId, "❌ متاسفانه مشکلی در تایید پرداخت یا ساخت کانفیگ به وجود آمده. لطفا به پشتیبانی پیام دهید 🙏");
+  //   }
+  // } else {
+  //   console.log('No match found.');
+  // }
+
+  // res.status(404).json({ msg: "transaction not found!", success: false });
 });
 
 const checkXUISessionExpiration = () => {
