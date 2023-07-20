@@ -5,15 +5,18 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/server.js",
+    "dev-release": "systemctl restart dedicated-vpn-bot-dev",
+    "dev-stop": "systemctl disable dedicated-vpn-bot-dev && systemctl stop dedicated-vpn-bot-dev",
     "pro": "NODE_ENV=pro nodemon src/server.js",
-    "release": "systemctl restart dedicated-vpn-bot",
-    "stop": "systemctl disable dedicated-vpn-bot && systemctl stop dedicated-vpn-bot"
+    "pro-release": "systemctl restart dedicated-vpn-bot",
+    "pro-stop": "systemctl disable dedicated-vpn-bot && systemctl stop dedicated-vpn-bot"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "axios": "^1.4.0",
+    "crypto": "^1.0.1",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "lowdb": "^6.0.1",

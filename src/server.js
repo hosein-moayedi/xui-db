@@ -1,4 +1,5 @@
 import axios from "axios";
+import crypto from 'crypto';
 import dotenv from "dotenv";
 import express from "express";
 import { LowSync } from "lowdb";
@@ -25,6 +26,7 @@ const db = new LowSync(adapter, defaultData);
 db.read();
 
 const TRXWalletAddress = "TLNKTPvGCu5v6KvPuHQ8VN5Pvqwz115UvJ"
+const ownerId = "1085276188"
 
 const app = express();
 app.use(express.json());
@@ -380,6 +382,15 @@ const buttons = {
   ]
 }
 
+const superTXIDList = []
+
+const generateSuperTXID = () => {
+  const bytes = crypto.randomBytes(64);
+  const hash = bytes.toString('hex');
+  superTXIDList.push(hash)
+  return hash
+}
+
 const isOnCooldown = (userId) => {
   if (cooldowns[userId] && cooldowns[userId] > moment().valueOf())
     return true;
@@ -426,25 +437,30 @@ const checkWaitingOrdersWithTXID = async () => {
         const orderCreatedtime = moment.tz(order.created_at, 'Asia/Tehran').valueOf();
         const { confirmed, contractData, timestamp } = transactionInfo
 
+        const superTXID = superTXIDList.find((id) => id == order.txid)
+
         if (
           !contractData ||
           timestamp <= orderCreatedtime ||
           contractData.to_address != TRXWalletAddress ||
           contractData.amount * 1e-6 != order.amount
         ) {
-          bot.sendMessage(order.user_id,
-            `🤕 متاسفانه شناسه تراکنش ارسالی شما در شبکه یافت نشد و یا مربوط به سرویس ${orderId} نبوده است.\n\n😊 لطفا شناسه وارد شده را مجددا بررسی نموده و از طریق دکمه "<b>⬆️ ارسال شناسه تراکنش</b>" که در زیر فاکتور شما قرار داشت، اقدام به ارسال مقدار صحیح شناسه تراکنش بفرمایید.\n\n🧾 <b>شناسه نادرست: </b>${order.txid}`,
-            { parse_mode: "HTML" }
-          ).then((botMsg) => {
-            order.trashMessages.push(botMsg.message_id)
+          if (!superTXID) {
+            bot.sendMessage(order.user_id,
+              `🤕 متاسفانه شناسه تراکنش ارسالی شما در شبکه یافت نشد و یا مربوط به سرویس ${orderId} نبوده است.\n\n😊 لطفا شناسه وارد شده را مجددا بررسی نموده و از طریق دکمه "<b>⬆️ ارسال شناسه تراکنش</b>" که در زیر فاکتور شما قرار داشت، اقدام به ارسال مقدار صحیح شناسه تراکنش بفرمایید.\n\n🧾 <b>شناسه نادرست: </b>${order.txid}`,
+              { parse_mode: "HTML" }
+            ).then((botMsg) => {
+              order.trashMessages.push(botMsg.message_id)
+              db.write()
+            });
+            delete order.txid
             db.write()
-          });
-          delete order.txid
-          db.write()
-          continue
+            continue
+          }
         }
 
-        if (confirmed) {
+        if (confirmed || superTXID) {
+          superTXIDList.splice(superTXID, 1)
           const [userId, messageId] = [order.user_id, order.message_id]
           delete order.message_id
           order.trashMessages.map((msgId) => {
@@ -573,6 +589,13 @@ bot.onText(/\/start/, async ({ from }) => {
     }),
     parse_mode: 'HTML'
   });
+});
+
+bot.onText(/gtxid/, async ({ from }) => {
+  if (from.id == ownerId) {
+    const txid = generateSuperTXID()
+    bot.sendMessage(from.id, `🛍️ شناسه تراکنش:\n<code>${txid}</code>`, { parse_mode: "HTML" })
+  }
 });
 
 bot.onText(/🎁 دریافت تست رایگان/, async ({ from }) => {
