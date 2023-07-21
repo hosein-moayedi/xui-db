@@ -1,7 +1,8 @@
 import axios from "axios";
-import crypto from 'crypto';
 import dotenv from "dotenv";
 import express from "express";
+import qr from "qrcode";
+import fs from 'fs'
 import { LowSync } from "lowdb";
 import { JSONFileSync } from "lowdb/node";
 import moment from "moment-timezone";
@@ -352,23 +353,43 @@ const buttons = {
     ["☎️ پشتیبانی مالی", "🫂 پشتیبانی فنی"],
   ],
   education: [
-    [{
-      text: '🍀 اندروید - Android 🍀',
-      url: 'https://t.me/nova_vpn_channel/25'
-    }],
-    [{
-      text: '🍎 آیفون - IOS 🍎',
-      url: 'https://t.me/nova_vpn_channel/19'
-    }],
-    [{
-      text: '🖥️ ویندوز - Windows 🖥️',
-      url: 'https://t.me/nova_vpn_channel/24'
-    }],
-    [{
-      text: '💻 مک او اس - MacOS 💻',
-      url: 'https://t.me/nova_vpn_channel/18'
-    }],
+    [
+      {
+        text: '🍀 اندروید',
+        url: 'https://t.me/nova_vpn_channel/25'
+      },
+      {
+        text: '🍎 آیفون',
+        url: 'https://t.me/nova_vpn_channel/19'
+      }
+    ],
+    [
+      {
+        text: '🖥️ ویندوز',
+        url: 'https://t.me/nova_vpn_channel/24'
+      },
+      {
+        text: '💻 مک او اس',
+        url: 'https://t.me/nova_vpn_channel/18'
+      }
+    ],
   ]
+}
+
+let images = {
+  gift: "",
+  os: "",
+  support: "",
+  welcome: "",
+  cart: "",
+}
+
+const initImages = async () => {
+  const assetsPath = './assets/img'
+  for (const img in images) {
+    const buffer = await readImageAsBuffer(`${assetsPath}/${img}.jpg`)
+    images[img] = buffer
+  }
 }
 
 const isOnCooldown = (userId) => {
@@ -447,6 +468,33 @@ const cleanExpiredConfigs = async () => {
   }
 }
 
+const qrGenerator = async (text) => {
+  try {
+    const buffer = await new Promise((resolve, reject) => {
+      qr.toBuffer(text, (err, buffer) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(buffer);
+        }
+      });
+    });
+    return buffer
+  } catch (err) {
+    console.error('Error generating or saving QR code:', err);
+  }
+}
+
+const readImageAsBuffer = async (filePath) => {
+  try {
+    const buffer = await fs.promises.readFile(filePath, 'binary');
+    return Buffer.from(buffer, 'binary');
+  } catch (err) {
+    console.error('Error reading the image:', err);
+    return null;
+  }
+}
+
 const baseChecking = async (userId, isStartCommand) => {
   if (isOnCooldown(userId)) return false
   if (!isStartCommand) {
@@ -459,8 +507,9 @@ const baseChecking = async (userId, isStartCommand) => {
   try {
     const channelSubscription = await bot.getChatMember('@nova_vpn_channel', userId)
     if (channelSubscription.status !== 'member' && channelSubscription.status !== 'creator' && channelSubscription.status !== 'administrator') {
-      bot.sendMessage(userId, `😇 به سرویس NOVA خوش آمدید 🌹\n\nلطفا جهت استفاده از ربات، ابتدا در کانال ما عضو شده و سپس بر روی 👈 /start 👉 ضربه بزنید`,
+      bot.sendPhoto(userId, images.welcome,
         {
+          caption: `😇 به سرویس NOVA خوش آمدید 🌹\n\nلطفا جهت استفاده از ربات، ابتدا در کانال ما عضو شده و سپس بر روی 👈 /start 👉 ضربه بزنید`,
           reply_markup: {
             inline_keyboard: [
               [{ text: "🪐 NOVA کانال اطلاع رسانی 📣", url: "https://t.me/nova_vpn_channel" }]
@@ -494,13 +543,18 @@ bot.onText(/\/start/, async ({ from }) => {
     }
     db.write();
   }
-  bot.sendMessage(from.id, "😇 به ربات <b>NOVA</b> خوش آمدید 🌹\n\n🎁 جهت دریافت تست <b>رایگان</b>، از منوی زیر اقدام بفرمایید 👇", {
-    reply_markup: JSON.stringify({
-      keyboard: buttons.mainMenu,
-      resize_keyboard: true,
-    }),
-    parse_mode: 'HTML'
-  });
+  try {
+    bot.sendPhoto(from.id, images.gift, {
+      caption: "😇 به ربات <b>NOVA</b> خوش آمدید 🌹\n\n🎁 جهت دریافت تست <b>رایگان</b>، از منوی زیر اقدام بفرمایید 👇",
+      reply_markup: JSON.stringify({
+        keyboard: buttons.mainMenu,
+        resize_keyboard: true,
+      }),
+      parse_mode: 'HTML'
+    });
+  } catch (err) {
+    console.log('err: ', err);
+  }
 });
 
 bot.onText(/ok/, async ({ from, text }) => {
@@ -533,15 +587,16 @@ bot.onText(/ok/, async ({ from, text }) => {
           })
           db.write()
           const subLink = vpn.getSubLink(config.subId)
-          bot.sendMessage(userId,
-            `🥳 تبریک میگم!\n✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic} گیگ\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n♻️ <b>لینک آپدیت خودکار:</b>\n${subLink}`,
+          const qr = await qrGenerator(subLink)
+          bot.sendPhoto(userId, qr,
             {
+              caption: `🥳 تبریک میگم!\n✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic} گیگ\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n♻️ <b>لینک آپدیت خودکار:</b>\n${subLink}`,
               parse_mode: "HTML",
               reply_markup: JSON.stringify({
                 keyboard: buttons.mainMenu,
                 resize_keyboard: true,
               }),
-            }
+            },
           );
           const botMsg = '👇 لینک‌های آموزش اتصال به سرویس 👇'
           setTimeout(() => bot.sendMessage(userId, botMsg, {
@@ -578,7 +633,17 @@ bot.onText(/🎁 دریافت تست رایگان/, async ({ from }) => {
     const subLink = vpn.getSubLink(subId)
     user.tested = true
     db.write()
-    bot.sendMessage(from.id, `🥳 تبریک میگم!\n✅ کانفیگ تست شما با موفقیت ساخته شده\n\n🎁 حجم: ۵۰۰ مگابایت\n⏰ مدت استفاده: ۲۴ ساعت\n\n♻️ لینک آپدیت خودکار:\n<code>${subLink}</code>`, { parse_mode: "HTML" });
+    const qr = await qrGenerator(subLink)
+    bot.sendPhoto(from.id, qr,
+      {
+        caption: `🥳 تبریک میگم!\n✅ کانفیگ تست شما با موفقیت ساخته شده\n\n🎁 <b>حجم: </b>۵۰۰ مگابایت\n⏰ <b>مدت استفاده: </b>۲۴ ساعت\n\n♻️ <b>لینک آپدیت خودکار: </b>\n<code>${subLink}</code>`,
+        parse_mode: "HTML",
+        reply_markup: JSON.stringify({
+          keyboard: buttons.mainMenu,
+          resize_keyboard: true,
+        }),
+      },
+    );
     const botMsg = '👇 لینک‌های آموزش اتصال به سرویس 👇'
     setTimeout(() => bot.sendMessage(from.id, botMsg, {
       reply_markup: {
@@ -632,20 +697,20 @@ bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
     return
   }
   try {
-    let botMsg = ""
     const query = `SELECT email, up, down, total, enable FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND email LIKE '${user.id}-%' AND email NOT LIKE '%-test'`;
     const rows = await api.db.iran(query)
     const configs = [...rows];
     if (configs.length > 0) {
-      configs.map(({ email, up, down, total, enable }) => {
+      configs.map(async ({ email, up, down, total, enable }) => {
         const orderId = email.split('-')[1]
         const { plan, paid_at, expire_at } = db.data.orders.verified[orderId]
         let remainingTraffic = ((total - up - down) / 1024 / 1024 / 1024).toFixed(2)
         remainingTraffic = remainingTraffic > 0 ? remainingTraffic : 0
         const subLink = vpn.getSubLink(orderId)
-        botMsg = `\n\n\n🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${remainingTraffic} گیگ\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n♻️ <b>لینک اپدیت خودکار: </b>\n<code>${subLink}</code>` : ''}` + botMsg
+        const qr = await qrGenerator(subLink)
+        const botMsg = `🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${remainingTraffic} گیگ\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n\n♻️ <b>لینک اپدیت خودکار: </b>\n<code>${subLink}</code>` : ''}`
+        bot.sendPhoto(from.id, qr, { caption: botMsg, parse_mode: "HTML" });
       })
-      bot.sendMessage(from.id, botMsg, { parse_mode: "HTML" });
     }
   } catch (err) {
     console.log(err);
@@ -657,7 +722,8 @@ bot.onText(/🔰 آموزش اتصال/, async ({ from }) => {
   const baseCheckingStatus = await baseChecking(from.id)
   if (!baseCheckingStatus) return
   const botMsg = '👇 لینک‌های آموزش اتصال به سرویس 👇'
-  bot.sendMessage(from.id, botMsg, {
+  bot.sendPhoto(from.id, images.os, {
+    caption: botMsg,
     reply_markup: {
       inline_keyboard: buttons.education,
     },
@@ -687,7 +753,8 @@ bot.onText(/☎️ پشتیبانی مالی/, async ({ from }) => {
   const baseCheckingStatus = await baseChecking(from.id)
   if (!baseCheckingStatus) return
   const botMsg = `✅ جهت تایید تراکنش، لطفا رسید خود را برای <u><b>پشتیبانی مالی</b></u> ارسال بفرمایید 👇`;
-  bot.sendMessage(from.id, botMsg, {
+  bot.sendPhoto(from.id, images.support, {
+    caption: botMsg,
     reply_markup: {
       inline_keyboard: [[{ text: "☎️ پشتیبان مالی", url: "t.me/nova_vpn_support" }]]
     },
@@ -947,6 +1014,7 @@ const checkXUISessionExpiration = () => {
 const port = process.env.PORT || 9090;
 app.listen(port, '0.0.0.0', async () => {
   console.log('\n\n', `${environment == 'dev' ? "🧪 DEVELOPMENT" : "🚨 PRODUCTION"}  ⛩️ PORT: ${port}`);
+  await initImages()
   await api.xui.login()
   cron.schedule('0 0 */25 * *', () => {
     checkXUISessionExpiration()
