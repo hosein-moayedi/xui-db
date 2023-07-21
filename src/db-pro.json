@@ -40,6 +40,14 @@
       "configs": [],
       "created_at": "2023-07-18T16:34:52"
     },
+    "1085276188": {
+      "id": 1085276188,
+      "tg_name": "Support 👨🏻‍💻",
+      "tg_username": "nova_vpn_support",
+      "tested": false,
+      "configs": [],
+      "created_at": "2023-07-21T05:42:34"
+    },
     "2033359964": {
       "id": 2033359964,
       "tg_name": "Samane",
@@ -72,30 +80,7 @@
     }
   },
   "orders": {
-    "waiting": {
-      "665165113": {
-        "id": 665165113,
-        "user_id": 5291183818,
-        "message_id": 279,
-        "trashMessages": [],
-        "plan": {
-          "id": 101,
-          "name": "🔵 100 گیگ - 4 کاربره - 💳 199 تومان",
-          "symbol": "🔵",
-          "traffic": 100,
-          "period": 30,
-          "original_price": 229,
-          "final_price": 199,
-          "limit_ip": 4,
-          "version": 1,
-          "active": true
-        },
-        "amount": 1989569,
-        "created_at": "2023-07-21T02:08:45",
-        "expire_at": "2023-08-20T02:08:45",
-        "payment_limit_time": 1689896325743
-      }
-    },
+    "waiting": {},
     "verified": {
       "438801399": {
         "id": 438801399,
@@ -199,6 +184,27 @@
         "created_at": "2023-07-19T19:46:11",
         "expire_at": "2023-08-18T19:46:11",
         "payment_limit_time": 1689785171623
+      },
+      "665165113": {
+        "id": 665165113,
+        "user_id": 5291183818,
+        "trashMessages": [],
+        "plan": {
+          "id": 101,
+          "name": "🔵 100 گیگ - 4 کاربره - 💳 199 تومان",
+          "symbol": "🔵",
+          "traffic": 100,
+          "period": 30,
+          "original_price": 229,
+          "final_price": 199,
+          "limit_ip": 4,
+          "version": 1,
+          "active": true
+        },
+        "amount": 1989569,
+        "created_at": "2023-07-21T02:08:45",
+        "expire_at": "2023-08-20T02:08:45",
+        "payment_limit_time": 1689896325743
       },
       "808701047": {
         "id": 808701047,
