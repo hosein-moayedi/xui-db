@@ -360,7 +360,7 @@ const buttons = {
       },
       {
         text: '🍎 آیفون',
-        url: 'https://t.me/nova_vpn_channel/19'
+        url: 'https://t.me/nova_vpn_channel/94'
       }
     ],
     [
@@ -370,7 +370,7 @@ const buttons = {
       },
       {
         text: '💻 مک او اس',
-        url: 'https://t.me/nova_vpn_channel/18'
+        url: 'https://t.me/nova_vpn_channel/93'
       }
     ],
   ]
