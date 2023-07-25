@@ -1,8 +1,8 @@
 import axios from "axios";
 import dotenv from "dotenv";
 import express from "express";
-import qr from "qrcode";
-import fs from 'fs'
+import fs from 'fs';
+import https from "https";
 import { LowSync } from "lowdb";
 import { JSONFileSync } from "lowdb/node";
 import moment from "moment-timezone";
@@ -10,6 +10,7 @@ import cron from 'node-cron';
 import TelegramBot from "node-telegram-bot-api";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import qr from "qrcode";
 import { v4 as uuidv4 } from 'uuid';
 
 moment.tz.setDefault('Asia/Tehran');
@@ -288,26 +289,24 @@ let api = {
       });
     },
   },
-  db: {
-    iran: async (query) => {
-      return new Promise(async (resolve, reject) => {
-        const options = {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        };
-        await axios
-          .post(process.env.XUI_DB_API, { query }, options)
-          .then((response) => {
-            resolve(response.data);
-          })
-          .catch((error) => {
-            reject(
-              `API call error [db/iran]: ${error.response.data.message}`
-            );
-          });
-      });
-    },
+  db: async (query) => {
+    return new Promise(async (resolve, reject) => {
+      const options = {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      };
+      await axios
+        .post(process.env.XUI_DB_API, { query }, options)
+        .then((response) => {
+          resolve(response.data);
+        })
+        .catch((error) => {
+          reject(
+            `API call error [db]: ${error.response.data.message}`
+          );
+        });
+    });
   },
 };
 
@@ -331,6 +330,7 @@ const vpn = {
       enable: true,
       expiryTime,
       id: uuid,
+      flow: 'xtls-rprx-vision',
       limitIp,
       subId: isTest ? `test-${userId}` : orderId,
       tgId: "",
@@ -338,7 +338,7 @@ const vpn = {
     }
   },
   getSubLink: (subId) => {
-    return `${process.env.XUI_SUB}/${subId}`
+    return `${process.env.REALEY_SUB}/${subId}`
   }
 }
 
@@ -445,26 +445,9 @@ const cleanExpiredOrders = () => {
 
 const cleanExpiredConfigs = async () => {
   try {
-    const query = 'SELECT email FROM client_traffics WHERE enable = 0';
-    const rows = await api.db.iran(query)
-    const expiredConfigs = rows.map((row) => row.email);
-    if (expiredConfigs.length > 0) {
-      try {
-        await api.xui.depletedClients()
-      } catch (err) {
-        console.log("Error in cleanExpiredConfigs>api.xui.depletedClients: ", err);
-      }
-      expiredConfigs.map((email) => {
-        const [userId, orderId] = email.split('-')
-        if (orderId != 'test') {
-          const configs = db.data.users[userId].configs
-          db.data.users[userId].configs = configs.filter((config) => config.email !== email)
-        }
-      })
-      db.write()
-    }
+    await api.xui.depletedClients()
   } catch (err) {
-    console.log(err);
+    console.log("Error in cleanExpiredConfigs >> ", err);
   }
 }
 
@@ -538,7 +521,6 @@ bot.onText(/\/start/, async ({ from }) => {
       tg_name: from.first_name,
       tg_username: from.username,
       tested: false,
-      configs: [],
       created_at: moment().format().slice(0, 19)
     }
     db.write();
@@ -579,18 +561,13 @@ bot.onText(/ok/, async ({ from, text }) => {
           orders.verified[order.id] = { ...order, paid_at: moment().format().slice(0, 19) }
           delete orders.waiting[orderId]
           bot.deleteMessage(userId, messageId);
-
-          const config = await vpn.addConfig(userId, orderId, order.plan)
-          db.data.users[userId].configs.push({
-            ...config,
-            orderId: order.id
-          })
           db.write()
+          const config = await vpn.addConfig(userId, orderId, order.plan)
           const subLink = vpn.getSubLink(config.subId)
           const qr = await qrGenerator(subLink)
           bot.sendPhoto(userId, qr,
             {
-              caption: `🥳 تبریک میگم!\n✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic} گیگ\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n♻️ <b>لینک آپدیت خودکار:</b>\n${subLink}`,
+              caption: `🥳 تبریک میگم!\n✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic} گیگ\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n♻️ <b>لینک آپدیت خودکار:</b>\n<code>${subLink}</code>`,
               parse_mode: "HTML",
               reply_markup: JSON.stringify({
                 keyboard: buttons.mainMenu,
@@ -613,6 +590,77 @@ bot.onText(/ok/, async ({ from, text }) => {
     } catch (err) {
       console.error("❌ Error: config_generation> ", err);
       bot.sendMessage(from.id, '❌ Failed ❌')
+    }
+  }
+});
+
+bot.onText(/msg/, async ({ from, text }) => {
+  const baseCheckingStatus = await baseChecking(from.id, true)
+  if (!baseCheckingStatus) return
+
+  if (from.id == ownerId) {
+    const { users } = db.data
+    try {
+      // Extracting everything between "-" and ":"
+      const regexRecipient = /msg\s(.*?)::/;
+      const matchRecipient = text.match(regexRecipient);
+      const recipient = matchRecipient ? matchRecipient[1].trim() : '';
+
+      // Extracting everything after the last ":"
+      const regexMessage = /(?<=::)(.*)/s;
+      const matchMessage = text.match(regexMessage);
+      const message = matchMessage ? matchMessage[0].trim() : '';
+
+      if (recipient && message) {
+        switch (recipient) {
+          case "all":
+            for (const userId in users) {
+              bot.sendMessage(userId, message)
+            }
+            bot.sendMessage(from.id, `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients</b>: ${recipient}\n\n✉️ <b>Message:</b>\n\n${message}`, { parse_mode: "HTML" })
+            break;
+
+          case "sub":
+            const query = `SELECT email FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND email LIKE '%-%' AND email NOT LIKE '%-test'`;
+            let rows = await api.db(query)
+            if (rows.length == 0) {
+              bot.sendMessage(from.id, '⚠️ There is no any sub user! ⚠️')
+              return
+            }
+            const recipients = []
+            rows.map(({ email }) => {
+              const userId = email.split('-')[0]
+              if (!recipients.find((item) => item == userId)) {
+                recipients.push(userId)
+              }
+            })
+            let botMsgToAdmin = `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients:</b>\n\n`
+            recipients.map((userId) => {
+              const userInfo = users[userId]
+              bot.sendMessage(userInfo.id, message)
+              botMsgToAdmin = botMsgToAdmin + `id: ${userInfo.id}\nusername: @${userInfo.tg_username}\nname: ${userInfo.tg_name}\n-----------------------------`
+            })
+            botMsgToAdmin = botMsgToAdmin + `\n\n\n👥 <b>Total Recipients: </b>${recipients.length}\n\n`
+            botMsgToAdmin = botMsgToAdmin + `✉️ <b>Message:</b>\n\n${message}`
+            bot.sendMessage(from.id, botMsgToAdmin, { parse_mode: "HTML" })
+            break;
+
+          default:
+            for (const user in users) {
+              const userInfo = users[user]
+              if (userInfo.tg_username == recipient) {
+                bot.sendMessage(userInfo.id, message)
+                bot.sendMessage(from.id, `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients</b>: \n\nid: ${userInfo.id}\nusername: @${userInfo.tg_username}\nname: ${userInfo.tg_name}\n\n\n✉️ <b>Message:</b>\n\n${message}`, { parse_mode: 'HTML' })
+                return
+              }
+            }
+            bot.sendMessage(from.id, '⚠️ Target user not found! ⚠️')
+            break;
+        }
+      }
+    } catch (err) {
+      console.error("❌ Error: Sending message> ", err);
+      bot.sendMessage(from.id, '❌ Failed to send message ❌')
     }
   }
 });
@@ -692,26 +740,25 @@ bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
     bot.sendMessage(from.id, "🤕 اوه اوه!\n🤔 فکر کنم مشکلی پیش اومده\n\n😇 لطفا بر روی /start بزنید.");
     return
   }
-  if (!user?.configs?.length != 0) {
-    bot.sendMessage(from.id, "🫠 در حال حاضر هیچ سرویس فعالی ندارید\n\n🛍️ جهت خرید از منو پایین اقدام بفرمایید 👇");
-    return
-  }
+
   try {
     const query = `SELECT email, up, down, total, enable FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND email LIKE '${user.id}-%' AND email NOT LIKE '%-test'`;
-    const rows = await api.db.iran(query)
+    const rows = await api.db(query)
     const configs = [...rows];
-    if (configs.length > 0) {
-      configs.map(async ({ email, up, down, total, enable }) => {
-        const orderId = email.split('-')[1]
-        const { plan, paid_at, expire_at } = db.data.orders.verified[orderId]
-        let remainingTraffic = ((total - up - down) / 1024 / 1024 / 1024).toFixed(2)
-        remainingTraffic = remainingTraffic > 0 ? remainingTraffic : 0
-        const subLink = vpn.getSubLink(orderId)
-        const qr = await qrGenerator(subLink)
-        const botMsg = `🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${remainingTraffic} گیگ\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n\n♻️ <b>لینک اپدیت خودکار: </b>\n<code>${subLink}</code>` : ''}`
-        bot.sendPhoto(from.id, qr, { caption: botMsg, parse_mode: "HTML" });
-      })
+    if (configs.length == 0) {
+      bot.sendMessage(from.id, "🫠 در حال حاضر هیچ سرویس فعالی ندارید\n\n🛍️ جهت خرید از منو پایین اقدام بفرمایید 👇");
+      return
     }
+    configs.map(async ({ email, up, down, total, enable }) => {
+      const orderId = email.split('-')[1]
+      const { plan, paid_at, expire_at } = db.data.orders.verified[orderId]
+      let remainingTraffic = ((total - up - down) / 1024 / 1024 / 1024).toFixed(2)
+      remainingTraffic = remainingTraffic > 0 ? remainingTraffic : 0
+      const subLink = vpn.getSubLink(orderId)
+      const qr = await qrGenerator(subLink)
+      const botMsg = `🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${remainingTraffic} گیگ\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n\n♻️ <b>لینک اپدیت خودکار: </b>\n<code>${subLink}</code>` : ''}`
+      bot.sendPhoto(from.id, qr, { caption: botMsg, parse_mode: "HTML" });
+    })
   } catch (err) {
     console.log(err);
     bot.sendMessage(from.id, "🤕 اوه اوه!\n🤔 فکر کنم مشکلی در دریافت سرویس های شما پیش اومده\n\n😇 لطفا بعد از چند دقیقه دوباره تلاش کنید.");
@@ -934,8 +981,26 @@ bot.on("polling_error", (error) => {
   console.log(error);
 });
 
-app.get("/", (req, res) => {
+app.get("/bot_status", (req, res) => {
   res.send("🚀 Bot is running ✅");
+});
+
+app.get("/sub/:order_id", async (req, res) => {
+  try {
+    let response = await axios.get(`${process.env.XUI_SUB}/${req.params.order_id}`)
+    let content = Buffer.from(response.data, 'base64')
+    content = content.toString('utf-8')
+    content = content.replace(/@([^:]+)/, '@nova.torgod.site').replace(/#.*/, "#%E2%9A%A1%EF%B8%8F%20Fast%20NOVA")
+    content = content + '\n' + content.replace(/@([^:]+)/, '@turbo.torgod.site').replace(/#.*/, '#%E2%9C%A8%20Stable%20NOVA')
+    content = btoa(content)
+    res.setHeader('Content-Type', response.headers['content-type']);
+    res.setHeader('Profile-Title', response.headers['profile-title']);
+    res.setHeader('Profile-Update-Interval', response.headers['profile-update-interval']);
+    res.setHeader('Subscription-Userinfo', response.headers['subscription-userinfo']);
+    res.status(200).send(content);
+  } catch (err) {
+    console.log(err);
+  }
 });
 
 app.post("/c2c-transaction-verification", async (req, res) => {
@@ -1012,7 +1077,14 @@ const checkXUISessionExpiration = () => {
 }
 
 const port = process.env.PORT || 9090;
-app.listen(port, '0.0.0.0', async () => {
+const certOptions = {
+  key: fs.readFileSync('./certs/turbo.torgod.site/privkey.pem'),
+  cert: fs.readFileSync('./certs/turbo.torgod.site/fullchain.pem')
+};
+
+const server = https.createServer(certOptions, app);
+
+server.listen(port, '0.0.0.0', async () => {
   console.log('\n\n', `${environment == 'dev' ? "🧪 DEVELOPMENT" : "🚨 PRODUCTION"}  ⛩️ PORT: ${port}`);
   await initImages()
   await api.xui.login()
