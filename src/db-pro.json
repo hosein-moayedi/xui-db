@@ -5,7 +5,6 @@
       "tg_name": "Asal",
       "tg_username": "Honeeyyy2725",
       "tested": false,
-      "configs": [],
       "created_at": "2023-07-19T19:13:40"
     },
     "95614904": {
@@ -13,7 +12,6 @@
       "tg_name": "Ali",
       "tg_username": "yarahmadi58",
       "tested": true,
-      "configs": [],
       "created_at": "2023-07-19T21:34:55"
     },
     "409431573": {
@@ -21,15 +19,27 @@
       "tg_name": "Hosein",
       "tg_username": "xrois",
       "tested": false,
-      "configs": [],
       "created_at": "2023-07-21T00:06:38"
+    },
+    "601970260": {
+      "id": 601970260,
+      "tg_name": "Ali",
+      "tg_username": "AliChavoshi2020",
+      "tested": true,
+      "created_at": "2023-07-23T19:38:02"
+    },
+    "786799933": {
+      "id": 786799933,
+      "tg_name": "•¤»((¯♥¯))«¤•babak•¤»((¯♥¯))«¤•",
+      "tg_username": "Babakmoj",
+      "tested": true,
+      "created_at": "2023-07-22T14:08:05"
     },
     "863196496": {
       "id": 863196496,
       "tg_name": "Kaniel",
       "tg_username": "otiskaniel",
       "tested": true,
-      "configs": [],
       "created_at": "2023-07-19T01:21:12"
     },
     "884687256": {
@@ -37,15 +47,13 @@
       "tg_name": "Amirali",
       "tg_username": "amiralifth",
       "tested": false,
-      "configs": [],
       "created_at": "2023-07-18T16:34:52"
     },
     "1085276188": {
       "id": 1085276188,
       "tg_name": "Support 👨🏻‍💻",
       "tg_username": "nova_vpn_support",
-      "tested": false,
-      "configs": [],
+      "tested": true,
       "created_at": "2023-07-21T05:42:34"
     },
     "2033359964": {
@@ -53,7 +61,6 @@
       "tg_name": "Samane",
       "tg_username": "samane_mk65",
       "tested": true,
-      "configs": [],
       "created_at": "2023-07-19T18:29:13"
     },
     "5291183818": {
@@ -61,27 +68,61 @@
       "tg_name": "Sajad",
       "tg_username": "Donsheidaei",
       "tested": true,
-      "configs": [
-        {
-          "inbound_id": 2,
-          "alterId": 0,
-          "email": "5291183818-438801399",
-          "enable": true,
-          "expiryTime": 1692271981264,
-          "id": "cc737153-6fe7-491b-9926-6985564a0521",
-          "limitIp": 2,
-          "subId": "438801399",
-          "tgId": "",
-          "totalGB": 80530636800,
-          "orderId": 438801399
-        }
-      ],
       "created_at": "2023-07-18T13:15:30"
+    },
+    "5613923506": {
+      "id": 5613923506,
+      "tg_name": "amirhda",
+      "tg_username": "Amir_68h",
+      "tested": true,
+      "created_at": "2023-07-22T08:44:41"
+    },
+    "5604269267": {
+      "id": 5604269267,
+      "tg_name": "G B ⚡ E X P E R T",
+      "tg_username": "GB_EXPERT",
+      "tested": true,
+      "created_at": "2023-07-24T04:28:06"
+    },
+    "5457438609": {
+      "id": 5457438609,
+      "tg_name": "©®",
+      "tg_username": "Ali_coe",
+      "tested": true,
+      "created_at": "2023-07-24T08:07:14"
+    },
+    "5708598189": {
+      "id": 5708598189,
+      "tg_name": "MR ONESHOT",
+      "tg_username": "MRSHOPMRONESHOT",
+      "tested": true,
+      "created_at": "2023-07-24T20:32:38"
     }
   },
   "orders": {
     "waiting": {},
     "verified": {
+      "418359301": {
+        "id": 418359301,
+        "user_id": 884687256,
+        "plan": {
+          "id": 101,
+          "name": "🔵 100 گیگ - 4 کاربره - 💳 199 تومان",
+          "symbol": "🔵",
+          "traffic": 100,
+          "period": 30,
+          "original_price": 229,
+          "final_price": 199,
+          "limit_ip": 4,
+          "version": 1,
+          "active": true
+        },
+        "amount": 1989956,
+        "created_at": "2023-07-21T19:50:40",
+        "expire_at": "2023-08-20T19:50:40",
+        "payment_limit_time": 1689960040389,
+        "paid_at": "2023-07-21T19:54:01"
+      },
       "438801399": {
         "id": 438801399,
         "user_id": 5291183818,
@@ -102,93 +143,52 @@
         "expire_at": "2023-08-17T15:02:31",
         "payment_limit_time": 1689681751275,
         "paid_at": "2023-07-18T15:03:01"
-      }
-    },
-    "expired": {
-      "197002482": {
-        "id": 197002482,
+      },
+      "574192616": {
+        "id": 574192616,
+        "user_id": 1085276188,
+        "plan": {
+          "id": 97,
+          "name": "🔴 15 گیگ - 1 کاربره - 💳 55 تومان",
+          "symbol": "🔴",
+          "traffic": 15,
+          "period": 30,
+          "original_price": 75,
+          "final_price": 55,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
+        },
+        "amount": 549423,
+        "created_at": "2023-07-25T05:37:08",
+        "expire_at": "2023-08-24T05:37:08",
+        "payment_limit_time": 1690254428223,
+        "paid_at": "2023-07-25T05:37:13"
+      },
+      "605268787": {
+        "id": 605268787,
         "user_id": 95614904,
-        "trashMessages": [
-          249
-        ],
         "plan": {
-          "id": 99,
-          "name": "🥇 50 گیگ - 30 روزه - 💳 125 تومان",
-          "symbol": "🥇",
-          "traffic": 50,
+          "id": 98,
+          "name": "🟠 25 گیگ - 1 کاربره - 💳 75 تومان",
+          "symbol": "🟠",
+          "traffic": 25,
           "period": 30,
-          "original_price": 150,
-          "final_price": 125,
+          "original_price": 95,
+          "final_price": 75,
           "limit_ip": 1,
           "version": 1,
           "active": true
         },
-        "ir_amount": 125000,
-        "amount": "26.89",
-        "rate": {
-          "tronPrice": 4072,
-          "fee": 15000
-        },
-        "created_at": "2023-07-19T21:45:55",
-        "expire_at": "2023-08-18T21:45:55",
-        "payment_limit_time": 1689792355454
+        "amount": 749152,
+        "created_at": "2023-07-24T11:13:57",
+        "expire_at": "2023-08-23T11:13:57",
+        "payment_limit_time": 1690188237044,
+        "paid_at": "2023-07-24T11:28:03"
       },
-      "389152943": {
-        "id": 389152943,
-        "user_id": 884687256,
-        "trashMessages": [],
-        "plan": {
-          "id": 101,
-          "name": "🎖️ 100 گیگ - 30 روزه - 💳 199 تومان",
-          "symbol": "🎖️",
-          "traffic": 100,
-          "period": 30,
-          "original_price": 229,
-          "final_price": 199,
-          "limit_ip": 4,
-          "version": 1,
-          "active": true
-        },
-        "ir_amount": 199000,
-        "amount": "45.04",
-        "rate": {
-          "tronPrice": 4072,
-          "fee": 15000
-        },
-        "created_at": "2023-07-20T02:10:19",
-        "expire_at": "2023-08-19T02:10:19",
-        "payment_limit_time": 1689808219307
-      },
-      "437623496": {
-        "id": 437623496,
-        "user_id": 2033359964,
-        "trashMessages": [],
-        "plan": {
-          "id": 99,
-          "name": "🥇 50 گیگ - 30 روزه - 💳 125 تومان",
-          "symbol": "🥇",
-          "traffic": 50,
-          "period": 30,
-          "original_price": 150,
-          "final_price": 125,
-          "limit_ip": 1,
-          "version": 1,
-          "active": true
-        },
-        "ir_amount": 125000,
-        "amount": "26.84",
-        "rate": {
-          "tronPrice": 4072,
-          "fee": 15000
-        },
-        "created_at": "2023-07-19T19:46:11",
-        "expire_at": "2023-08-18T19:46:11",
-        "payment_limit_time": 1689785171623
-      },
-      "665165113": {
-        "id": 665165113,
-        "user_id": 5291183818,
-        "trashMessages": [],
+      "831163120": {
+        "id": 831163120,
+        "user_id": 786799933,
         "plan": {
           "id": 101,
           "name": "🔵 100 گیگ - 4 کاربره - 💳 199 تومان",
@@ -202,35 +202,96 @@
           "active": true
         },
         "amount": 1989569,
-        "created_at": "2023-07-21T02:08:45",
-        "expire_at": "2023-08-20T02:08:45",
-        "payment_limit_time": 1689896325743
+        "created_at": "2023-07-22T14:09:15",
+        "expire_at": "2023-08-21T14:09:15",
+        "payment_limit_time": 1690025955302,
+        "paid_at": "2023-07-22T14:15:45"
       },
-      "808701047": {
-        "id": 808701047,
-        "user_id": 2033359964,
-        "trashMessages": [],
+      "833434137": {
+        "id": 833434137,
+        "user_id": 1085276188,
         "plan": {
-          "id": 99,
-          "name": "🥇 50 گیگ - 30 روزه - 💳 125 تومان",
-          "symbol": "🥇",
-          "traffic": 50,
+          "id": 97,
+          "name": "🔴 15 گیگ - 1 کاربره - 💳 55 تومان",
+          "symbol": "🔴",
+          "traffic": 15,
           "period": 30,
-          "original_price": 150,
-          "final_price": 125,
+          "original_price": 75,
+          "final_price": 55,
           "limit_ip": 1,
           "version": 1,
           "active": true
         },
-        "ir_amount": 125000,
-        "amount": "26.86",
-        "rate": {
-          "tronPrice": 4072,
-          "fee": 15000
+        "amount": 549279,
+        "created_at": "2023-07-25T05:34:46",
+        "expire_at": "2023-08-24T05:34:46",
+        "payment_limit_time": 1690254286835,
+        "paid_at": "2023-07-25T05:34:50"
+      },
+      "888584317": {
+        "id": 888584317,
+        "user_id": 1085276188,
+        "plan": {
+          "id": 97,
+          "name": "🔴 15 گیگ - 1 کاربره - 💳 55 تومان",
+          "symbol": "🔴",
+          "traffic": 15,
+          "period": 30,
+          "original_price": 75,
+          "final_price": 55,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
         },
-        "created_at": "2023-07-19T18:32:19",
-        "expire_at": "2023-08-18T18:32:19",
-        "payment_limit_time": 1689780739458
+        "amount": 549795,
+        "created_at": "2023-07-24T18:37:34",
+        "expire_at": "2023-08-23T18:37:34",
+        "payment_limit_time": 1690214854515,
+        "paid_at": "2023-07-24T18:37:41"
+      }
+    },
+    "expired": {
+      "633316326": {
+        "id": 633316326,
+        "user_id": 601970260,
+        "trashMessages": [],
+        "plan": {
+          "id": 97,
+          "name": "🔴 15 گیگ - 1 کاربره - 💳 55 تومان",
+          "symbol": "🔴",
+          "traffic": 15,
+          "period": 30,
+          "original_price": 75,
+          "final_price": 55,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
+        },
+        "amount": 549680,
+        "created_at": "2023-07-23T19:40:29",
+        "expire_at": "2023-08-22T19:40:29",
+        "payment_limit_time": 1690132229825
+      },
+      "952742427": {
+        "id": 952742427,
+        "user_id": 5604269267,
+        "trashMessages": [],
+        "plan": {
+          "id": 97,
+          "name": "🔴 15 گیگ - 1 کاربره - 💳 55 تومان",
+          "symbol": "🔴",
+          "traffic": 15,
+          "period": 30,
+          "original_price": 75,
+          "final_price": 55,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
+        },
+        "amount": 549573,
+        "created_at": "2023-07-24T04:35:50",
+        "expire_at": "2023-08-23T04:35:50",
+        "payment_limit_time": 1690164350040
       }
     }
   }
