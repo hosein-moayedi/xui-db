@@ -38,13 +38,25 @@ const bot = new TelegramBot(token, { polling: true });
 
 const plans = [
   {
-    id: 97,
+    id: 96,
     name: "${SYMBOL} ${TRAFFIC} گیگ - ${LIMIT_IP} کاربره - 💳 ${PRICE} تومان",
     symbol: "🔴",
+    traffic: 5,
+    period: 30,
+    original_price: 25,
+    final_price: 15,
+    limit_ip: 1,
+    version: 1,
+    active: true,
+  },
+  {
+    id: 97,
+    name: "${SYMBOL} ${TRAFFIC} گیگ - ${LIMIT_IP} کاربره - 💳 ${PRICE} تومان",
+    symbol: "⚪️",
     traffic: 15,
     period: 30,
-    original_price: 75,
-    final_price: 55,
+    original_price: 55,
+    final_price: 39,
     limit_ip: 1,
     version: 1,
     active: true,
@@ -55,8 +67,8 @@ const plans = [
     symbol: "🟠",
     traffic: 25,
     period: 30,
-    original_price: 95,
-    final_price: 75,
+    original_price: 75,
+    final_price: 59,
     limit_ip: 1,
     version: 1,
     active: true,
@@ -67,8 +79,8 @@ const plans = [
     symbol: "🟡",
     traffic: 50,
     period: 30,
-    original_price: 150,
-    final_price: 125,
+    original_price: 125,
+    final_price: 99,
     limit_ip: 2,
     version: 1,
     active: true,
@@ -79,8 +91,8 @@ const plans = [
     symbol: "🟢",
     traffic: 75,
     period: 30,
-    original_price: 200,
-    final_price: 180,
+    original_price: 180,
+    final_price: 149,
     limit_ip: 2,
     version: 1,
     active: true,
@@ -91,7 +103,7 @@ const plans = [
     symbol: "🔵",
     traffic: 100,
     period: 30,
-    original_price: 229,
+    original_price: 230,
     final_price: 199,
     limit_ip: 4,
     version: 1,
@@ -103,7 +115,7 @@ const plans = [
     symbol: "🟣",
     traffic: 200,
     period: 30,
-    original_price: 419,
+    original_price: 420,
     final_price: 379,
     limit_ip: 4,
     version: 1,
@@ -575,7 +587,7 @@ bot.onText(/ok/, async ({ from, text }) => {
               }),
             },
           );
-          const botMsg = '👇 لینک‌های آموزش اتصال به سرویس 👇'
+          const botMsg = '‼️<u><b>حتما از آخرین نسخه نرم افزارها استفاده کنید</b></u>‼️\n\n👇دریافت آخرین نسخه نرم افزار و آموزش👇'
           setTimeout(() => bot.sendMessage(userId, botMsg, {
             reply_markup: {
               inline_keyboard: buttons.education,
@@ -638,7 +650,7 @@ bot.onText(/msg/, async ({ from, text }) => {
             recipients.map((userId) => {
               const userInfo = users[userId]
               bot.sendMessage(userInfo.id, message)
-              botMsgToAdmin = botMsgToAdmin + `id: ${userInfo.id}\nusername: @${userInfo.tg_username}\nname: ${userInfo.tg_name}\n-----------------------------`
+              botMsgToAdmin = botMsgToAdmin + `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
             })
             botMsgToAdmin = botMsgToAdmin + `\n\n\n👥 <b>Total Recipients: </b>${recipients.length}\n\n`
             botMsgToAdmin = botMsgToAdmin + `✉️ <b>Message:</b>\n\n${message}`
@@ -646,15 +658,26 @@ bot.onText(/msg/, async ({ from, text }) => {
             break;
 
           default:
-            for (const user in users) {
-              const userInfo = users[user]
-              if (userInfo.tg_username == recipient) {
-                bot.sendMessage(userInfo.id, message)
-                bot.sendMessage(from.id, `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients</b>: \n\nid: ${userInfo.id}\nusername: @${userInfo.tg_username}\nname: ${userInfo.tg_name}\n\n\n✉️ <b>Message:</b>\n\n${message}`, { parse_mode: 'HTML' })
-                return
+            const targets = recipient.split(',')
+            let notValid = false
+            targets.map((targetId) => {
+              if (!notValid && !users[targetId]) {
+                notValid = true
               }
+            })
+            if (notValid) {
+              bot.sendMessage(from.id, '⚠️ Target user not found! ⚠️')
+              return
             }
-            bot.sendMessage(from.id, '⚠️ Target user not found! ⚠️')
+            let botMsg = `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients:</b>\n\n`
+            targets.map((targetId) => {
+              const userInfo = users[targetId]
+              bot.sendMessage(targetId, message, { parse_mode: 'HTML' })
+              botMsg = botMsg + `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
+            })
+            botMsg = botMsg + `\n\n\n👥 <b>Total Recipients: </b>${targets.length}\n\n`
+            botMsg = botMsg + `✉️ <b>Message:</b>\n\n${message}`
+            bot.sendMessage(from.id, botMsg, { parse_mode: "HTML" })
             break;
         }
       }
@@ -692,13 +715,21 @@ bot.onText(/🎁 دریافت تست رایگان/, async ({ from }) => {
         }),
       },
     );
-    const botMsg = '👇 لینک‌های آموزش اتصال به سرویس 👇'
+    const botMsg = '‼️<u><b>حتما از آخرین نسخه نرم افزارها استفاده کنید</b></u>‼️\n\n👇دریافت آخرین نسخه نرم افزار و آموزش👇'
     setTimeout(() => bot.sendMessage(from.id, botMsg, {
       reply_markup: {
         inline_keyboard: buttons.education,
       },
       parse_mode: "HTML"
     }), 500)
+    if (user.id !== ownerId) {
+      setTimeout(() => {
+        bot.sendMessage(ownerId,
+          `🔔 <b>New user created test</b> 🔔\n\n🗣️ <code>${user.tg_name}</code>  ${user.tg_username && ` 👋 <code>${user.tg_username}</code> `}  🎗️ <code>${user.id}</code>`,
+          { parse_mode: 'HTML' }
+        )
+      }, 900)
+    }
   } catch (e) {
     console.error("❌ Error: test_config_generation> ", e);
     bot.sendMessage(from.id, "🤕 اواو!\n🤔 فکر کنم یه مشکلی پیش اومده\n\n😇 لطفا بعد از چند دقیقا مجددا تلاش کنید");
@@ -768,7 +799,7 @@ bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
 bot.onText(/🔰 آموزش اتصال/, async ({ from }) => {
   const baseCheckingStatus = await baseChecking(from.id)
   if (!baseCheckingStatus) return
-  const botMsg = '👇 لینک‌های آموزش اتصال به سرویس 👇'
+  const botMsg = '‼️<u><b>حتما از آخرین نسخه نرم افزارها استفاده کنید</b></u>‼️\n\n👇دریافت آخرین نسخه نرم افزار و آموزش👇'
   bot.sendPhoto(from.id, images.os, {
     caption: botMsg,
     reply_markup: {
