@@ -329,7 +329,7 @@ const vpn = {
     return { inbound_id: INBOUND_ID, ...config }
   },
   addTestConfig: async (userId) => {
-    const testConfig = vpn.createConfigObj(userId, null, 0.5, 1, 1, true)
+    const testConfig = vpn.createConfigObj(userId, null, 2, 0.041, 1, true)
     await api.xui.addClient(INBOUND_ID, testConfig)
     return { inbound_id: INBOUND_ID, ...testConfig }
   },
@@ -360,31 +360,31 @@ const COOLDOWN_PERIOD = 1000;
 const buttons = {
   mainMenu: [
     ["🛍️ خرید سرویس"],
-    ["🔮 سرویس‌ های فعال", "🎁 دریافت تست رایگان",],
+    ["🔮 سرویس‌ های فعال", "🎁 تست نامحدود و رایگان",],
     ["🔰 آموزش اتصال"],
     ["☎️ پشتیبانی مالی", "🫂 پشتیبانی فنی"],
   ],
   education: [
-    [
-      {
-        text: '🍀 اندروید',
-        url: 'https://t.me/nova_vpn_channel/25'
-      },
-      {
-        text: '🍎 آیفون',
-        url: 'https://t.me/nova_vpn_channel/94'
-      }
-    ],
-    [
-      {
-        text: '🖥️ ویندوز',
-        url: 'https://t.me/nova_vpn_channel/24'
-      },
-      {
-        text: '💻 مک او اس',
-        url: 'https://t.me/nova_vpn_channel/93'
-      }
-    ],
+    [{
+      text: '🍀 اندروید - V2rayNG 💫',
+      url: 'https://telegra.ph/%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-%D8%A7%D9%86%D8%AF%D8%B1%D9%88%DB%8C%D8%AF-%D8%A8%D8%A7-V2rayNG-07-29'
+    }],
+    [{
+      text: '🍀 اندروید - Hiddify ✨',
+      url: 'https://telegra.ph/%D8%A2%D9%85%D9%88%D8%B2%D8%B4-%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-%D8%A7%D9%86%D8%AF%D8%B1%D9%88%DB%8C%D8%AF-%D8%A8%D8%A7-HiddifyNG-07-29'
+    }],
+    [{
+      text: '🍎 آی او اس - V2Box 🗳️',
+      url: 'https://telegra.ph/%D8%A2%D9%85%D9%88%D8%B2%D8%B4-%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-IOS-%D8%A8%D8%A7-%D9%86%D8%B1%D9%85-%D8%A7%D9%81%D8%B2%D8%A7%D8%B1-V2Box-07-29'
+    }],
+    [{
+      text: '🖥️ ویندوز - V2rayN 💫',
+      url: 'https://t.me/nova_vpn_channel/24'
+    }],
+    [{
+      text: '💻 مک او اس - V2Box 🗳️',
+      url: 'https://t.me/nova_vpn_channel/93'
+    }]
   ]
 }
 
@@ -394,6 +394,7 @@ let images = {
   support: "",
   welcome: "",
   cart: "",
+  hiddify: ""
 }
 
 const initImages = async () => {
@@ -499,26 +500,38 @@ const baseChecking = async (userId, isStartCommand) => {
       return false
     }
   }
-  try {
-    const channelSubscription = await bot.getChatMember('@nova_vpn_channel', userId)
-    if (channelSubscription.status !== 'member' && channelSubscription.status !== 'creator' && channelSubscription.status !== 'administrator') {
-      bot.sendPhoto(userId, images.welcome,
-        {
-          caption: `😇 به سرویس NOVA خوش آمدید 🌹\n\nلطفا جهت استفاده از ربات، ابتدا در کانال ما عضو شده و سپس بر روی 👈 /start 👉 ضربه بزنید`,
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: "🪐 NOVA کانال اطلاع رسانی 📣", url: "https://t.me/nova_vpn_channel" }]
-            ]
-          }, parse_mode: 'HTML'
-        }
-      );
-      return false
-    }
-  } catch (err) {
-    console.error('Error:', err);
-    return false
-  }
+  // try {
+  //   const channelSubscription = await bot.getChatMember('@nova_vpn_channel', userId)
+  //   if (channelSubscription.status !== 'member' && channelSubscription.status !== 'creator' && channelSubscription.status !== 'administrator') {
+  //     bot.sendPhoto(userId, images.welcome,
+  //       {
+  //         caption: `😇 به سرویس NOVA خوش آمدید 🌹\n\nلطفا جهت استفاده از ربات، ابتدا در کانال ما عضو شده و سپس بر روی 👈 /start 👉 ضربه بزنید`,
+  //         reply_markup: {
+  //           inline_keyboard: [
+  //             [{ text: "🪐 NOVA کانال اطلاع رسانی 📣", url: "https://t.me/nova_vpn_channel" }]
+  //           ]
+  //         }, parse_mode: 'HTML'
+  //       }
+  //     );
+  //     return false
+  //   }
+  // } catch (err) {
+  //   console.error('Error:', err);
+  //   return false
+  // }
   return true
+}
+
+const getConfigFromSub = async (subLink) => {
+  try {
+    let response = await axios.get(subLink)
+    let content = Buffer.from(response.data, 'base64')
+    content = content.toString('utf-8')
+    const [fastConfig, stableConfig] = content.split('\n\n')
+    return { stableConfig, fastConfig }
+  } catch (err) {
+    console.log(err);
+  }
 }
 
 bot.onText(/\/start/, async ({ from }) => {
@@ -539,7 +552,7 @@ bot.onText(/\/start/, async ({ from }) => {
   }
   try {
     bot.sendPhoto(from.id, images.gift, {
-      caption: "😇 به ربات <b>NOVA</b> خوش آمدید 🌹\n\n🎁 جهت دریافت تست <b>رایگان</b>، از منوی زیر اقدام بفرمایید 👇",
+      caption: "😇 به ربات <b>NOVA</b> خوش آمدید 🌹\n\n🎁 جهت دریافت تست <b>نامحدود و رایگان</b>، از منوی زیر اقدام بفرمایید 👇",
       reply_markup: JSON.stringify({
         keyboard: buttons.mainMenu,
         resize_keyboard: true,
@@ -576,24 +589,33 @@ bot.onText(/ok/, async ({ from, text }) => {
           db.write()
           const config = await vpn.addConfig(userId, orderId, order.plan)
           const subLink = vpn.getSubLink(config.subId)
-          const qr = await qrGenerator(subLink)
-          bot.sendPhoto(userId, qr,
-            {
-              caption: `🥳 تبریک میگم!\n✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic} گیگ\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n♻️ <b>لینک آپدیت خودکار:</b>\n<code>${subLink}</code>`,
-              parse_mode: "HTML",
-              reply_markup: JSON.stringify({
-                keyboard: buttons.mainMenu,
-                resize_keyboard: true,
-              }),
-            },
+          const { fastConfig, stableConfig } = await getConfigFromSub(subLink)
+          const fastConfigQR = await qrGenerator(fastConfig)
+          const stableConfigQR = await qrGenerator(stableConfig)
+          bot.sendMediaGroup(userId,
+            [
+              {
+                type: 'photo',
+                media: fastConfigQR,
+              }, {
+                type: 'photo',
+                media: stableConfigQR,
+                caption: `✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic} گیگ\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n🚀 <b>کانفیگ - پرسرعت:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${fastConfig}</code>\n\n\n✨ <b>کانفیگ - همیشه متصل:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${stableConfig}</code>`,
+                parse_mode: "HTML",
+
+              }
+            ],
           );
-          const botMsg = '‼️<u><b>حتما از آخرین نسخه نرم افزارها استفاده کنید</b></u>‼️\n\n👇دریافت آخرین نسخه نرم افزار و آموزش👇'
-          setTimeout(() => bot.sendMessage(userId, botMsg, {
-            reply_markup: {
-              inline_keyboard: buttons.education,
-            },
-            parse_mode: "HTML"
-          }), 500)
+          setTimeout(() => {
+            bot.sendMessage(userId, 'لطفا بر اساس سیستم عامل خود یکی از نرم افزارها را انتخاب کرده و تمامی مراحل را با دقت انجام دهید 👇',
+              {
+                parse_mode: 'HTML',
+                reply_markup: JSON.stringify({
+                  inline_keyboard: buttons.education,
+                  resize_keyboard: true,
+                }),
+              })
+          }, 500)
           bot.sendMessage(from.id, '✅ Done ✅')
           return
         }
@@ -688,41 +710,33 @@ bot.onText(/msg/, async ({ from, text }) => {
   }
 });
 
-bot.onText(/🎁 دریافت تست رایگان/, async ({ from }) => {
+bot.onText(/🎁 تست نامحدود و رایگان/, async ({ from }) => {
   const baseCheckingStatus = await baseChecking(from.id)
   if (!baseCheckingStatus) return
   const user = db.data.users[from.id]
   if (user.tested) {
     bot.sendMessage(
       from.id,
-      "🙃 شما قبلا تست رایگان را دریافت نموده‌اید.\n\n😇 لطفا درصورت رضایت از کیفیت سرویس، از منو پایین اقدام به خرید سرویس بفرمایید 👇"
+      "🙃 شما قبلا کانفیگ تست را دریافت نموده‌اید.\n\n😇 لطفا درصورت رضایت از کیفیت سرویس، از منو پایین اقدام به خرید سرویس بفرمایید 👇"
     );
     return;
   }
   try {
     const { subId } = await vpn.addTestConfig(user.id)
     const subLink = vpn.getSubLink(subId)
+    const { stableConfig, fastConfig } = await getConfigFromSub(subLink)
     user.tested = true
     db.write()
-    const qr = await qrGenerator(subLink)
-    bot.sendPhoto(from.id, qr,
+    bot.sendMessage(from.id, `✅ کانفیگ تست شما با موفقیت ساخته شده\n\n🎁 <b>حجم: </b>نامحدود\n⏰ <b>مدت استفاده: </b>۱ ساعت\n\n🚀 <b>کانفیگ - پرسرعت:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${fastConfig}</code>\n\n\n✨ <b>کانفیگ - همیشه متصل:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${stableConfig}</code>\n\n‼️ <u><b>لطفا بر اساس سیستم عامل خود یکی از نرم افزارها را انتخاب کرده و تمامی مراحل را با دقت انجام دهید</b></u> ‼️`,
       {
-        caption: `🥳 تبریک میگم!\n✅ کانفیگ تست شما با موفقیت ساخته شده\n\n🎁 <b>حجم: </b>۵۰۰ مگابایت\n⏰ <b>مدت استفاده: </b>۲۴ ساعت\n\n♻️ <b>لینک آپدیت خودکار: </b>\n<code>${subLink}</code>`,
         parse_mode: "HTML",
         reply_markup: JSON.stringify({
-          keyboard: buttons.mainMenu,
+          inline_keyboard: buttons.education,
           resize_keyboard: true,
         }),
       },
     );
-    const botMsg = '‼️<u><b>حتما از آخرین نسخه نرم افزارها استفاده کنید</b></u>‼️\n\n👇دریافت آخرین نسخه نرم افزار و آموزش👇'
-    setTimeout(() => bot.sendMessage(from.id, botMsg, {
-      reply_markup: {
-        inline_keyboard: buttons.education,
-      },
-      parse_mode: "HTML"
-    }), 500)
-    if (user.id !== ownerId) {
+    if (user.id != ownerId) {
       setTimeout(() => {
         bot.sendMessage(ownerId,
           `🔔 <b>New user created test</b> 🔔\n\n🗣️ <code>${user.tg_name}</code>  ${user.tg_username && ` 👋 <code>${user.tg_username}</code> `}  🎗️ <code>${user.id}</code>`,
@@ -746,7 +760,7 @@ bot.onText(/🛍️ خرید سرویس/, async ({ from }) => {
   }
   bot.sendMessage(
     from.id,
-    `😇 جهت اطمینان، حتما از منو اصلی اقدام به "<b>🎁 دریافت تست رایگان</b>" بفرمایید.\n\n😊 جهت ادامه خرید بر روی دکمه زیر بزنید.`,
+    `😇 جهت اطمینان، حتما از منو اصلی اقدام به "<b>🎁 تست نامحدود و رایگان</b>" بفرمایید.\n\n😊 جهت ادامه خرید بر روی دکمه زیر بزنید.`,
     {
       reply_markup: JSON.stringify({
         inline_keyboard: [
@@ -786,9 +800,23 @@ bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
       let remainingTraffic = ((total - up - down) / 1024 / 1024 / 1024).toFixed(2)
       remainingTraffic = remainingTraffic > 0 ? remainingTraffic : 0
       const subLink = vpn.getSubLink(orderId)
-      const qr = await qrGenerator(subLink)
-      const botMsg = `🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${remainingTraffic} گیگ\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n\n♻️ <b>لینک اپدیت خودکار: </b>\n<code>${subLink}</code>` : ''}`
-      bot.sendPhoto(from.id, qr, { caption: botMsg, parse_mode: "HTML" });
+      const { fastConfig, stableConfig } = await getConfigFromSub(subLink)
+      const fastConfigQR = await qrGenerator(fastConfig)
+      const stableConfigQR = await qrGenerator(stableConfig)
+      bot.sendMediaGroup(from.id,
+        [
+          {
+            type: 'photo',
+            media: fastConfigQR,
+          }, {
+            type: 'photo',
+            media: stableConfigQR,
+            caption: `🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${remainingTraffic} گیگ\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n\n🚀 <b>کانفیگ - پرسرعت:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${fastConfig}</code>\n\n\n✨ <b>کانفیگ - همیشه متصل:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${stableConfig}</code>` : ''}`,
+            parse_mode: "HTML",
+
+          }
+        ],
+      );
     })
   } catch (err) {
     console.log(err);
@@ -799,9 +827,8 @@ bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
 bot.onText(/🔰 آموزش اتصال/, async ({ from }) => {
   const baseCheckingStatus = await baseChecking(from.id)
   if (!baseCheckingStatus) return
-  const botMsg = '‼️<u><b>حتما از آخرین نسخه نرم افزارها استفاده کنید</b></u>‼️\n\n👇دریافت آخرین نسخه نرم افزار و آموزش👇'
-  bot.sendPhoto(from.id, images.os, {
-    caption: botMsg,
+  const botMsg = '‼️ <u><b>حتما از آخرین نسخه نرم افزارها استفاده کنید</b></u> ‼️\n\n👇بر اساس سیستم عامل خود یکی از نرم افزارهای زیر را انتخاب کنید👇'
+  bot.sendMessage(from.id, botMsg, {
     reply_markup: {
       inline_keyboard: buttons.education,
     },
@@ -817,11 +844,11 @@ bot.onText(/🫂 پشتیبانی فنی/, async ({ from }) => {
     bot.sendMessage(from.id, "🤕 اوه اوه!\n🤔 فکر کنم مشکلی پیش اومده\n\n😇 لطفا بر روی /start بزنید.");
     return
   }
-  const botMsg = `😇 <b>لطفا ابتدا موارد زیر را بررسی بفرمایید 👇</b>\n\n1️⃣ از بخش "🔮سرویس‌های فعال" حجم و زمان باقی مانده سرویس را بررسی کنید.\n\n2️⃣ اتصال به اینترنت را بدون استفاده از vpn چک بفرمایید.\n\n3️⃣ ترجیحا از نرم افزارهایی که در کانال معرفی شده استفاده کنید.\n\n4️⃣ در نرم افزار v2rayNG طبق آموزش مقدار allowInsecure را true کنید.\n\n😇 همچنین میتوانید مشکل خود را در گروه NOVA ارسال بفرمایید 👇`
+  const botMsg = `😇 <b>لطفا ابتدا موارد زیر را بررسی بفرمایید 👇</b>\n\n1️⃣ از بخش "🔮سرویس‌های فعال" حجم و زمان باقی مانده سرویس را بررسی کنید.\n\n2️⃣ اتصال به اینترنت را بدون استفاده از vpn چک بفرمایید.\n\n3️⃣ ترجیحا از نرم افزارهایی که در کانال معرفی شده استفاده کنید.\n\n4️⃣ در نرم افزار v2rayNG طبق آموزش مقدار allowInsecure را true کنید.\n\n😇 در صورتی که همچنان در اتصال به سرویس مشکل دارید میتوانید به پشتیبانی پیام دهید 👇`
   bot.sendMessage(from.id, botMsg,
     {
       reply_markup: {
-        inline_keyboard: [[{ text: "🫂 گروه پرسش و پاسخ", url: "https://t.me/+9Ry1urzfT-owMzVk" }]]
+        inline_keyboard: [[{ text: "☎️ پشتیبان فنی", url: "https://t.me/nova_vpn_support" }]]
       }, parse_mode: "HTML"
     }
   );
@@ -1004,6 +1031,20 @@ bot.on("callback_query", async (query) => {
           },
         }
       );
+    }
+  }
+
+  if (queryData.action === 'education') {
+    switch (queryData.data.device) {
+      case 'android':
+        bot.sendPhoto(chatId, images.hiddify, {
+          caption: '‼️ <b>آخرین نسخه هیدیفای را نصب کنید</b>\n\n👈 <b><a href="http://turbo.torgod.site/softwares/HiddifyNG.apk">(دریافت آخرین نسخه هیدیفای)</a> 👉</b>\n\n🔰 طبق آموزش داخل عکس عمل کنید',
+          parse_mode: "HTML"
+        })
+        break;
+
+      default:
+        break;
     }
   }
 });
