@@ -5,39 +5,32 @@
       "tg_name": "Hosein",
       "tg_username": "xrois",
       "tested": true,
-      "created_at": "2023-07-25T09:19:08"
-    },
-    "1085276188": {
-      "id": 1085276188,
-      "tg_name": "Support 👨🏻‍💻",
-      "tg_username": "nova_vpn_support",
-      "tested": false,
-      "created_at": "2023-07-25T07:56:35"
+      "created_at": "2023-08-01T16:51:39"
     }
   },
   "orders": {
     "waiting": {},
     "verified": {
-      "266642529": {
-        "id": 266642529,
+      "677433249": {
+        "id": 677433249,
         "user_id": 409431573,
         "plan": {
-          "id": 97,
-          "name": "🔴 15 گیگ - 1 کاربره - 💳 55 تومان",
-          "symbol": "🔴",
-          "traffic": 15,
+          "id": 99,
+          "name": "🥈 50 گیگ     2 کاربره   💳 99   تومان ",
+          "symbol": "🥈",
+          "traffic": 50,
           "period": 30,
-          "original_price": 75,
-          "final_price": 55,
-          "limit_ip": 1,
+          "original_price": 125,
+          "final_price": 99,
+          "limit_ip": 2,
           "version": 1,
           "active": true
         },
-        "amount": 549545,
-        "created_at": "2023-07-25T10:41:07",
-        "expire_at": "2023-08-24T10:41:07",
-        "payment_limit_time": 1690272667283,
-        "paid_at": "2023-07-25T10:41:37"
+        "amount": 989894,
+        "created_at": "2023-08-01T16:54:12",
+        "expire_at": "2023-08-31T16:54:12",
+        "payment_limit_time": 1690899852323,
+        "paid_at": "2023-08-01T16:56:38"
       }
     },
     "expired": {}
