@@ -38,6 +38,18 @@ const bot = new TelegramBot(token, { polling: true });
 
 const plans = [
   {
+    id: 103,
+    name: "${SYMBOL} نامحدود     ${LIMIT_IP} کاربره   💳 ${PRICE} تومان",
+    symbol: "🎖️",
+    traffic: 0,
+    period: 30,
+    original_price: 200,
+    final_price: 150,
+    limit_ip: 1,
+    version: 1,
+    active: true,
+  },
+  {
     id: 96,
     name: "${SYMBOL} ${TRAFFIC} گیگ - ${LIMIT_IP} کاربره - 💳 ${PRICE} تومان",
     symbol: "🔴",
@@ -47,7 +59,7 @@ const plans = [
     final_price: 15,
     limit_ip: 1,
     version: 1,
-    active: true,
+    active: false,
   },
   {
     id: 97,
@@ -59,12 +71,12 @@ const plans = [
     final_price: 39,
     limit_ip: 1,
     version: 1,
-    active: true,
+    active: false,
   },
   {
     id: 98,
-    name: "${SYMBOL} ${TRAFFIC} گیگ - ${LIMIT_IP} کاربره - 💳 ${PRICE} تومان",
-    symbol: "🟠",
+    name: "${SYMBOL} ${TRAFFIC} گیگ     ${LIMIT_IP} کاربره   💳 ${PRICE}   تومان ",
+    symbol: "🥉",
     traffic: 25,
     period: 30,
     original_price: 75,
@@ -75,8 +87,8 @@ const plans = [
   },
   {
     id: 99,
-    name: "${SYMBOL} ${TRAFFIC} گیگ - ${LIMIT_IP} کاربره - 💳 ${PRICE} تومان",
-    symbol: "🟡",
+    name: "${SYMBOL} ${TRAFFIC} گیگ     ${LIMIT_IP} کاربره   💳 ${PRICE}   تومان ",
+    symbol: "🥈",
     traffic: 50,
     period: 30,
     original_price: 125,
@@ -87,8 +99,8 @@ const plans = [
   },
   {
     id: 100,
-    name: "${SYMBOL} ${TRAFFIC} گیگ - ${LIMIT_IP} کاربره - 💳 ${PRICE} تومان",
-    symbol: "🟢",
+    name: "${SYMBOL} ${TRAFFIC} گیگ     ${LIMIT_IP} کاربره   💳 ${PRICE} تومان",
+    symbol: "🥇",
     traffic: 75,
     period: 30,
     original_price: 180,
@@ -99,8 +111,8 @@ const plans = [
   },
   {
     id: 101,
-    name: "${SYMBOL} ${TRAFFIC} گیگ - ${LIMIT_IP} کاربره - 💳 ${PRICE} تومان",
-    symbol: "🔵",
+    name: "${SYMBOL} ${TRAFFIC} گیگ   ${LIMIT_IP} کاربره   💳 ${PRICE} تومان",
+    symbol: "🥇",
     traffic: 100,
     period: 30,
     original_price: 230,
@@ -111,8 +123,8 @@ const plans = [
   },
   {
     id: 102,
-    name: "${SYMBOL} ${TRAFFIC} گیگ - ${LIMIT_IP} کاربره - 💳 ${PRICE} تومان",
-    symbol: "🟣",
+    name: "${SYMBOL}${TRAFFIC} گیگ   ${LIMIT_IP} کاربره   💳 ${PRICE} تومان",
+    symbol: "🏅",
     traffic: 200,
     period: 30,
     original_price: 420,
@@ -362,16 +374,16 @@ const buttons = {
     ["🛍️ خرید سرویس"],
     ["🔮 سرویس‌ های فعال", "🎁 تست نامحدود و رایگان",],
     ["🔰 آموزش اتصال"],
-    ["☎️ پشتیبانی مالی", "🫂 پشتیبانی فنی"],
+    ["☎️ پشتیبانی", "🫂 پشتیبانی فنی"],
   ],
   education: [
     [{
-      text: '🍀 اندروید - V2rayNG 💫',
-      url: 'https://telegra.ph/%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-%D8%A7%D9%86%D8%AF%D8%B1%D9%88%DB%8C%D8%AF-%D8%A8%D8%A7-V2rayNG-07-29'
-    }],
-    [{
       text: '🍀 اندروید - Hiddify ✨',
       url: 'https://telegra.ph/%D8%A2%D9%85%D9%88%D8%B2%D8%B4-%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-%D8%A7%D9%86%D8%AF%D8%B1%D9%88%DB%8C%D8%AF-%D8%A8%D8%A7-HiddifyNG-07-29'
+    }],
+    [{
+      text: '🍀 اندروید - V2rayNG 🍭',
+      url: 'https://telegra.ph/%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-%D8%A7%D9%86%D8%AF%D8%B1%D9%88%DB%8C%D8%AF-%D8%A8%D8%A7-V2rayNG-07-29'
     }],
     [{
       text: '🍎 آی او اس - V2Box 🗳️',
@@ -462,6 +474,47 @@ const cleanExpiredConfigs = async () => {
   } catch (err) {
     console.log("Error in cleanExpiredConfigs >> ", err);
   }
+}
+
+const checkConfigsExpiration = async () => {
+  // try {
+  //   const query = `SELECT email, up, down, total, expiry_time FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND enable=1`;
+  //   const rows = await api.db(query)
+  //   const configs = [...rows];
+  //   if (configs.length > 0) {
+  //     configs.map(async ({ email, up, down, total, expiry_time }) => {
+  //       const [userId, orderId] = email.split('-')
+
+
+
+
+  //       const { plan, paid_at, expire_at } = db.data.orders.verified[orderId]
+  //       let remainingTraffic = ((total - up - down) / 1024 / 1024 / 1024).toFixed(2)
+  //       remainingTraffic = remainingTraffic > 0 ? remainingTraffic : 0
+  //       const subLink = vpn.getSubLink(orderId)
+  //       const { fastConfig, stableConfig } = await getConfigFromSub(subLink)
+  //       const fastConfigQR = await qrGenerator(fastConfig)
+  //       const stableConfigQR = await qrGenerator(stableConfig)
+  //       bot.sendMediaGroup(from.id,
+  //         [
+  //           {
+  //             type: 'photo',
+  //             media: fastConfigQR,
+  //           }, {
+  //             type: 'photo',
+  //             media: stableConfigQR,
+  //             caption: `🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${remainingTraffic} گیگ\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n\n🚀 <b>کانفیگ - پرسرعت:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${fastConfig}</code>\n\n\n✨ <b>کانفیگ - همیشه متصل:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${stableConfig}</code>` : ''}`,
+  //             parse_mode: "HTML",
+
+  //           }
+  //         ],
+  //       );
+  //     })
+  //   }
+  // } catch (err) {
+  //   console.log(err);
+  //   bot.sendMessage(from.id, "🤕 اوه اوه!\n🤔 فکر کنم مشکلی در دریافت سرویس های شما پیش اومده\n\n😇 لطفا بعد از چند دقیقه دوباره تلاش کنید.");
+  // }
 }
 
 const qrGenerator = async (text) => {
@@ -600,14 +653,14 @@ bot.onText(/ok/, async ({ from, text }) => {
               }, {
                 type: 'photo',
                 media: stableConfigQR,
-                caption: `✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic} گیگ\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n🚀 <b>کانفیگ - پرسرعت:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${fastConfig}</code>\n\n\n✨ <b>کانفیگ - همیشه متصل:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${stableConfig}</code>`,
+                caption: `✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ`: 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n🚀 <b>کانفیگ - پرسرعت:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${fastConfig}</code>\n\n\n✨ <b>کانفیگ - همیشه متصل:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${stableConfig}</code>`,
                 parse_mode: "HTML",
 
               }
             ],
           );
           setTimeout(() => {
-            bot.sendMessage(userId, 'لطفا بر اساس سیستم عامل خود یکی از نرم افزارها را انتخاب کرده و تمامی مراحل را با دقت انجام دهید 👇',
+            bot.sendMessage(userId, 'لینک دانلود آخرین نسخه نرم افزار ها به همراه آموزش نحوه اتصال بر اساس سیستم عامل شما در پایین قرار داده شده 👇',
               {
                 parse_mode: 'HTML',
                 reply_markup: JSON.stringify({
@@ -811,7 +864,7 @@ bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
           }, {
             type: 'photo',
             media: stableConfigQR,
-            caption: `🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${remainingTraffic} گیگ\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n\n🚀 <b>کانفیگ - پرسرعت:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${fastConfig}</code>\n\n\n✨ <b>کانفیگ - همیشه متصل:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${stableConfig}</code>` : ''}`,
+            caption: `🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${total > 0 ? `${remainingTraffic} گیگ`: 'نامحدود'}\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n\n🚀 <b>کانفیگ - پرسرعت:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${fastConfig}</code>\n\n\n✨ <b>کانفیگ - همیشه متصل:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${stableConfig}</code>` : ''}`,
             parse_mode: "HTML",
 
           }
@@ -854,14 +907,14 @@ bot.onText(/🫂 پشتیبانی فنی/, async ({ from }) => {
   );
 });
 
-bot.onText(/☎️ پشتیبانی مالی/, async ({ from }) => {
+bot.onText(/☎️ پشتیبانی/, async ({ from }) => {
   const baseCheckingStatus = await baseChecking(from.id)
   if (!baseCheckingStatus) return
-  const botMsg = `✅ جهت تایید تراکنش، لطفا رسید خود را برای <u><b>پشتیبانی مالی</b></u> ارسال بفرمایید 👇`;
+  const botMsg = `✅ جهت تایید تراکنش، لطفا رسید خود را برای <u><b>پشتیبانی</b></u> ارسال بفرمایید 👇`;
   bot.sendPhoto(from.id, images.support, {
     caption: botMsg,
     reply_markup: {
-      inline_keyboard: [[{ text: "☎️ پشتیبان مالی", url: "t.me/nova_vpn_support" }]]
+      inline_keyboard: [[{ text: "☎️ پشتیبان", url: "t.me/nova_vpn_support" }]]
     },
     parse_mode: "HTML",
     disable_web_page_preview: true
@@ -924,6 +977,7 @@ bot.on("callback_query", async (query) => {
               },
             ];
           }
+          return []
         }),
       },
       parse_mode: "HTML"
@@ -933,7 +987,7 @@ bot.on("callback_query", async (query) => {
   if (queryData.action === "plan_detailes") {
     const plan = plans.find((item) => item.id == queryData.data.planId);
 
-    const botMsg = `${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n${plan.symbol} <b>حجم:</b> ${plan.traffic} گیگ\n\n⏰ <b>مدت:</b> ${plan.period} روزه\n\n🎁 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\n😊 برای خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`
+    const botMsg = `${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n${plan.symbol} <b>حجم:</b> ${plan.traffic > 0 ? `${plan.traffic} گیگ`: 'نامحدود'}\n\n⏰ <b>مدت:</b> ${plan.period} روزه\n\n🎁 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\n😊 برای خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`
 
     bot.editMessageText(botMsg, {
       chat_id: chatId,
@@ -988,7 +1042,7 @@ bot.on("callback_query", async (query) => {
       db.write();
 
       bot.editMessageText(
-        `🛍️ <b>شماره سرویس: </b>${orderId}\n\n💳 <b>مبلغ نهایی: </b>\n<code>${amount.toLocaleString()}</code> ریال 👉 (روی اعداد ضربه بزنید تا کپی شود)\n\n🏦 <b>شماره کارت: </b>\n<code>${BANK_ACCOUNT.CARD_NUMBER}</code> 👉 (ضربه بزنید تا کپی شود)\n\n👤 <b>صاحب حساب: </b> ${BANK_ACCOUNT.OWNER_NAME}\n\n⚠️ <b>مهلت پرداخت: </b> تا ساعت <u><b>${paymentLimitTime.format().slice(11, 16)}</b></u> ⚠️\n\n‼️ <u><b>توجه: از رند کردن مبلغ نهایی خودداری کنید </b></u>‼️\n\n✅ جهت تکمیل خرید سرویس، مبلغ <u><b>دقیق</b></u> بالا را به شماره کارت ذکر شده واریز بفرمایید و رسید خود را برای <u><b>پشتیبانی مالی</b></u> ارسال کنید 👇`,
+        `🛍️ <b>شماره سرویس: </b>${orderId}\n\n💳 <b>مبلغ نهایی: </b>\n<code>${amount.toLocaleString()}</code> ریال 👉 (روی اعداد ضربه بزنید تا کپی شود)\n\n🏦 <b>شماره کارت: </b>\n<code>${BANK_ACCOUNT.CARD_NUMBER}</code> 👉 (ضربه بزنید تا کپی شود)\n\n👤 <b>صاحب حساب: </b> ${BANK_ACCOUNT.OWNER_NAME}\n\n⚠️ <b>مهلت پرداخت: </b> تا ساعت <u><b>${paymentLimitTime.format().slice(11, 16)}</b></u> ⚠️\n\n‼️ <u><b>توجه: از رند کردن مبلغ نهایی خودداری کنید </b></u>‼️\n\n✅ جهت تکمیل خرید سرویس، مبلغ <u><b>دقیق</b></u> بالا را به شماره کارت ذکر شده واریز بفرمایید و رسید خود را برای <u><b>پشتیبانی</b></u> ارسال کنید 👇`,
         {
           parse_mode: "HTML",
           chat_id: chatId,
@@ -996,7 +1050,7 @@ bot.on("callback_query", async (query) => {
           reply_markup: {
             inline_keyboard: [[
               {
-                text: "☎️ پشتیبانی مالی",
+                text: "☎️ پشتیبانی",
                 url: "https://t.me/nova_vpn_support",
               }
             ]]
@@ -1163,10 +1217,15 @@ server.listen(port, '0.0.0.0', async () => {
   cron.schedule('0 0 */25 * *', () => {
     checkXUISessionExpiration()
   }).start();
+
   cron.schedule('*/1 * * * * *', () => {
     cleanExpiredCooldown()
     checkOrdersTimeout()
   }).start();
+
+  // cron.schedule('* */1 * * * *', () => {
+  //   checkConfigsExpiration()
+  // }).start();
 
   cron.schedule('0 */24 * * *', () => {
     cleanExpiredConfigs()
