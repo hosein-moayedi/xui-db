@@ -355,7 +355,7 @@ const vpn = {
       expiryTime,
       id: uuid,
       flow: 'xtls-rprx-vision',
-      limitIp,
+      limitIp: limitIp + 1,
       subId: isTest ? `test-${userId}` : orderId,
       tgId: "",
       totalGB: traffic * 1024 * 1024 * 1024
@@ -378,24 +378,46 @@ const buttons = {
   ],
   education: [
     [{
-      text: '🍀 اندروید - Hiddify ✨',
+      text: '🍀 اتصال در Hiddify ✨',
       url: 'https://telegra.ph/%D8%A2%D9%85%D9%88%D8%B2%D8%B4-%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-%D8%A7%D9%86%D8%AF%D8%B1%D9%88%DB%8C%D8%AF-%D8%A8%D8%A7-HiddifyNG-07-29'
     }],
     [{
-      text: '🍀 اندروید - V2rayNG 🍭',
+      text: '🍀 اتصال در V2rayNG 🍭',
       url: 'https://telegra.ph/%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-%D8%A7%D9%86%D8%AF%D8%B1%D9%88%DB%8C%D8%AF-%D8%A8%D8%A7-V2rayNG-07-29'
     }],
     [{
-      text: '🍎 آی او اس - V2Box 🗳️',
+      text: '🍎 اتصال در V2Box 🗳️',
       url: 'https://telegra.ph/%D8%A2%D9%85%D9%88%D8%B2%D8%B4-%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-IOS-%D8%A8%D8%A7-%D9%86%D8%B1%D9%85-%D8%A7%D9%81%D8%B2%D8%A7%D8%B1-V2Box-07-29'
     }],
     [{
-      text: '🖥️ ویندوز - V2rayN 💫',
+      text: '🖥️ اتصال در V2rayN 💫',
       url: 'https://t.me/nova_vpn_channel/24'
     }],
     [{
-      text: '💻 مک او اس - V2Box 🗳️',
+      text: '💻 اتصال در V2Box 🗳️',
       url: 'https://t.me/nova_vpn_channel/93'
+    }]
+  ],
+  softwares: [
+    [{
+      text: '⬇️ اندروید - Hiddify ⬇️',
+      url: 'http://turbo.torgod.site/softwares/HiddifyNG.apk'
+    }],
+    [{
+      text: '⬇️ اندروید - V2rayNG ⬇️',
+      url: 'http://turbo.torgod.site/softwares/v2rayNG_1.8.5.apk'
+    }],
+    [{
+      text: '⬇️ آی او اس (آیفون) - V2Box ⬇️',
+      url: 'https://apps.apple.com/app/id6446814690'
+    }],
+    [{
+      text: '⬇️ ویندوز - V2rayN ⬇️',
+      url: 'https://mega.nz/file/52smHRKQ#-RiDYMV-uO1w4iq-E4catWywkcBIGP5-7QL2kl4htvk'
+    }],
+    [{
+      text: '⬇️ مک او اس - V2Box ⬇️',
+      url: 'https://apps.apple.com/fr/app/v2box-v2ray-client/id6446814690?l=en-GB'
     }]
   ]
 }
@@ -653,7 +675,7 @@ bot.onText(/ok/, async ({ from, text }) => {
               }, {
                 type: 'photo',
                 media: fastConfigQR,
-                caption: `✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ`: 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n✨ <b>کانفیگ 1 - کیفیت اتصال عالی:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${stableConfig}</code>\n\n\n🚀 <b>کانفیگ 2 - سرعت بالا:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${fastConfig}</code>`,
+                caption: `✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n✨ <b>کانفیگ 1 - کیفیت اتصال عالی:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${stableConfig}</code>\n\n\n🚀 <b>کانفیگ 2 - سرعت بالا:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${fastConfig}</code>`,
                 parse_mode: "HTML",
 
               }
@@ -766,46 +788,20 @@ bot.onText(/msg/, async ({ from, text }) => {
 bot.onText(/🎁 تست نامحدود و رایگان/, async ({ from }) => {
   const baseCheckingStatus = await baseChecking(from.id)
   if (!baseCheckingStatus) return
-  const user = db.data.users[from.id]
-  if (user.tested) {
-    bot.sendMessage(
-      from.id,
-      "🙃 شما قبلا کانفیگ تست را دریافت نموده‌اید.\n\n😇 لطفا درصورت رضایت از کیفیت سرویس، از منو پایین اقدام به خرید سرویس بفرمایید 👇"
-    );
-    return;
-  }
   try {
-    const { subId } = await vpn.addTestConfig(user.id)
-    const subLink = vpn.getSubLink(subId)
-    const { stableConfig, fastConfig } = await getConfigFromSub(subLink)
-    user.tested = true
-    db.write()
-    bot.sendMessage(from.id, `✅ کانفیگ تست شما با موفقیت ساخته شده\n\n🎁 <b>حجم: </b>نامحدود\n⏰ <b>مدت استفاده: </b>۱ ساعت\n\n✨ <b>کانفیگ 1 - کیفیت اتصال عالی:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${stableConfig}</code>\n\n\n🚀 <b>کانفیگ 2 - سرعت بالا:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${fastConfig}</code>\n\n‼️ <u><b>لطفا بر اساس سیستم عامل خود یکی از نرم افزارها را انتخاب کرده و تمامی مراحل را با دقت انجام دهید</b></u> ‼️`,
-      {
-        parse_mode: "HTML",
-        reply_markup: JSON.stringify({
-          inline_keyboard: buttons.education,
-          resize_keyboard: true,
-        }),
-      },
-    );
-    if (user.id != ownerId) {
+    bot.sendMessage(from.id, `⚠️ <u><b>بسیار مهم: اگر نرم افزار شما بروز نباشد نمیتوانید به سرویس ما متصل شوید</b></u> ⚠️\n\n1️⃣  <b>حتما حتما حتی اگر</b> نرم افزار مورد نظر را از قبل نصب شده دارید، دوباره بر اساس سیستم عامل خود، <b>آخرین نسخه</b> آن را از لیست زیر <b>دانلود و نصب</b> کنید\n\n2️⃣ پس از نصب و بروزرسانی، روی دکمه "✅ <b>بروزرسانی کردم</b> ✅" که در زیر لیست پایین میباشد بزنید`, { parse_mode: "HTML" }
+    ).then((message) => {
       setTimeout(() => {
-        bot.sendMessage(from.id,
-          `⚠️ به اطلاع میرساند، تنها <b>۵ دقیقه</b> تا اتمام مهلت تست و قطع اتصال شما باقی مانده است\n\nدرصورت رضایت از سرویس، با زدن دکمه "<b>🛍️ خرید سرویس</b>" از منو اصلی، اقدام به خرید سرویس بفرمایید.`,
-          { parse_mode: 'HTML' }
-        )
-      }, 3240000)
-      setTimeout(() => {
-        bot.sendMessage(ownerId,
-          `🔔 <b>New user created test</b> 🔔\n\n🗣️ <code>${user.tg_name}</code>  ${user.tg_username && ` 👋 <code>${user.tg_username}</code> `}  🎗️ <code>${user.id}</code>`,
-          { parse_mode: 'HTML' }
-        )
-      }, 900)
-    }
+        bot.editMessageReplyMarkup(
+          JSON.stringify({
+            inline_keyboard: [...buttons.softwares.slice(0, 3), [{ text: '✅ بروزرسانی کردم ✅', callback_data: JSON.stringify({ action: 'generate_test_config' }) }]],
+            resize_keyboard: true,
+          }),
+          { chat_id: from.id, message_id: message.message_id })
+      }, 10000)
+    })
   } catch (e) {
-    console.error("❌ Error: test_config_generation> ", e);
-    bot.sendMessage(from.id, "🤕 اواو!\n🤔 فکر کنم یه مشکلی پیش اومده\n\n😇 لطفا بعد از چند دقیقا مجددا تلاش کنید");
+    console.error("❌ Error: edit replyMarkup of test config> ", e);
   }
 });
 
@@ -870,7 +866,7 @@ bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
           }, {
             type: 'photo',
             media: fastConfigQR,
-            caption: `🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${total > 0 ? `${remainingTraffic} گیگ`: 'نامحدود'}\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n\n✨ <b>کانفیگ 1 - کیفیت اتصال عالی:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${stableConfig}</code>\n\n\n🚀 <b>کانفیگ 2 - سرعت بالا:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${fastConfig}</code>` : ''}`,
+            caption: `🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${total > 0 ? `${remainingTraffic} گیگ` : 'نامحدود'}\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n\n✨ <b>کانفیگ 1 - کیفیت اتصال عالی:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${stableConfig}</code>\n\n\n🚀 <b>کانفیگ 2 - سرعت بالا:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${fastConfig}</code>` : ''}`,
             parse_mode: "HTML",
 
           }
@@ -960,6 +956,50 @@ bot.on("callback_query", async (query) => {
     });
   }
 
+  if (queryData.action === 'generate_test_config') {
+    try {
+      if (user.tested) {
+        bot.sendMessage(
+          from.id,
+          "🙃 شما قبلا کانفیگ تست را دریافت نموده‌اید.\n\n😇 لطفا درصورت رضایت از کیفیت سرویس، از منو پایین اقدام به خرید سرویس بفرمایید 👇"
+        );
+        return;
+      }
+      const { subId } = await vpn.addTestConfig(user.id)
+      const subLink = vpn.getSubLink(subId)
+      const { stableConfig } = await getConfigFromSub(subLink)
+      user.tested = true
+      db.write()
+
+      bot.sendMessage(from.id, `🎁 <b>حجم</b>: نامحدود\n⏰ <b>مدت استفاده</b>: ۱ ساعت\n✨ <b>کانفیگ اتصال</b>: (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${stableConfig}</code>\n\n👇 بر اساس نرم افزاری که در مرحله قبل نصب و یا بروزرسانی کردین، آموزش نحوه اتصال در آن نرم افزار را مشاهده بفرمایید👇`,
+        {
+          parse_mode: "HTML",
+          reply_markup: JSON.stringify({
+            inline_keyboard: buttons.education.slice(0, 3),
+            resize_keyboard: true,
+          }),
+        },
+      );
+      if (user.id != ownerId) {
+        setTimeout(() => {
+          bot.sendMessage(from.id,
+            `⚠️ به اطلاع میرساند، تنها <b>۵ دقیقه</b> تا اتمام مهلت تست و قطع اتصال شما باقی مانده است\n\nدرصورت رضایت از سرویس، با زدن دکمه "<b>🛍️ خرید سرویس</b>" از منو اصلی، اقدام به خرید سرویس بفرمایید.`,
+            { parse_mode: 'HTML' }
+          )
+        }, 3240000)
+        setTimeout(() => {
+          bot.sendMessage(ownerId,
+            `🔔 <b>New user created test</b> 🔔\n\n🗣️ <code>${user.tg_name}</code>  ${user.tg_username && ` 👋 <code>${user.tg_username}</code> `}  🎗️ <code>${user.id}</code>`,
+            { parse_mode: 'HTML' }
+          )
+        }, 900)
+      }
+    } catch (e) {
+      console.error("❌ Error: test_config_generation> ", e);
+      bot.sendMessage(from.id, "🤕 اواو!\n🤔 فکر کنم یه مشکلی پیش اومده\n\n😇 لطفا بعد از چند دقیقا مجددا تلاش کنید");
+    }
+  }
+
   if (queryData.action === "store") {
     const botMsg =
       `<b>‼️ تمامی سرویس ها 30 روزه میباشد ‼️</b>\n\n🔻 سرویس مورد نظر خود را انتخاب کنید🔻`;
@@ -993,7 +1033,7 @@ bot.on("callback_query", async (query) => {
   if (queryData.action === "plan_detailes") {
     const plan = plans.find((item) => item.id == queryData.data.planId);
 
-    const botMsg = `${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n${plan.symbol} <b>حجم:</b> ${plan.traffic > 0 ? `${plan.traffic} گیگ`: 'نامحدود'}\n\n⏰ <b>مدت:</b> ${plan.period} روزه\n\n🎁 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\n😊 برای خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`
+    const botMsg = `${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n${plan.symbol} <b>حجم:</b> ${plan.traffic > 0 ? `${plan.traffic} گیگ` : 'نامحدود'}\n\n⏰ <b>مدت:</b> ${plan.period} روزه\n\n🎁 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\n😊 برای خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`
 
     bot.editMessageText(botMsg, {
       chat_id: chatId,
@@ -1048,7 +1088,7 @@ bot.on("callback_query", async (query) => {
       db.write();
 
       bot.editMessageText(
-        `🛍️ <b>شماره سرویس: </b>${orderId}\n\n💳 <b>مبلغ نهایی: </b>\n<code>${amount.toLocaleString()}</code> ریال 👉 (روی اعداد ضربه بزنید تا کپی شود)\n\n🏦 <b>شماره کارت: </b>\n<code>${BANK_ACCOUNT.CARD_NUMBER}</code> 👉 (ضربه بزنید تا کپی شود)\n\n👤 <b>صاحب حساب: </b> ${BANK_ACCOUNT.OWNER_NAME}\n\n⚠️ <b>مهلت پرداخت: </b> تا ساعت <u><b>${paymentLimitTime.format().slice(11, 16)}</b></u> ⚠️\n\n‼️ <u><b>توجه: از رند کردن مبلغ نهایی خودداری کنید </b></u>‼️\n\n✅ جهت تکمیل خرید سرویس، مبلغ <u><b>دقیق</b></u> بالا را به شماره کارت ذکر شده واریز بفرمایید و رسید خود را برای <u><b>پشتیبانی</b></u> ارسال کنید 👇`,
+        `🛍️ <b>شماره سرویس: </b>${orderId}\n\n💳 <b>مبلغ نهایی: </b>\n<code>${amount.toLocaleString()}</code> ریال 👉 (روی اعداد ضربه بزنید تا کپی شود)\n\n🏦 <b>شماره کارت: </b>\n<code>${environment === 'pro' ? BANK_ACCOUNT.CARD_NUMBER : '0000-0000-0000-0000'}</code> 👉 (ضربه بزنید تا کپی شود)\n\n👤 <b>صاحب حساب: </b> ${environment === 'pro' ? BANK_ACCOUNT.OWNER_NAME : 'admin'}\n\n⚠️ <b>مهلت پرداخت: </b> تا ساعت <u><b>${paymentLimitTime.format().slice(11, 16)}</b></u> ⚠️\n\n‼️ <u><b>توجه: از رند کردن مبلغ نهایی خودداری کنید </b></u>‼️\n\n✅ جهت تکمیل خرید سرویس، مبلغ <u><b>دقیق</b></u> بالا را به شماره کارت ذکر شده واریز بفرمایید و رسید خود را برای <u><b>پشتیبانی</b></u> ارسال کنید 👇`,
         {
           parse_mode: "HTML",
           chat_id: chatId,
@@ -1237,7 +1277,4 @@ server.listen(port, '0.0.0.0', async () => {
     cleanExpiredConfigs()
     cleanExpiredOrders()
   }).start();
-
-  cleanExpiredConfigs()
-  cleanExpiredOrders()
 });
