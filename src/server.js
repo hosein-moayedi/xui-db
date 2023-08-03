@@ -379,15 +379,15 @@ const buttons = {
   education: [
     [{
       text: '🍀 اتصال در Hiddify ✨',
-      url: 'https://telegra.ph/%D8%A2%D9%85%D9%88%D8%B2%D8%B4-%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-%D8%A7%D9%86%D8%AF%D8%B1%D9%88%DB%8C%D8%AF-%D8%A8%D8%A7-HiddifyNG-07-29'
+      url: 'https://telegra.ph/%D8%A2%D9%85%D9%88%D8%B2%D8%B4-%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-%D8%A7%D9%86%D8%AF%D8%B1%D9%88%DB%8C%D8%AF-%D8%A8%D8%A7-HiddifyNG-08-03'
     }],
     [{
       text: '🍀 اتصال در V2rayNG 🍭',
-      url: 'https://telegra.ph/%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-%D8%A7%D9%86%D8%AF%D8%B1%D9%88%DB%8C%D8%AF-%D8%A8%D8%A7-V2rayNG-07-29'
+      url: 'https://telegra.ph/%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-%D8%A7%D9%86%D8%AF%D8%B1%D9%88%DB%8C%D8%AF-%D8%A8%D8%A7-V2rayNG-08-03'
     }],
     [{
       text: '🍎 اتصال در V2Box 🗳️',
-      url: 'https://telegra.ph/%D8%A2%D9%85%D9%88%D8%B2%D8%B4-%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-IOS-%D8%A8%D8%A7-%D9%86%D8%B1%D9%85-%D8%A7%D9%81%D8%B2%D8%A7%D8%B1-V2Box-07-29'
+      url: 'https://telegra.ph/%D8%A2%D9%85%D9%88%D8%B2%D8%B4-%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-IOS-%D8%A8%D8%A7-%D9%86%D8%B1%D9%85-%D8%A7%D9%81%D8%B2%D8%A7%D8%B1-V2Box-08-03'
     }],
     [{
       text: '🖥️ اتصال در V2rayN 💫',
@@ -664,23 +664,11 @@ bot.onText(/ok/, async ({ from, text }) => {
           db.write()
           const config = await vpn.addConfig(userId, orderId, order.plan)
           const subLink = vpn.getSubLink(config.subId)
-          const { fastConfig, stableConfig } = await getConfigFromSub(subLink)
-          const fastConfigQR = await qrGenerator(fastConfig)
-          const stableConfigQR = await qrGenerator(stableConfig)
-          bot.sendMediaGroup(userId,
-            [
-              {
-                type: 'photo',
-                media: stableConfigQR,
-              }, {
-                type: 'photo',
-                media: fastConfigQR,
-                caption: `✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n✨ <b>کانفیگ 1 - کیفیت اتصال عالی:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${stableConfig}</code>\n\n\n🚀 <b>کانفیگ 2 - سرعت بالا:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${fastConfig}</code>`,
-                parse_mode: "HTML",
-
-              }
-            ],
-          );
+          const subLinkQR = await qrGenerator(subLink)
+          bot.sendPhoto(userId, subLinkQR, {
+            caption: `✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n♻️ <b>لینک آپدیت خودکار: </b>(روی لینک پایین بزنید تا کپی شود 👇)\n<code>${subLink}</code>`,
+            parse_mode: "HTML",
+          });
           setTimeout(() => {
             bot.sendMessage(userId, 'لینک دانلود آخرین نسخه نرم افزار ها به همراه آموزش نحوه اتصال بر اساس سیستم عامل شما در پایین قرار داده شده 👇',
               {
@@ -855,22 +843,12 @@ bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
       let remainingTraffic = ((total - up - down) / 1024 / 1024 / 1024).toFixed(2)
       remainingTraffic = remainingTraffic > 0 ? remainingTraffic : 0
       const subLink = vpn.getSubLink(orderId)
-      const { fastConfig, stableConfig } = await getConfigFromSub(subLink)
-      const fastConfigQR = await qrGenerator(fastConfig)
-      const stableConfigQR = await qrGenerator(stableConfig)
-      bot.sendMediaGroup(from.id,
-        [
-          {
-            type: 'photo',
-            media: stableConfigQR,
-          }, {
-            type: 'photo',
-            media: fastConfigQR,
-            caption: `🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${total > 0 ? `${remainingTraffic} گیگ` : 'نامحدود'}\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n\n✨ <b>کانفیگ 1 - کیفیت اتصال عالی:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${stableConfig}</code>\n\n\n🚀 <b>کانفیگ 2 - سرعت بالا:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${fastConfig}</code>` : ''}`,
-            parse_mode: "HTML",
-
-          }
-        ],
+      const subLinkQR = await qrGenerator(subLink)
+      bot.sendPhoto(from.id, subLinkQR,
+        {
+          caption: `🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${total > 0 ? `${remainingTraffic} گیگ` : 'نامحدود'}\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n\n♻️ <b>لینک آپدیت خودکار: </b>(روی لینک پایین بزنید تا کپی شود 👇)\n<code>${subLink}</code>` : ''}`,
+          parse_mode: "HTML",
+        }
       );
     })
   } catch (err) {
@@ -882,7 +860,7 @@ bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
 bot.onText(/🔰 آموزش اتصال/, async ({ from }) => {
   const baseCheckingStatus = await baseChecking(from.id)
   if (!baseCheckingStatus) return
-  const botMsg = '‼️ <u><b>حتما از آخرین نسخه نرم افزارها استفاده کنید</b></u> ‼️\n\n👇بر اساس سیستم عامل خود یکی از نرم افزارهای زیر را انتخاب کنید👇'
+  const botMsg = '⚠️ <u><b>حتما از آخرین نسخه هر نرم افزار که در مقالات پایین قرار دارد استفاده کنید</b></u> ⚠️\n\n<b>🍀 اندروید: </b> Hiddify, v2rayNG\n<b>🍎 آی او اس (آیفون): </b>V2BOX\n<b>🖥️ ویندوز: </b>V2rayN\n<b>💻 مک: </b>V2Box\n\nبر اساس سیستم عامل خود یکی از نرم افزارهای زیر را انتخاب کنید👇'
   bot.sendMessage(from.id, botMsg, {
     reply_markup: {
       inline_keyboard: buttons.education,
@@ -967,11 +945,10 @@ bot.on("callback_query", async (query) => {
       }
       const { subId } = await vpn.addTestConfig(user.id)
       const subLink = vpn.getSubLink(subId)
-      const { stableConfig } = await getConfigFromSub(subLink)
       user.tested = true
       db.write()
 
-      bot.sendMessage(from.id, `🎁 <b>حجم</b>: نامحدود\n⏰ <b>مدت استفاده</b>: ۱ ساعت\n✨ <b>کانفیگ اتصال</b>: (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${stableConfig}</code>\n\n👇 بر اساس نرم افزاری که در مرحله قبل نصب و یا بروزرسانی کردین، آموزش نحوه اتصال در آن نرم افزار را مشاهده بفرمایید👇`,
+      bot.sendMessage(from.id, `🎁 <b>حجم</b>: نامحدود\n⏰ <b>مدت استفاده</b>: ۱ ساعت\n♻️ <b>لینک آپدیت خودکار</b>: (روی لینک پایین بزنید تا کپی شود 👇)\n\n<code>${subLink}</code>\n\n👇 بر اساس نرم افزاری که در مرحله قبل نصب و یا بروزرسانی کردین، آموزش نحوه اتصال در آن نرم افزار را مشاهده بفرمایید👇`,
         {
           parse_mode: "HTML",
           reply_markup: JSON.stringify({
@@ -1278,3 +1255,19 @@ server.listen(port, '0.0.0.0', async () => {
     cleanExpiredOrders()
   }).start();
 });
+
+
+
+
+// const docLinks = {
+//   withSubLinks: {
+//     v2rayNG: "https://telegra.ph/%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-%D8%A7%D9%86%D8%AF%D8%B1%D9%88%DB%8C%D8%AF-%D8%A8%D8%A7-V2rayNG-08-03",
+//     hiddify: "https://telegra.ph/%D8%A2%D9%85%D9%88%D8%B2%D8%B4-%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-%D8%A7%D9%86%D8%AF%D8%B1%D9%88%DB%8C%D8%AF-%D8%A8%D8%A7-HiddifyNG-08-03",
+//     v2box: "https://telegra.ph/%D8%A2%D9%85%D9%88%D8%B2%D8%B4-%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-IOS-%D8%A8%D8%A7-%D9%86%D8%B1%D9%85-%D8%A7%D9%81%D8%B2%D8%A7%D8%B1-V2Box-08-03",
+//   },
+//   manually: {
+//     v2rayNG: "https://telegra.ph/%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-%D8%A7%D9%86%D8%AF%D8%B1%D9%88%DB%8C%D8%AF-%D8%A8%D8%A7-V2rayNG-07-29",
+//     hiddify: "https://telegra.ph/%D8%A2%D9%85%D9%88%D8%B2%D8%B4-%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-%D8%A7%D9%86%D8%AF%D8%B1%D9%88%DB%8C%D8%AF-%D8%A8%D8%A7-HiddifyNG-07-29",
+//     v2box: "https://telegra.ph/%D8%A2%D9%85%D9%88%D8%B2%D8%B4-%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-IOS-%D8%A8%D8%A7-%D9%86%D8%B1%D9%85-%D8%A7%D9%81%D8%B2%D8%A7%D8%B1-V2Box-07-29",
+//   }
+// }
