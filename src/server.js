@@ -272,6 +272,26 @@ let api = {
           });
       });
     },
+    deleteClient: async (inboundId, uuid) => {
+      return new Promise(async (resolve, reject) => {
+        const options = {
+          headers: {
+            Cookie: `session=${api.xui.session.token}=`
+          }
+        }
+        await axios
+          .post(process.env.XUI_API + `/${inboundId}/delClient/${uuid}`, {}, options)
+          .then((response) => {
+            if (!response.data.success) {
+              throw response.data.msg;
+            }
+            resolve();
+          })
+          .catch((error) => {
+            reject(`API call error [xui/deleteClient]: ${error}`);
+          });
+      });
+    },
     getClientInfo: async (email) => {
       return new Promise(async (resolve, reject) => {
         const options = {
@@ -335,30 +355,41 @@ let api = {
 };
 
 const vpn = {
-  addConfig: async (userId, orderId, plan) => {
-    const config = vpn.createConfigObj(userId, orderId, plan.traffic, plan.period, plan.limit_ip)
+  addConfig: async (userId, orderId, plan, uuid) => {
+    const config = vpn.createConfigObj(userId, orderId, plan.traffic, plan.period, plan.limit_ip, false, uuid)
     await api.xui.addClient(INBOUND_ID, config)
     return { inbound_id: INBOUND_ID, ...config }
+  },
+  renewConfig: async (userId, orderId, plan) => {
+    const subLink = vpn.getSubLink(orderId)
+    const { stableConfig } = await getConfigFromSub(subLink)
+    const matches = stableConfig.match(/:\/\/(.*?)@/);
+    if (matches && matches.length > 1) {
+      const uuid = matches[1];
+      await api.xui.deleteClient(INBOUND_ID, uuid)
+      await vpn.addConfig(userId, orderId, plan, uuid)
+    } else {
+      console.log('Can not find uuid in previous config for renew process!');
+      throw 'Can not find uuid in previous config for renew process!'
+    }
   },
   addTestConfig: async (userId) => {
     const testConfig = vpn.createConfigObj(userId, null, 2, 0.041, 1, true)
     await api.xui.addClient(INBOUND_ID, testConfig)
     return { inbound_id: INBOUND_ID, ...testConfig }
   },
-  createConfigObj: (userId, orderId, traffic, period, limitIp, isTest = false) => {
-    const uuid = uuidv4()
+  createConfigObj: (userId, orderId, traffic, period, limitIp, isTest = false, uuid) => {
     const expiryTime = moment().add(period * 24 * 60 * 60 * 1000).valueOf()
     return {
-      alterId: 0,
-      email: `${userId}-${isTest ? "test" : orderId}`,
-      enable: true,
-      expiryTime,
-      id: uuid,
+      id: uuid || uuidv4(),
       flow: 'xtls-rprx-vision',
+      email: `${userId}-${isTest ? "test" : orderId}`,
       limitIp: limitIp + 1,
-      subId: isTest ? `test-${userId}` : orderId,
+      totalGB: traffic * 1024 * 1024 * 1024,
+      expiryTime,
+      enable: true,
       tgId: "",
-      totalGB: traffic * 1024 * 1024 * 1024
+      subId: isTest ? `test-${userId}` : `${orderId}`,
     }
   },
   getSubLink: (subId) => {
@@ -653,32 +684,48 @@ bot.onText(/ok/, async ({ from, text }) => {
         const order = orders.waiting[orderId];
         if (order.amount == price.replace(/\,/g, '')) {
           const [userId, messageId] = [order.user_id, order.message_id]
+          const parentId = order?.parentId
           delete order.message_id
           order.trashMessages.map((msgId) => {
             bot.deleteMessage(userId, msgId);
           })
           delete order.trashMessages
-          orders.verified[order.id] = { ...order, paid_at: moment().format().slice(0, 19) }
-          delete orders.waiting[orderId]
-          bot.deleteMessage(userId, messageId);
-          db.write()
-          const config = await vpn.addConfig(userId, orderId, order.plan)
-          const subLink = vpn.getSubLink(config.subId)
-          const subLinkQR = await qrGenerator(subLink)
-          bot.sendPhoto(userId, subLinkQR, {
-            caption: `✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n♻️ <b>لینک آپدیت خودکار: </b>(روی لینک پایین بزنید تا کپی شود 👇)\n<code>${subLink}</code>`,
-            parse_mode: "HTML",
-          });
-          setTimeout(() => {
-            bot.sendMessage(userId, 'لینک دانلود آخرین نسخه نرم افزار ها به همراه آموزش نحوه اتصال بر اساس سیستم عامل شما در پایین قرار داده شده 👇',
-              {
-                parse_mode: 'HTML',
-                reply_markup: JSON.stringify({
-                  inline_keyboard: buttons.education,
-                  resize_keyboard: true,
-                }),
-              })
-          }, 500)
+          if (parentId) {
+            await vpn.renewConfig(userId, parentId, order.plan)
+
+            orders.verified[parentId] = { ...order, paid_at: moment().format().slice(0, 19), renewed: true }
+            delete orders.verified[parentId].parentId
+            delete orders.waiting[orderId]
+            bot.deleteMessage(userId, messageId);
+            db.write()
+
+            bot.sendMessage(userId, `✅ سرویس <b>${order.id}</b> تا تاریخ <b>${order.expire_at.slice(0, 10)}</b> با موفقیت تمدید شد\n\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال`,
+              { parse_mode: 'HTML' })
+          } else {
+            const config = await vpn.addConfig(userId, orderId, order.plan)
+            const subLink = vpn.getSubLink(config.subId)
+            const subLinkQR = await qrGenerator(subLink)
+
+            orders.verified[order.id] = { ...order, paid_at: moment().format().slice(0, 19) }
+            delete orders.waiting[orderId]
+            bot.deleteMessage(userId, messageId);
+            db.write()
+
+            bot.sendPhoto(userId, subLinkQR, {
+              caption: `✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n♻️ <b>لینک آپدیت خودکار: </b>(روی لینک پایین بزنید تا کپی شود 👇)\n<code>${subLink}</code>`,
+              parse_mode: "HTML",
+            });
+            setTimeout(() => {
+              bot.sendMessage(userId, 'لینک دانلود آخرین نسخه نرم افزار ها به همراه آموزش نحوه اتصال بر اساس سیستم عامل شما در پایین قرار داده شده 👇',
+                {
+                  parse_mode: 'HTML',
+                  reply_markup: JSON.stringify({
+                    inline_keyboard: buttons.education,
+                    resize_keyboard: true,
+                  }),
+                })
+            }, 500)
+          }
           bot.sendMessage(from.id, '✅ Done ✅')
           return
         }
@@ -782,7 +829,7 @@ bot.onText(/🎁 تست نامحدود و رایگان/, async ({ from }) => {
       setTimeout(() => {
         bot.editMessageReplyMarkup(
           JSON.stringify({
-            inline_keyboard: [...buttons.softwares.slice(0, 3), [{ text: '✅ بروزرسانی کردم ✅', callback_data: JSON.stringify({ action: 'generate_test_config' }) }]],
+            inline_keyboard: [...buttons.softwares.slice(0, 3), [{ text: '✅ بروزرسانی کردم ✅', callback_data: JSON.stringify({ act: 'gen_test' }) }]],
             resize_keyboard: true,
           }),
           { chat_id: from.id, message_id: message.message_id })
@@ -810,7 +857,7 @@ bot.onText(/🛍️ خرید سرویس/, async ({ from }) => {
           [
             {
               text: "🛍️ ادامه خرید",
-              callback_data: JSON.stringify({ action: "features" }),
+              callback_data: JSON.stringify({ act: "features" }),
             },
           ],
         ],
@@ -846,8 +893,11 @@ bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
       const subLinkQR = await qrGenerator(subLink)
       bot.sendPhoto(from.id, subLinkQR,
         {
-          caption: `🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${total > 0 ? `${remainingTraffic} گیگ` : 'نامحدود'}\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n\n♻️ <b>لینک آپدیت خودکار: </b>(روی لینک پایین بزنید تا کپی شود 👇)\n<code>${subLink}</code>` : ''}`,
+          caption: `🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${total > 0 ? `${remainingTraffic} گیگ` : 'نامحدود'}\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n\n♻️ <b>لینک آپدیت خودکار: </b>(روی لینک پایین بزنید تا کپی شود 👇)\n<code>${subLink}</code>` : '\n\n⚠️ حجم و یا تاریخ انقضای این سرویس به پایان رسیده. جهت تمدید سرویس روی دکمه زیر بزنید 👇'}`,
           parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [[{ text: '♻️ تمدید سرویس', callback_data: JSON.stringify({ act: 'renew', data: { orderId } }) }]]
+          }
         }
       );
     })
@@ -913,11 +963,11 @@ bot.on("callback_query", async (query) => {
   const messageId = message.message_id;
   const queryData = JSON.parse(data);
 
-  if (queryData.action === "check_channel_subscription") {
+  if (queryData.act === "check_channel_subscription") {
     baseChecking(chatId)
   }
 
-  if (queryData.action === "features") {
+  if (queryData.act === "features") {
     const botMsg =
       `✅ <b>مزایای تمامی سرویس های 🪐 NOVA</b>\n\n💥 دور زدن اینترنت ملی\n💥 مناسب تمامی اپراتور ها\n💥 پشتیبانی از تمامی سیستم عامل ها\n💥مخصوص دانلود با سرعت بالا\n💥 رنج آی پی ثابت\n\n👇 جهت ادامه خرید، کلیک کنید 👇`;
     bot.editMessageText(botMsg, {
@@ -926,7 +976,7 @@ bot.on("callback_query", async (query) => {
       reply_markup: {
         inline_keyboard: [[{
           text: "🛍️ مشاهده سرویس ها", callback_data: JSON.stringify({
-            action: "store",
+            act: "store",
           })
         }]]
       },
@@ -934,7 +984,7 @@ bot.on("callback_query", async (query) => {
     });
   }
 
-  if (queryData.action === 'generate_test_config') {
+  if (queryData.act === 'gen_test') {
     try {
       if (user.tested) {
         bot.sendMessage(
@@ -977,7 +1027,7 @@ bot.on("callback_query", async (query) => {
     }
   }
 
-  if (queryData.action === "store") {
+  if (queryData.act === "store") {
     const botMsg =
       `<b>‼️ تمامی سرویس ها 30 روزه میباشد ‼️</b>\n\n🔻 سرویس مورد نظر خود را انتخاب کنید🔻`;
     bot.editMessageText(botMsg, {
@@ -994,7 +1044,7 @@ bot.on("callback_query", async (query) => {
                   .replace("${SYMBOL}", item.symbol)
                   .replace("${PRICE}", item.final_price),
                 callback_data: JSON.stringify({
-                  action: "plan_detailes",
+                  act: "plan_detailes",
                   data: { planId: item.id },
                 }),
               },
@@ -1007,7 +1057,7 @@ bot.on("callback_query", async (query) => {
     });
   }
 
-  if (queryData.action === "plan_detailes") {
+  if (queryData.act === "plan_detailes") {
     const plan = plans.find((item) => item.id == queryData.data.planId);
 
     const botMsg = `${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n${plan.symbol} <b>حجم:</b> ${plan.traffic > 0 ? `${plan.traffic} گیگ` : 'نامحدود'}\n\n⏰ <b>مدت:</b> ${plan.period} روزه\n\n🎁 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\n😊 برای خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`
@@ -1021,12 +1071,12 @@ bot.on("callback_query", async (query) => {
           [
             {
               text: "⬅️ بازگشت",
-              callback_data: JSON.stringify({ action: "store" }),
+              callback_data: JSON.stringify({ act: "store" }),
             },
             {
               text: "✅ صدور فاکتور",
               callback_data: JSON.stringify({
-                action: "generate_order",
+                act: "gen_order",
                 data: { planId: plan.id },
               }),
             },
@@ -1036,12 +1086,13 @@ bot.on("callback_query", async (query) => {
     });
   }
 
-  if (queryData.action === "generate_order") {
+  if (queryData.act === "gen_order") {
     const plan = plans.find((item) => item.id == queryData.data.planId);
+    const parentId = queryData.data?.parentId
     try {
       const orderId = Math.floor(Math.random() * (999999999 - 100000000 + 1)) + 100000000;
       const amount = (plan.final_price * 10000) - Math.floor(Math.random() * 1000);
-      const paymentLimitTime = moment().add(3600000) // 1 hour
+      const paymentLimitTime = moment().add(32400000) // 9 hour
 
       const order = {
         id: orderId,
@@ -1061,11 +1112,13 @@ bot.on("callback_query", async (query) => {
         expire_at: moment().add(plan.period * 24 * 60 * 60 * 1000).format().slice(0, 19),
         payment_limit_time: paymentLimitTime.valueOf()
       };
+      if (parentId)
+        order.parentId = parseInt(parentId)
       db.data.orders.waiting[orderId] = order;
       db.write();
 
       bot.editMessageText(
-        `🛍️ <b>شماره سرویس: </b>${orderId}\n\n💳 <b>مبلغ نهایی: </b>\n<code>${amount.toLocaleString()}</code> ریال 👉 (روی اعداد ضربه بزنید تا کپی شود)\n\n🏦 <b>شماره کارت: </b>\n<code>${environment === 'pro' ? BANK_ACCOUNT.CARD_NUMBER : '0000-0000-0000-0000'}</code> 👉 (ضربه بزنید تا کپی شود)\n\n👤 <b>صاحب حساب: </b> ${environment === 'pro' ? BANK_ACCOUNT.OWNER_NAME : 'admin'}\n\n⚠️ <b>مهلت پرداخت: </b> تا ساعت <u><b>${paymentLimitTime.format().slice(11, 16)}</b></u> ⚠️\n\n‼️ <u><b>توجه: از رند کردن مبلغ نهایی خودداری کنید </b></u>‼️\n\n✅ جهت تکمیل خرید سرویس، مبلغ <u><b>دقیق</b></u> بالا را به شماره کارت ذکر شده واریز بفرمایید و رسید خود را برای <u><b>پشتیبانی</b></u> ارسال کنید 👇`,
+        `🛍️ <b>شماره سرویس: </b>${parentId || orderId}\n\n💳 <b>مبلغ نهایی: </b>\n<code>${amount.toLocaleString()}</code> ریال 👉 (روی اعداد ضربه بزنید تا کپی شود)\n\n🏦 <b>شماره کارت: </b>\n<code>${environment === 'pro' ? BANK_ACCOUNT.CARD_NUMBER : '0000-0000-0000-0000'}</code> 👉 (ضربه بزنید تا کپی شود)\n\n👤 <b>صاحب حساب: </b> ${environment === 'pro' ? BANK_ACCOUNT.OWNER_NAME : 'admin'}\n\n⚠️ <b>مهلت پرداخت: </b> تا ساعت <u><b>${paymentLimitTime.format().slice(11, 16)}</b></u> ⚠️\n\n‼️ <u><b>توجه: از رند کردن مبلغ نهایی خودداری کنید </b></u>‼️\n\n✅ جهت تکمیل خرید سرویس، مبلغ <u><b>دقیق</b></u> بالا را به شماره کارت ذکر شده واریز بفرمایید و رسید خود را برای <u><b>پشتیبانی</b></u> ارسال کنید 👇`,
         {
           parse_mode: "HTML",
           chat_id: chatId,
@@ -1093,7 +1146,7 @@ bot.on("callback_query", async (query) => {
                 {
                   text: "♻️ تلاش مجدد",
                   callback_data: JSON.stringify({
-                    action: "generate_order",
+                    act: "gen_order",
                     data: { planId: plan.id },
                   }),
                 },
@@ -1101,7 +1154,7 @@ bot.on("callback_query", async (query) => {
               [
                 {
                   text: "⬅️ بازگشت",
-                  callback_data: JSON.stringify({ action: "store" }),
+                  callback_data: JSON.stringify({ act: "store" }),
                 },
               ],
             ],
@@ -1111,7 +1164,7 @@ bot.on("callback_query", async (query) => {
     }
   }
 
-  if (queryData.action === 'education') {
+  if (queryData.act === 'education') {
     switch (queryData.data.device) {
       case 'android':
         bot.sendPhoto(chatId, images.hiddify, {
@@ -1123,6 +1176,34 @@ bot.on("callback_query", async (query) => {
       default:
         break;
     }
+  }
+
+  if (queryData.act === 'renew') {
+    const { orderId } = queryData.data
+    const order = db.data.orders.verified[orderId]
+    const plan = plans.find((item) => item.id == order.plan.id && item.active);
+    if (!plan) {
+      bot.sendMessage(chatId, `😔 متاسفانه درحال حاضر امکان تمدید این سرویس وجود ندارد.\n\n🙏 لطفا از طریق دکمه <b>"🛍️ خرید سرویس"</b> که در منو اصلی ربات قرار دارد، اقدام به خرید سرویس جدید بفرمایید 👇`, { parse_mode: "HTML" });
+      return
+    }
+    bot.sendMessage(chatId, `🛍️ <b>شماره سرویس: </b>${orderId}\n\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n${plan.symbol} <b>حجم:</b> ${plan.traffic > 0 ? `${plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت:</b> ${plan.period} روزه\n\n🎁 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\n⚠️ <u><b>توجه: پس از تمدید سرویس، حجم باقیمانده سرویس قبلی از بین میرود</b></u> ⚠️\n\n😊 برای خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`,
+      {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "✅ صدور فاکتور",
+                callback_data: JSON.stringify({
+                  act: "gen_order",
+                  data: { planId: plan.id, parentId: orderId },
+                }),
+              }
+            ],
+          ],
+        },
+      }
+    );
   }
 });
 
