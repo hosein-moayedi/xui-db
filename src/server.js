@@ -1181,6 +1181,10 @@ bot.on("callback_query", async (query) => {
   if (queryData.act === 'renew') {
     const { orderId } = queryData.data
     const order = db.data.orders.verified[orderId]
+    if (!order) {
+      bot.sendMessage(chatId, '⚠️ این سرویس دیگر در دسترس نمی باشد\n\nلطفا از منو اصلی اقدام به خرید سرویس جدید نمایید 👇');
+      return
+    }
     const plan = plans.find((item) => item.id == order.plan.id && item.active);
     if (!plan) {
       bot.sendMessage(chatId, `😔 متاسفانه درحال حاضر امکان تمدید این سرویس وجود ندارد.\n\n🙏 لطفا از طریق دکمه <b>"🛍️ خرید سرویس"</b> که در منو اصلی ربات قرار دارد، اقدام به خرید سرویس جدید بفرمایید 👇`, { parse_mode: "HTML" });
@@ -1234,66 +1238,96 @@ app.get("/sub/:order_id", async (req, res) => {
 });
 
 app.post("/c2c-transaction-verification", async (req, res) => {
-  // const { content, secret_key } = req.body
-  // if (secret_key !== process.env.C2C_TRANSACTION_VERIFICATION_SECRET_KEY) {
-  //   res.status(403).json({ msg: "invalid secretkey!", success: false });
-  //   return
-  // }
-  // console.log("content: ", content);
+  const { content, secret_key } = req.body
+  if (secret_key !== process.env.C2C_TRANSACTION_VERIFICATION_SECRET_KEY) {
+    res.status(403).json({ msg: "invalid secretkey!", success: false });
+    return
+  }
 
-  // let formattedMessage = "";
-  // for (let i = 0; i < content.length; i += 4) {
-  //   formattedMessage += "\\u" + content.substr(i, 4);
-  // }
-  // console.log(formattedMessage);
+  let formattedMessage = "";
+  for (let i = 0; i < content.length; i += 4) {
+    formattedMessage += "\\u" + content.substr(i, 4);
+  }
 
-  // const persianText = formattedMessage.replace(/\\u([\d\w]{4})/gi, (match, grp) => {
-  //   return String.fromCharCode(parseInt(grp, 16));
-  // });
-  // console.log(persianText);
+  const persianText = formattedMessage.replace(/\\u([\d\w]{4})/gi, (match, grp) => {
+    return String.fromCharCode(parseInt(grp, 16));
+  });
 
-  // const bankRegex = /بلو\nواریز پول\n محمدحسین عزیز، ([\d,]+)/;
+  const bankRegex = /بلو\nواریز پول\n محمدامین عزیز، ([\d,]+)/;
 
-  // const bankMatch = persianText.match(bankRegex);
+  const bankMatch = persianText.match(bankRegex);
 
-  // if (bankMatch) {
-  //   let price = bankMatch[1];
-  //   console.log(price.replace(/\,/g, ''));
+  if (bankMatch) {
+    let price = bankMatch[1];
+    const { orders } = db.data
 
-  //   const { orders } = db.data
-  //   let userId, messageId
+    try {
+      for (const orderId in orders.waiting) {
+        const order = orders.waiting[orderId];
+        if (order.amount == price.replace(/\,/g, '')) {
 
-  //   try {
-  //     for (const orderId in orders.waiting) {
-  //       const order = orders.waiting[orderId];
-  //       if (order.amount == price.replace(/\,/g, '')) {
-  //         [userId, messageId] = [order.user_id, order.message_id]
-  //         delete order.message_id
-  //         orders.verified[order.id] = { ...order, paid_at: moment().format().slice(0, 19) }
-  //         delete orders.waiting[orderId]
-  //         bot.deleteMessage(userId, messageId);
+          const [userId, messageId] = [order.user_id, order.message_id]
+          const parentId = order?.parentId
+          delete order.message_id
+          order.trashMessages.map((msgId) => {
+            bot.deleteMessage(userId, msgId);
+          })
+          delete order.trashMessages
+          if (parentId) {
+            await vpn.renewConfig(userId, parentId, order.plan)
 
-  //         const config = await vpn.addConfig(userId, orderId, order.plan)
-  //         db.data.users[userId].configs.push({
-  //           ...config,
-  //           orderId: order.id
-  //         })
-  //         db.write()
-  //         const subLink = vpn.getSubLink(config.subId)
-  //         bot.sendMessage(userId, `✅ پرداخت شما برای سفارش ${orderId} با موفقیت تایید شد.\n\n😇 ابتدا بر روی لینک آپدیت زیر کلیک کرده تا کپی شود و سپس برای مشاهده نحوه اتصال، در منو اصلی ربات بر روی دکمه <b>«👨🏻‍🏫 آموزش اتصال»</b> کلیک کنید\n\n<code>${subLink}</code>`, { parse_mode: "HTML" });
-  //         res.status(200).json({ msg: "verified", success: true });
-  //         return
-  //       }
-  //     }
-  //   } catch (err) {
-  //     console.error("❌ Error: config_generation> ", err);
-  //     bot.sendMessage(userId, "❌ متاسفانه مشکلی در تایید پرداخت یا ساخت کانفیگ به وجود آمده. لطفا به پشتیبانی پیام دهید 🙏");
-  //   }
-  // } else {
-  //   console.log('No match found.');
-  // }
+            orders.verified[parentId] = { ...order, paid_at: moment().format().slice(0, 19), renewed: true }
+            delete orders.verified[parentId].parentId
+            delete orders.waiting[orderId]
+            bot.deleteMessage(userId, messageId);
+            db.write()
 
-  // res.status(404).json({ msg: "transaction not found!", success: false });
+            bot.sendMessage(userId, `✅ سرویس <b>${order.id}</b> تا تاریخ <b>${order.expire_at.slice(0, 10)}</b> با موفقیت تمدید شد\n\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال`,
+              { parse_mode: 'HTML' })
+          } else {
+            const config = await vpn.addConfig(userId, orderId, order.plan)
+            const subLink = vpn.getSubLink(config.subId)
+            const subLinkQR = await qrGenerator(subLink)
+
+            orders.verified[order.id] = { ...order, paid_at: moment().format().slice(0, 19) }
+            delete orders.waiting[orderId]
+            bot.deleteMessage(userId, messageId);
+            db.write()
+
+            bot.sendPhoto(userId, subLinkQR, {
+              caption: `✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n♻️ <b>لینک آپدیت خودکار: </b>(روی لینک پایین بزنید تا کپی شود 👇)\n<code>${subLink}</code>`,
+              parse_mode: "HTML",
+            });
+            setTimeout(() => {
+              bot.sendMessage(userId, 'لینک دانلود آخرین نسخه نرم افزار ها به همراه آموزش نحوه اتصال بر اساس سیستم عامل شما در پایین قرار داده شده 👇',
+                {
+                  parse_mode: 'HTML',
+                  reply_markup: JSON.stringify({
+                    inline_keyboard: buttons.education,
+                    resize_keyboard: true,
+                  }),
+                })
+            }, 500)
+          }
+          const user = db.data.users[userId]
+          bot.sendMessage(ownerId,
+            `🔔 <b>Confirmed by ESP32</b> 🔔\n\n🛍️ <b>Order: </b>${parentId || orderId}\n🍭 <b>Plan: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} Gb` : 'Unlimited'}\n💳 <b>Price: </b>${(order.amount).toLocaleString()}\n♻️ Renew: ${parentId ? 'Yes' : 'No'}\n\n🗣️ <code>${user.tg_name}</code>\n${user.tg_username && `👋 <code>${user.tg_username}</code>`}\n🎗️ <code>${user.id}</code>`,
+            { parse_mode: 'HTML' }
+          )
+          return
+        }
+      }
+    } catch (err) {
+      console.error("❌ Error: config_generation> ", err);
+      bot.sendMessage(userId, "❌ متاسفانه مشکلی در تایید پرداخت به وجود آمده. لطفا به پشتیبانی پیام دهید 🙏");
+      bot.sendMessage(ownerId, "❌ A problem in confirm transaction! 🙏");
+    }
+  } else {
+    console.log('No match found.');
+  }
+
+  console.log('⚠️ c2c transaction not found!');
+  res.status(404).json({ msg: "transaction not found!", success: false });
 });
 
 const checkXUISessionExpiration = () => {
