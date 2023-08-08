@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "dev-release": "systemctl restart nova-vpn-bot-dev",
+    "dev-release": "systemctl enable nova-vpn-bot-dev && systemctl restart nova-vpn-bot-dev",
     "dev-stop": "systemctl disable nova-vpn-bot-dev && systemctl stop nova-vpn-bot-dev",
     "pro": "NODE_ENV=pro nodemon src/server.js",
-    "pro-release": "systemctl restart nova-vpn-bot-pro",
+    "pro-release": "systemctl enable nova-vpn-bot-pro && systemctl restart nova-vpn-bot-pro",
     "pro-stop": "systemctl disable nova-vpn-bot-pro && systemctl stop nova-vpn-bot-pro"
   },
   "keywords": [],
