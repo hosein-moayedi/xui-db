@@ -389,7 +389,7 @@
       "id": 1085276188,
       "tg_name": "Support 👨🏻‍💻",
       "tg_username": "nova_vpn_support",
-      "tested": false,
+      "tested": true,
       "created_at": "2023-08-01T17:45:43"
     },
     "1098963684": {
@@ -943,6 +943,48 @@
   "orders": {
     "waiting": {},
     "verified": {
+      "142138037": {
+        "id": 142138037,
+        "user_id": 1085276188,
+        "plan": {
+          "id": 98,
+          "name": "🥉 25 گیگ     1 کاربره   💳 59   تومان ",
+          "symbol": "🥉",
+          "traffic": 25,
+          "period": 30,
+          "original_price": 75,
+          "final_price": 59,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
+        },
+        "amount": 589657,
+        "created_at": "2023-08-08T19:54:30",
+        "expire_at": "2023-09-07T19:54:30",
+        "payment_limit_time": 1691544270494,
+        "paid_at": "2023-08-08T19:55:04"
+      },
+      "160045082": {
+        "id": 160045082,
+        "user_id": 1265388613,
+        "plan": {
+          "id": 103,
+          "name": "🎖️ نامحدود     1 کاربره   💳 150 تومان",
+          "symbol": "🎖️",
+          "traffic": 0,
+          "period": 30,
+          "original_price": 200,
+          "final_price": 150,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
+        },
+        "amount": 1499158,
+        "created_at": "2023-08-07T20:23:06",
+        "expire_at": "2023-09-06T20:23:06",
+        "payment_limit_time": 1691459586000,
+        "paid_at": "2023-08-07T20:35:18"
+      },
       "204269731": {
         "id": 204269731,
         "user_id": 112873897,
@@ -1131,6 +1173,27 @@
         "expire_at": "2023-09-05T14:29:32",
         "payment_limit_time": 1691351972665,
         "paid_at": "2023-08-06T14:51:30"
+      },
+      "503469770": {
+        "id": 503469770,
+        "user_id": 1085276188,
+        "plan": {
+          "id": 103,
+          "name": "🎖️ نامحدود     1 کاربره   💳 150 تومان",
+          "symbol": "🎖️",
+          "traffic": 0,
+          "period": 30,
+          "original_price": 200,
+          "final_price": 150,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
+        },
+        "amount": 1499532,
+        "created_at": "2023-08-08T18:07:25",
+        "expire_at": "2023-09-07T18:07:25",
+        "payment_limit_time": 1691537845708,
+        "paid_at": "2023-08-08T18:07:33"
       },
       "572082814": {
         "id": 572082814,
