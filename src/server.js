@@ -362,7 +362,7 @@ const vpn = {
   },
   renewConfig: async (userId, orderId, plan) => {
     const subLink = vpn.getSubLink(orderId)
-    const { stableConfig } = await getConfigFromSub(subLink)
+    const { stableConfig } = await vpn.getConfigFromSub(subLink)
     const matches = stableConfig.match(/:\/\/(.*?)@/);
     if (matches && matches.length > 1) {
       const uuid = matches[1];
@@ -389,11 +389,22 @@ const vpn = {
       expiryTime,
       enable: true,
       tgId: "",
-      subId: isTest ? `test-${userId}` : `${orderId}`,
+      subId: isTest ? `${userId}-test` : `${orderId}`,
     }
   },
   getSubLink: (subId) => {
     return `${process.env.REALEY_SUB}/${subId}`
+  },
+  getConfigFromSub: async (subLink) => {
+    try {
+      let response = await axios.get(subLink)
+      let content = Buffer.from(response.data, 'base64')
+      content = content.toString('utf-8')
+      const [fastConfig, stableConfig] = content.split('\n\n')
+      return { stableConfig, fastConfig }
+    } catch (err) {
+      console.log(err);
+    }
   }
 }
 
@@ -523,51 +534,76 @@ const cleanExpiredOrders = () => {
 
 const cleanExpiredConfigs = async () => {
   try {
-    await api.xui.depletedClients()
+    const date = Date.now()
+    const query = `SELECT email FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND enable=0 AND (expiry_time + 86400000) < ${date}`; // get expired configs that past more than 24 hours
+    const rows = await api.db(query)
+    const configs = [...rows];
+    if (configs.length > 0) {
+      configs.map(async ({ email }) => {
+        const [, orderId] = email.split('-')
+        const subId = vpn.getSubLink(orderId == 'test' ? email : orderId)
+        const { stableConfig } = await vpn.getConfigFromSub(subId)
+        const matches = stableConfig.match(/:\/\/(.*?)@/);
+        if (matches && matches.length > 1) {
+          const uuid = matches[1];
+          await api.xui.deleteClient(INBOUND_ID, uuid)
+        }
+      })
+    }
   } catch (err) {
-    console.log("Error in cleanExpiredConfigs >> ", err);
+    console.log('cleanExpiredConfigs => ', err);
   }
 }
 
 const checkConfigsExpiration = async () => {
-  // try {
-  //   const query = `SELECT email, up, down, total, expiry_time FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND enable=1`;
-  //   const rows = await api.db(query)
-  //   const configs = [...rows];
-  //   if (configs.length > 0) {
-  //     configs.map(async ({ email, up, down, total, expiry_time }) => {
-  //       const [userId, orderId] = email.split('-')
+  try {
+    const date = Date.now()
+    const query = `SELECT email, expiry_time FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND enable=1 AND email NOT LIKE '%-test' AND expiry_time < ${date + 172800000}`; // get items that is less than 48 hours
+    const rows = await api.db(query)
+    const configs = [...rows];
+    if (configs.length > 0) {
+      configs.map(async ({ email, expiry_time }) => {
+        const [userId, orderId] = email.split('-')
+        bot.sendMessage(userId, `⚠️ <b>هشدار انقضای سرویس: </b> کم تر از <b>${expiry_time < (date + 86400000) ? '24' : '48'} ساعت </b>به انقضای سرویس <b>${orderId}</b> باقی مانده است.\n\n♻️ لطفا جهت جلوگیری از قطع اتصال، اقدام به تمدید سرویس نمایید 👇`,
+          {
+            parse_mode: 'HTML',
+            reply_markup: {
+              inline_keyboard: [[{ text: '♻️ تمدید سرویس', callback_data: JSON.stringify({ act: 'renew', data: { orderId } }) }]]
+            }
+          })
+      })
+    }
+  } catch (err) {
+    console.log('checkConfigsExpiration => ', err);
+  }
+}
 
-
-
-
-  //       const { plan, paid_at, expire_at } = db.data.orders.verified[orderId]
-  //       let remainingTraffic = ((total - up - down) / 1024 / 1024 / 1024).toFixed(2)
-  //       remainingTraffic = remainingTraffic > 0 ? remainingTraffic : 0
-  //       const subLink = vpn.getSubLink(orderId)
-  //       const { fastConfig, stableConfig } = await getConfigFromSub(subLink)
-  //       const fastConfigQR = await qrGenerator(fastConfig)
-  //       const stableConfigQR = await qrGenerator(stableConfig)
-  //       bot.sendMediaGroup(from.id,
-  //         [
-  //           {
-  //             type: 'photo',
-  //             media: fastConfigQR,
-  //           }, {
-  //             type: 'photo',
-  //             media: stableConfigQR,
-  //             caption: `🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${remainingTraffic} گیگ\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n\n🚀 <b>کانفیگ - پرسرعت:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${fastConfig}</code>\n\n\n✨ <b>کانفیگ - همیشه متصل:</b> (روی کانفیگ بزنید تا کپی شود 👇)\n\n<code>${stableConfig}</code>` : ''}`,
-  //             parse_mode: "HTML",
-
-  //           }
-  //         ],
-  //       );
-  //     })
-  //   }
-  // } catch (err) {
-  //   console.log(err);
-  //   bot.sendMessage(from.id, "🤕 اوه اوه!\n🤔 فکر کنم مشکلی در دریافت سرویس های شما پیش اومده\n\n😇 لطفا بعد از چند دقیقه دوباره تلاش کنید.");
-  // }
+const checkConfigsTraffics = async () => {
+  try {
+    const query = `SELECT email, up, down, total FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND enable=1 AND email NOT LIKE '%-test' AND sent_traffic_notif=false`; // get items that is less than 48 hours
+    const rows = await api.db(query)
+    const configs = [...rows];
+    if (configs.length > 0) {
+      configs.map(async ({ email, up, down, total }) => {
+        if (total != 0) {
+          const [userId, orderId] = email.split('-')
+          const remainingTraffic = ((total - up - down) / 1024 / 1024 / 1024).toFixed(2)
+          if (remainingTraffic <= 1.00) {
+            await api.db(`UPDATE client_traffics SET sent_traffic_notif = 1 WHERE email = '${email}';`)
+            bot.sendMessage(userId, `⚠️ <b>هشدار حجم: </b> کم تر از <b>1 گیگابایت</b> از حجم سرویس <b>${orderId}</b> باقی مانده است.\n\n♻️ لطفا جهت جلوگیری از قطع اتصال، اقدام به تمدید سرویس نمایید 👇`,
+              {
+                parse_mode: 'HTML',
+                reply_markup: {
+                  inline_keyboard: [[{ text: '♻️ تمدید سرویس', callback_data: JSON.stringify({ act: 'renew', data: { orderId } }) }]]
+                }
+              })
+          }
+        }
+      })
+    }
+  } catch (err) {
+    console.log('checkConfigsTraffics => ', err);
+  }
 }
 
 const qrGenerator = async (text) => {
@@ -626,18 +662,6 @@ const baseChecking = async (userId, isStartCommand) => {
   //   return false
   // }
   return true
-}
-
-const getConfigFromSub = async (subLink) => {
-  try {
-    let response = await axios.get(subLink)
-    let content = Buffer.from(response.data, 'base64')
-    content = content.toString('utf-8')
-    const [fastConfig, stableConfig] = content.split('\n\n')
-    return { stableConfig, fastConfig }
-  } catch (err) {
-    console.log(err);
-  }
 }
 
 bot.onText(/\/start/, async ({ from }) => {
@@ -765,7 +789,7 @@ bot.onText(/msg/, async ({ from, text }) => {
             break;
 
           case "sub":
-            const query = `SELECT email FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND email LIKE '%-%' AND email NOT LIKE '%-test'`;
+            const query = `SELECT email FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND email NOT LIKE '%-test'`;
             let rows = await api.db(query)
             if (rows.length == 0) {
               bot.sendMessage(from.id, '⚠️ There is no any sub user! ⚠️')
@@ -1190,7 +1214,7 @@ bot.on("callback_query", async (query) => {
       bot.sendMessage(chatId, `😔 متاسفانه درحال حاضر امکان تمدید این سرویس وجود ندارد.\n\n🙏 لطفا از طریق دکمه <b>"🛍️ خرید سرویس"</b> که در منو اصلی ربات قرار دارد، اقدام به خرید سرویس جدید بفرمایید 👇`, { parse_mode: "HTML" });
       return
     }
-    bot.sendMessage(chatId, `🛍️ <b>شماره سرویس: </b>${orderId}\n\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n${plan.symbol} <b>حجم:</b> ${plan.traffic > 0 ? `${plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت:</b> ${plan.period} روزه\n\n🎁 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\n⚠️ <u><b>توجه: پس از تمدید سرویس، حجم باقیمانده سرویس قبلی از بین میرود</b></u> ⚠️\n\n😊 برای خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`,
+    bot.sendMessage(chatId, `🛍️ <b>شماره سرویس: </b>${orderId}\n\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n${plan.symbol} <b>حجم:</b> ${plan.traffic > 0 ? `${plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت:</b> ${plan.period} روزه\n\n🎁 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\n⚠️ <u><b>توجه: پس از تمدید سرویس، حجم و زمان باقیمانده سرویس قبلی از بین خواهد رفت </b></u> ⚠️\n\n😊 برای خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`,
       {
         parse_mode: "HTML",
         reply_markup: {
@@ -1361,14 +1385,15 @@ server.listen(port, '0.0.0.0', async () => {
     checkOrdersTimeout()
   }).start();
 
-  // cron.schedule('* */1 * * * *', () => {
-  //   checkConfigsExpiration()
-  // }).start();
+  cron.schedule('0 * * * *', () => {
+    checkConfigsTraffics()
+  }).start();
 
-  cron.schedule('0 */24 * * *', () => {
+  cron.schedule('0 22 * * *', () => {
+    checkConfigsExpiration()
     cleanExpiredConfigs()
     cleanExpiredOrders()
-  }).start();
+  }).start()
 });
 
 
