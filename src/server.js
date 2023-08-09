@@ -563,14 +563,16 @@ const checkConfigsExpiration = async () => {
     const configs = [...rows];
     if (configs.length > 0) {
       configs.map(async ({ email, expiry_time }) => {
-        const [userId, orderId] = email.split('-')
-        bot.sendMessage(userId, `⚠️ <b>هشدار انقضای سرویس: </b> کم تر از <b>${expiry_time < (date + 86400000) ? '24' : '48'} ساعت </b>به انقضای سرویس <b>${orderId}</b> باقی مانده است.\n\n♻️ لطفا جهت جلوگیری از قطع اتصال، اقدام به تمدید سرویس نمایید 👇`,
-          {
-            parse_mode: 'HTML',
-            reply_markup: {
-              inline_keyboard: [[{ text: '♻️ تمدید سرویس', callback_data: JSON.stringify({ act: 'renew', data: { orderId } }) }]]
-            }
-          })
+        if (expiry_time != 0) {
+          const [userId, orderId] = email.split('-')
+          bot.sendMessage(userId, `⚠️ <b>هشدار انقضای سرویس: </b> کم تر از <b>${expiry_time < (date + 86400000) ? '24' : '48'} ساعت </b>به انقضای سرویس <b>${orderId}</b> باقی مانده است.\n\n♻️ لطفا جهت جلوگیری از قطع اتصال، اقدام به تمدید سرویس نمایید 👇`,
+            {
+              parse_mode: 'HTML',
+              reply_markup: {
+                inline_keyboard: [[{ text: '♻️ تمدید سرویس', callback_data: JSON.stringify({ act: 'renew', data: { orderId } }) }]]
+              }
+            })
+        }
       })
     }
   } catch (err) {
