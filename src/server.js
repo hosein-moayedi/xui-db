@@ -442,7 +442,7 @@ const buttons = {
   ],
   softwares: [
     [{
-      text: '⬇️ اندروید - Hiddify ⬇️',
+      text: '⬇️ اندروید - Hiddify (پیشنهاد ما) ⬇️',
       url: 'http://turbo.torgod.site/softwares/HiddifyNG.apk'
     }],
     [{
@@ -783,14 +783,15 @@ bot.onText(/msg/, async ({ from, text }) => {
 
       if (recipient && message) {
         switch (recipient) {
-          case "all":
+          case "all": {
             for (const userId in users) {
-              bot.sendMessage(userId, message)
+              if (userId !== ownerId)
+                bot.sendMessage(userId, message)
             }
             bot.sendMessage(from.id, `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients</b>: ${recipient}\n\n✉️ <b>Message:</b>\n\n${message}`, { parse_mode: "HTML" })
             break;
-
-          case "sub":
+          }
+          case "sub": {
             const query = `SELECT email FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND email NOT LIKE '%-test'`;
             let rows = await api.db(query)
             if (rows.length == 0) {
@@ -800,7 +801,7 @@ bot.onText(/msg/, async ({ from, text }) => {
             const recipients = []
             rows.map(({ email }) => {
               const userId = email.split('-')[0]
-              if (!recipients.find((item) => item == userId)) {
+              if (!recipients.find((item) => item == userId) && userId !== ownerId) {
                 recipients.push(userId)
               }
             })
@@ -814,8 +815,34 @@ bot.onText(/msg/, async ({ from, text }) => {
             botMsgToAdmin = botMsgToAdmin + `✉️ <b>Message:</b>\n\n${message}`
             bot.sendMessage(from.id, botMsgToAdmin, { parse_mode: "HTML" })
             break;
-
-          default:
+          }
+          case 'unsub': {
+            const query = `SELECT email FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND email NOT LIKE '%-test'`;
+            let rows = await api.db(query)
+            const allUsers = Object.getOwnPropertyNames(users)
+            const subUsers = []
+            let recipients = []
+            rows.map(({ email }) => {
+              const userId = email.split('-')[0]
+              if (!subUsers.find((item) => item == userId)) {
+                subUsers.push(userId)
+              }
+            })
+            recipients = allUsers.filter(element => !subUsers.includes(element))
+            let botMsgToAdmin = `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients:</b>\n\n`
+            recipients.map((userId) => {
+              if (userId !== ownerId) {
+                const userInfo = users[userId]
+                bot.sendMessage(userInfo.id, message)
+                botMsgToAdmin = botMsgToAdmin + `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
+              }
+            })
+            botMsgToAdmin = botMsgToAdmin + `\n\n\n👥 <b>Total Recipients: </b>${recipients.length}\n\n`
+            botMsgToAdmin = botMsgToAdmin + `✉️ <b>Message:</b>\n\n${message}`
+            bot.sendMessage(from.id, botMsgToAdmin, { parse_mode: "HTML" })
+            break;
+          }
+          default: {
             const targets = recipient.split(',')
             let notValid = false
             targets.map((targetId) => {
@@ -837,6 +864,7 @@ bot.onText(/msg/, async ({ from, text }) => {
             botMsg = botMsg + `✉️ <b>Message:</b>\n\n${message}`
             bot.sendMessage(from.id, botMsg, { parse_mode: "HTML" })
             break;
+          }
         }
       }
     } catch (err) {
@@ -874,23 +902,19 @@ bot.onText(/🛍️ خرید سرویس/, async ({ from }) => {
     bot.sendMessage(from.id, "🤕 اوه اوه!\n🤔 فکر کنم مشکلی پیش اومده\n\n😇 لطفا بر روی /start بزنید.");
     return
   }
-  bot.sendMessage(
-    from.id,
-    `😇 جهت اطمینان، حتما از منو اصلی اقدام به "<b>🎁 تست نامحدود و رایگان</b>" بفرمایید.\n\n😊 جهت ادامه خرید بر روی دکمه زیر بزنید.`,
-    {
-      reply_markup: JSON.stringify({
-        inline_keyboard: [
-          [
-            {
-              text: "🛍️ ادامه خرید",
-              callback_data: JSON.stringify({ act: "features" }),
-            },
-          ],
-        ],
-      }),
-      parse_mode: "HTML"
+
+  const botMsg =
+    `✅ <b>مزایای تمامی سرویس ها</b>\n\n💥 دور زدن اینترنت ملی\n💥 مناسب تمامی اپراتور ها\n💥 پشتیبانی از تمامی سیستم عامل ها\n💥مخصوص دانلود با سرعت بالا\n💥 رنج آی پی ثابت\n\n👇 جهت ادامه خرید، کلیک کنید 👇`;
+  bot.sendMessage(from.id, botMsg, {
+    reply_markup: {
+      inline_keyboard: [[{
+        text: "🛍️ قیمت و خرید", callback_data: JSON.stringify({
+          act: "store",
+        })
+      }]]
     },
-  );
+    parse_mode: "HTML"
+  });
 });
 
 bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
@@ -991,23 +1015,6 @@ bot.on("callback_query", async (query) => {
 
   if (queryData.act === "check_channel_subscription") {
     baseChecking(chatId)
-  }
-
-  if (queryData.act === "features") {
-    const botMsg =
-      `✅ <b>مزایای تمامی سرویس های 🪐 NOVA</b>\n\n💥 دور زدن اینترنت ملی\n💥 مناسب تمامی اپراتور ها\n💥 پشتیبانی از تمامی سیستم عامل ها\n💥مخصوص دانلود با سرعت بالا\n💥 رنج آی پی ثابت\n\n👇 جهت ادامه خرید، کلیک کنید 👇`;
-    bot.editMessageText(botMsg, {
-      chat_id: chatId,
-      message_id: messageId,
-      reply_markup: {
-        inline_keyboard: [[{
-          text: "🛍️ مشاهده سرویس ها", callback_data: JSON.stringify({
-            act: "store",
-          })
-        }]]
-      },
-      parse_mode: "HTML"
-    });
   }
 
   if (queryData.act === 'gen_test') {
