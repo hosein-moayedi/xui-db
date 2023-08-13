@@ -1286,7 +1286,7 @@ app.post("/c2c-transaction-verification", async (req, res) => {
     return String.fromCharCode(parseInt(grp, 16));
   });
 
-  const bankRegex = /بلو\nواریز پول\n محمدامین عزیز، ([\d,]+)/;
+  const bankRegex = /عزیز، ([\d,]+)/;
 
   const bankMatch = persianText.match(bankRegex);
 
