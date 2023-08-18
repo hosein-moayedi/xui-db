@@ -1,10 +1,11 @@
 BOT_TOKEN=6392127626:AAFtprPUWWMn2hVLpJZULwRLb7_HlTD-EDk
 DIGISWAP=http://api.digiswap.org/api/v1/asset/getPrices
 TRON_SCAN=https://apilist.tronscan.org/api/transaction-info?hash=
-XUI=http://nova.torgod.site:45990
-XUI_SUB=http://nova.torgod.site:2096/sub
-XUI_API=http://nova.torgod.site:45990/panel/api/inbounds
-XUI_DB_API=http://nova.torgod.site:36749/db
+XUI_BASE_DOMAIN=panel.torgod.site
+XUI=http://panel.torgod.site:45990
+XUI_SUB=http://panel.torgod.site:2096/sub
+XUI_API=http://panel.torgod.site:45990/panel/api/inbounds
+XUI_DB_API=http://panel.torgod.site:36749/db
 XUI_USERNAME=C3cZaYP7
 XUI_PASSWORD=Ht9w4rLF
 REALEY_SUB=https://turbo.torgod.site:44096/sub
