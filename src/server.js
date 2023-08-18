@@ -1268,7 +1268,6 @@ bot.on("callback_query", async (query) => {
           const order = db.data.orders.verified[orderId]
           orders.push([{ text: `${orderId} - ${order.plan.symbol}${order.plan.traffic === 0 ? 'نامحدود' : `${order.plan.traffic} گیگ`} - ${order.plan.limit_ip} کاربره`, callback_data: JSON.stringify({ act: 'renew_gen', data: { orderId } }) }])
         })
-        console.log("orders: ", orders);
         bot.sendMessage(chatId, `♻️ <b>تمدید سرویس: </b>\n\n⚠️ <u><b>توجه: پس از تمدید سرویس، حجم و زمان باقیمانده سرویس قبلی از بین خواهد رفت </b></u>\n\n😇 لطفا سرویسی که قصد تمدید آن را دارید را انتخاب بفرمایید 👇`, {
           parse_mode: 'HTML',
           reply_markup: {
