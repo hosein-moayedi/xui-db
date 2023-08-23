@@ -402,9 +402,8 @@ const vpn = {
     try {
       let response = await axios.get(subLink)
       let content = Buffer.from(response.data, 'base64')
-      content = content.toString('utf-8')
-      const [fastConfig, stableConfig] = content.split('\n\n')
-      return { stableConfig, fastConfig }
+      const stableConfig = content.toString('utf-8')
+      return { stableConfig }
     } catch (err) {
       console.log(err);
     }
@@ -1297,8 +1296,8 @@ app.get("/sub/:order_id", async (req, res) => {
     let response = await axios.get(`${process.env.XUI_SUB}/${req.params.order_id}`)
     let content = Buffer.from(response.data, 'base64')
     content = content.toString('utf-8')
-    content = content.replace(/@([^:]+)/, `@${PANEL_IP}`).replace(/#.*/, "#%E2%9A%A1%EF%B8%8F%20Fast%20NOVA")
-    content = content + '\n' + content.replace(/@([^:]+)/, '@turbo.torgod.site').replace(/#.*/, '#%E2%9C%A8%20Stable%20NOVA')
+    content = content.replace(/@([^:]+)/, '@turbo.torgod.site').replace(/#.*/, '#%E2%9C%A8%20Stable%20NOVA')
+    // content = content + '\n' + content.replace(/@([^:]+)/, `@${PANEL_IP}`).replace(/#.*/, "#%E2%9A%A1%EF%B8%8F%20Fast%20NOVA")
     content = btoa(content)
     res.setHeader('Content-Type', response.headers['content-type']);
     res.setHeader('Profile-Title', response.headers['profile-title']);
