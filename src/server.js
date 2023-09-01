@@ -1,6 +1,6 @@
 import axios from "axios";
+import dns from 'dns';
 import dotenv from "dotenv";
-import dns from 'dns'
 import express from "express";
 import fs from 'fs';
 import https from "https";
@@ -138,7 +138,11 @@ const plans = [
 
 let PANEL_IP = '0.0.0.0'
 
-const INBOUND_ID = environment == 'dev' ? 3 : 2
+const MAIN_INBOUND_ID = environment == 'dev' ? 3 : 2
+const INBOUNDS = {
+  dev: [{ id: 5, name: '#%F0%9F%9A%80%20Stable%20NOVA%202%20%28%D9%BE%DB%8C%D8%B4%D9%86%D9%87%D8%A7%D8%AF%DB%8C%29' }, { id: 3, name: '#%E2%9C%A8%20Stable%20NOVA%20' }],
+  pro: [{ id: 4, name: '#%F0%9F%9A%80%20Stable%20NOVA%202%20%28%D9%BE%DB%8C%D8%B4%D9%86%D9%87%D8%A7%D8%AF%DB%8C%29' }, { id: 2, name: '#%E2%9C%A8%20Stable%20NOVA%20' }],
+}
 
 const BANK_ACCOUNT = {
   OWNER_NAME: "محمد امین مویدی یکتا",
@@ -249,10 +253,10 @@ let api = {
           });
       });
     },
-    addClient: async (inboundId, client) => {
+    addClient: async (inbound, client) => {
       return new Promise(async (resolve, reject) => {
         const requestData = {
-          id: inboundId,
+          id: inbound,
           settings: JSON.stringify({
             clients: [client]
           })
@@ -275,7 +279,7 @@ let api = {
           });
       });
     },
-    deleteClient: async (inboundId, uuid) => {
+    deleteClient: async (inbound, uuid) => {
       return new Promise(async (resolve, reject) => {
         const options = {
           headers: {
@@ -283,7 +287,7 @@ let api = {
           }
         }
         await axios
-          .post(process.env.XUI_API + `/${inboundId}/delClient/${uuid}`, {}, options)
+          .post(process.env.XUI_API + `/${inbound}/delClient/${uuid}`, {}, options)
           .then((response) => {
             if (!response.data.success) {
               throw response.data.msg;
@@ -323,7 +327,7 @@ let api = {
           }
         }
         await axios
-          .post(process.env.XUI_API + `/delDepletedClients/${INBOUND_ID}`, null, options)
+          .post(process.env.XUI_API + `/delDepletedClients/${MAIN_INBOUND_ID}`, null, options)
           .then((response) => {
             if (!response.data.success) {
               throw response.data.msg;
@@ -360,16 +364,20 @@ let api = {
 const vpn = {
   addConfig: async (userId, orderId, plan, uuid) => {
     const config = vpn.createConfigObj(userId, orderId, plan.traffic, plan.period, plan.limit_ip, false, uuid)
-    await api.xui.addClient(INBOUND_ID, config)
-    return { inbound_id: INBOUND_ID, ...config }
+    for (const inbound of INBOUNDS[`${environment}`]) {
+      await api.xui.addClient(inbound.id, { ...config, email: config.email.replace('{INBOUND_ID}', inbound.id) })
+    }
+    return { ...config }
   },
   renewConfig: async (userId, orderId, plan) => {
     const subLink = vpn.getSubLink(orderId)
-    const { stableConfig } = await vpn.getConfigFromSub(subLink)
-    const matches = stableConfig.match(/:\/\/(.*?)@/);
+    const subConfigs = await vpn.getConfigFromSub(subLink)
+    const matches = subConfigs[0]?.match(/:\/\/(.*?)@/);
     if (matches && matches.length > 1) {
       const uuid = matches[1];
-      await api.xui.deleteClient(INBOUND_ID, uuid)
+      for (const inbound of INBOUNDS[`${environment}`]) {
+        await api.xui.deleteClient(inbound.id, uuid)
+      }
       await vpn.addConfig(userId, orderId, plan, uuid)
     } else {
       console.log('Can not find uuid in previous config for renew process!');
@@ -378,15 +386,17 @@ const vpn = {
   },
   addTestConfig: async (userId) => {
     const testConfig = vpn.createConfigObj(userId, null, 2, 0.041, 1, true)
-    await api.xui.addClient(INBOUND_ID, testConfig)
-    return { inbound_id: INBOUND_ID, ...testConfig }
+    for (const inbound of INBOUNDS[`${environment}`]) {
+      await api.xui.addClient(inbound.id, { ...testConfig, email: testConfig.email.replace('{INBOUND_ID}', inbound.id) })
+    }
+    return { ...testConfig }
   },
   createConfigObj: (userId, orderId, traffic, period, limitIp, isTest = false, uuid) => {
     const expiryTime = moment().add(period * 24 * 60 * 60 * 1000).valueOf()
     return {
       id: uuid || uuidv4(),
       flow: 'xtls-rprx-vision',
-      email: `${userId}-${isTest ? "test" : orderId}`,
+      email: `${userId}-${isTest ? "test" : orderId}-{INBOUND_ID}`,
       limitIp: limitIp + 1,
       totalGB: traffic * 1024 * 1024 * 1024,
       expiryTime,
@@ -402,8 +412,9 @@ const vpn = {
     try {
       let response = await axios.get(subLink)
       let content = Buffer.from(response.data, 'base64')
-      const stableConfig = content.toString('utf-8')
-      return { stableConfig }
+      content = content.toString('utf-8')
+      const configs = content.split('\n')
+      return configs
     } catch (err) {
       console.log(err);
     }
@@ -537,18 +548,20 @@ const cleanExpiredOrders = () => {
 const cleanExpiredConfigs = async () => {
   try {
     const date = Date.now()
-    const query = `SELECT email FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND enable=0 AND (expiry_time + 86400000) < ${date}`; // get expired configs that past more than 24 hours
+    const query = `SELECT email FROM client_traffics WHERE inbound_id=${MAIN_INBOUND_ID} AND enable=0 AND (expiry_time + 86400000) < ${date}`; // get expired configs that past more than 24 hours
     const rows = await api.db(query)
     const configs = [...rows];
     if (configs.length > 0) {
       configs.map(async ({ email }) => {
         const [, orderId] = email.split('-')
         const subId = vpn.getSubLink(orderId == 'test' ? email : orderId)
-        const { stableConfig } = await vpn.getConfigFromSub(subId)
-        const matches = stableConfig.match(/:\/\/(.*?)@/);
+        const subConfigs = await vpn.getConfigFromSub(subId)
+        const matches = subConfigs[0].match(/:\/\/(.*?)@/);
         if (matches && matches.length > 1) {
           const uuid = matches[1];
-          await api.xui.deleteClient(INBOUND_ID, uuid)
+          for (const inbound of INBOUNDS[`${environment}`]) {
+            await api.xui.deleteClient(inbound.id, uuid)
+          }
         }
       })
     }
@@ -560,7 +573,7 @@ const cleanExpiredConfigs = async () => {
 const checkConfigsExpiration = async () => {
   try {
     const date = Date.now()
-    const query = `SELECT email, expiry_time FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND enable=1 AND email NOT LIKE '%-test' AND expiry_time < ${date + 172800000}`; // get items that is less than 48 hours
+    const query = `SELECT email, expiry_time FROM client_traffics WHERE inbound_id=${MAIN_INBOUND_ID} AND enable=1 AND email NOT LIKE '%-test-%' AND expiry_time < ${date + 172800000}`; // get items that is less than 48 hours
     const rows = await api.db(query)
     const configs = [...rows];
     if (configs.length > 0) {
@@ -584,29 +597,53 @@ const checkConfigsExpiration = async () => {
 
 const checkConfigsTraffics = async () => {
   try {
-    const query = `SELECT email, up, down, total FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND enable=1 AND email NOT LIKE '%-test' AND sent_traffic_notif=false`; // get items that is less than 48 hours
+    const query = `SELECT email, total_usage, total FROM client_traffics WHERE inbound_id=${MAIN_INBOUND_ID} AND enable=1 AND email NOT LIKE '%-test-%' AND sent_traffic_notif=false AND total <> 0;`; // get items that is less than 48 hours
     const rows = await api.db(query)
     const configs = [...rows];
     if (configs.length > 0) {
-      configs.map(async ({ email, up, down, total }) => {
-        if (total != 0) {
-          const [userId, orderId] = email.split('-')
-          const remainingTraffic = ((total - up - down) / 1024 / 1024 / 1024).toFixed(2)
-          if (remainingTraffic <= 1.00) {
-            await api.db(`UPDATE client_traffics SET sent_traffic_notif = 1 WHERE email = '${email}';`)
-            bot.sendMessage(userId, `⚠️ <b>هشدار حجم: </b> کم تر از <b>1 گیگابایت</b> از حجم سرویس <b>${orderId}</b> باقی مانده است.\n\n♻️ لطفا جهت جلوگیری از قطع اتصال، اقدام به تمدید سرویس نمایید 👇`,
-              {
-                parse_mode: 'HTML',
-                reply_markup: {
-                  inline_keyboard: [[{ text: '♻️ تمدید سرویس', callback_data: JSON.stringify({ act: 'renew_gen', data: { orderId } }) }]]
-                }
-              })
+      for (const { email, total_usage, total } of configs) {
+        const [userId, orderId] = email.split('-')
+        const remainingTraffic = ((total - total_usage) / 1024 / 1024 / 1024).toFixed(2)
+        if (remainingTraffic <= 1.00) {
+          try {
+            await api.db(`UPDATE client_traffics SET sent_traffic_notif=true WHERE email LIKE '${userId}-${orderId}-%';`)
+          } catch (err) {
+            console.log('Error for sent_traffic_notif=true: ', err);
           }
+          bot.sendMessage(userId, `⚠️ <b>هشدار حجم: </b> کم تر از <b>1 گیگابایت</b> از حجم سرویس <b>${orderId}</b> باقی مانده است.\n\n♻️ لطفا جهت جلوگیری از قطع اتصال، اقدام به تمدید سرویس نمایید 👇`,
+            {
+              parse_mode: 'HTML',
+              reply_markup: {
+                inline_keyboard: [[{ text: '♻️ تمدید سرویس', callback_data: JSON.stringify({ act: 'renew_gen', data: { orderId } }) }]]
+              }
+            })
         }
-      })
+      }
     }
   } catch (err) {
     console.log('checkConfigsTraffics => ', err);
+  }
+}
+
+const updateConfigsTotalUsages = async () => {
+  try {
+    const query = `SELECT SUBSTR(email, 1, INSTR(email, '-') - 1) AS user_id, SUBSTR(email, INSTR(email, '-') + 1, INSTR(SUBSTR(email, INSTR(email, '-') + 1), '-') - 1) AS order_id, SUM(up) AS summed_up, SUM(down) AS summed_down, total FROM client_traffics WHERE enable = 1 AND email LIKE '%-%-%' GROUP BY user_id, order_id;`
+    const rows = await api.db(query)
+    const configs = [...rows];
+    for (const config of configs) {
+      try {
+        const updateTotalUsageQuery = `UPDATE client_traffics SET total_usage=${config.summed_up + config.summed_down} where email LIKE '${config.user_id}-${config.order_id}-%';`
+        await api.db(updateTotalUsageQuery)
+        if (config.total != 0 && (config.summed_up + config.summed_down) >= config.total) {
+          const disableExpiredTrafficQuery = `UPDATE client_traffics SET enable=0, up=${config.summed_up}, down=${config.summed_down} where email LIKE '${config.user_id}-${config.order_id}-%';`
+          await api.db(disableExpiredTrafficQuery)
+        }
+      } catch (err) {
+        console.log(`Error update total_usage for ${config.user_id}-${config.order_id}: `, err);
+      }
+    }
+  } catch (err) {
+    console.log('updateConfigsTotalUsages => ', err);
   }
 }
 
@@ -720,7 +757,7 @@ bot.onText(/ok/, async ({ from, text }) => {
           if (parentId) {
             await vpn.renewConfig(userId, parentId, order.plan)
 
-            orders.verified[parentId] = { ...order, paid_at: moment().format().slice(0, 19), renewed: true }
+            orders.verified[parentId] = { ...order, id: parentId, paid_at: moment().format().slice(0, 19), renewed: true }
             delete orders.verified[parentId].parentId
             delete orders.waiting[orderId]
             bot.deleteMessage(userId, messageId);
@@ -793,7 +830,7 @@ bot.onText(/msg/, async ({ from, text }) => {
             break;
           }
           case "sub": {
-            const query = `SELECT email FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND email NOT LIKE '%-test'`;
+            const query = `SELECT email FROM client_traffics WHERE inbound_id=${MAIN_INBOUND_ID} AND email NOT LIKE '%-test-%'`;
             let rows = await api.db(query)
             if (rows.length == 0) {
               bot.sendMessage(from.id, '⚠️ There is no any sub user! ⚠️')
@@ -818,7 +855,7 @@ bot.onText(/msg/, async ({ from, text }) => {
             break;
           }
           case 'unsub': {
-            const query = `SELECT email FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND email NOT LIKE '%-test'`;
+            const query = `SELECT email FROM client_traffics WHERE inbound_id=${MAIN_INBOUND_ID} AND email NOT LIKE '%-test-%'`;
             let rows = await api.db(query)
             const allUsers = Object.getOwnPropertyNames(users)
             const subUsers = []
@@ -935,17 +972,17 @@ bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
   }
 
   try {
-    const query = `SELECT email, up, down, total, enable FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND email LIKE '${user.id}-%' AND email NOT LIKE '%-test'`;
+    const query = `SELECT email, total_usage, total, enable FROM client_traffics WHERE inbound_id=${MAIN_INBOUND_ID} AND email LIKE '${user.id}-%' AND email NOT LIKE '%-test-%'`;
     const rows = await api.db(query)
     const configs = [...rows];
     if (configs.length == 0) {
       bot.sendMessage(from.id, "🫠 در حال حاضر هیچ سرویس فعالی ندارید\n\n🛍️ جهت خرید از منو پایین اقدام بفرمایید 👇");
       return
     }
-    configs.map(async ({ email, up, down, total, enable }) => {
+    configs.map(async ({ email, total_usage, total, enable }) => {
       const orderId = email.split('-')[1]
       const { plan, paid_at, expire_at } = db.data.orders.verified[orderId]
-      let remainingTraffic = ((total - up - down) / 1024 / 1024 / 1024).toFixed(2)
+      let remainingTraffic = ((total - total_usage) / 1024 / 1024 / 1024).toFixed(2)
       remainingTraffic = remainingTraffic > 0 ? remainingTraffic : 0
       const subLink = vpn.getSubLink(orderId)
       const subLinkQR = await qrGenerator(subLink)
@@ -1254,7 +1291,7 @@ bot.on("callback_query", async (query) => {
     }
     case 'renew_show_orders': {
       try {
-        const query = `SELECT email FROM client_traffics WHERE inbound_id=${INBOUND_ID} AND email LIKE '${user.id}-%' AND email NOT LIKE '%-test'`;
+        const query = `SELECT email FROM client_traffics WHERE inbound_id=${MAIN_INBOUND_ID} AND email LIKE '${user.id}-%' AND email NOT LIKE '%-test-%'`;
         const rows = await api.db(query)
         const configs = [...rows];
         if (configs.length == 0) {
@@ -1296,14 +1333,16 @@ app.get("/sub/:order_id", async (req, res) => {
     let response = await axios.get(`${process.env.XUI_SUB}/${req.params.order_id}`)
     let content = Buffer.from(response.data, 'base64')
     content = content.toString('utf-8')
-    content = content.replace(/@([^:]+)/, '@turbo.torgod.site').replace(/#.*/, '#%E2%9C%A8%20Stable%20NOVA')
-    // content = content + '\n' + content.replace(/@([^:]+)/, `@${PANEL_IP}`).replace(/#.*/, "#%E2%9A%A1%EF%B8%8F%20Fast%20NOVA")
-    content = btoa(content)
+    const configs = content?.split('\n')?.slice(0, -1)?.reverse()
+    let newContent = ''
+    configs.map((config, index) => {
+      newContent += (config.replace(/@([^:]+)/, '@turbo.torgod.site').replace(/#.*/, INBOUNDS[environment][index].name) + (configs.length != index + 1 ? '\n' : ''))
+    })
     res.setHeader('Content-Type', response.headers['content-type']);
     res.setHeader('Profile-Title', response.headers['profile-title']);
     res.setHeader('Profile-Update-Interval', response.headers['profile-update-interval']);
     res.setHeader('Subscription-Userinfo', response.headers['subscription-userinfo']);
-    res.status(200).send(content);
+    res.status(200).send(btoa(newContent));
   } catch (err) {
     console.log(err);
   }
@@ -1348,7 +1387,7 @@ app.post("/c2c-transaction-verification", async (req, res) => {
           if (parentId) {
             await vpn.renewConfig(userId, parentId, order.plan)
 
-            orders.verified[parentId] = { ...order, paid_at: moment().format().slice(0, 19), renewed: true }
+            orders.verified[parentId] = { ...order, id: parentId, paid_at: moment().format().slice(0, 19), renewed: true }
             delete orders.verified[parentId].parentId
             delete orders.waiting[orderId]
             bot.deleteMessage(userId, messageId);
@@ -1432,6 +1471,7 @@ server.listen(port, '0.0.0.0', async () => {
   console.log('\n\n', `${environment == 'dev' ? "🧪 DEVELOPMENT" : "🚨 PRODUCTION"}  ⛩️ PORT: ${port}`);
   await initImages()
   await api.xui.login()
+
   cron.schedule('0 0 */25 * *', () => {
     checkXUISessionExpiration()
   }).start();
@@ -1441,7 +1481,8 @@ server.listen(port, '0.0.0.0', async () => {
     checkOrdersTimeout()
   }).start();
 
-  cron.schedule('0 * * * *', () => {
+  cron.schedule('0 * * * * *', () => {
+    updateConfigsTotalUsages()
     checkConfigsTraffics()
   }).start();
 
