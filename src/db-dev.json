@@ -56,6 +56,13 @@
       "tested": true,
       "created_at": "2023-08-03T19:09:35"
     },
+    "1546569209": {
+      "id": 1546569209,
+      "tg_name": "aria",
+      "tg_username": "colonel_aria",
+      "tested": false,
+      "created_at": "2023-09-03T11:41:37"
+    },
     "6017602287": {
       "id": 6017602287,
       "tg_name": "Hamid",
@@ -71,31 +78,7 @@
     }
   },
   "orders": {
-    "waiting": {
-      "463274863": {
-        "id": 463274863,
-        "user_id": 1085276188,
-        "message_id": 7110,
-        "trashMessages": [],
-        "plan": {
-          "id": 98,
-          "name": "🥉 25 گیگ     1 کاربره   💳 59   تومان ",
-          "symbol": "🥉",
-          "traffic": 25,
-          "period": 30,
-          "original_price": 75,
-          "final_price": 59,
-          "limit_ip": 1,
-          "version": 1,
-          "active": true
-        },
-        "amount": 589147,
-        "created_at": "2023-09-01T21:14:44",
-        "expire_at": "2023-10-01T21:14:44",
-        "payment_limit_time": 1693622684465,
-        "parentId": 647776624
-      }
-    },
+    "waiting": {},
     "verified": {
       "202905418": {
         "id": 202905418,
