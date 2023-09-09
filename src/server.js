@@ -548,22 +548,25 @@ const cleanExpiredOrders = () => {
 const cleanExpiredConfigs = async () => {
   try {
     const date = Date.now()
-    const query = `SELECT email FROM client_traffics WHERE inbound_id=${MAIN_INBOUND_ID} AND enable=0 AND (expiry_time + 86400000) < ${date}`; // get expired configs that past more than 24 hours
+    const query = `SELECT email, expiry_time FROM client_traffics WHERE inbound_id=${MAIN_INBOUND_ID} AND enable=0`; // get expired configs
     const rows = await api.db(query)
     const configs = [...rows];
     if (configs.length > 0) {
-      configs.map(async ({ email }) => {
-        const [, orderId] = email.split('-')
-        const subId = vpn.getSubLink(orderId == 'test' ? email : orderId)
-        const subConfigs = await vpn.getConfigFromSub(subId)
-        const matches = subConfigs[0].match(/:\/\/(.*?)@/);
-        if (matches && matches.length > 1) {
-          const uuid = matches[1];
-          for (const inbound of INBOUNDS[`${environment}`]) {
-            await api.xui.deleteClient(inbound.id, uuid)
+      for (const config of configs) {
+        const { email, expiry_time } = config
+        if (expiry_time + 86400000 <= date) {
+          const [userId, orderId,] = email.split('-')
+          const subId = vpn.getSubLink(orderId == 'test' ? `${userId}-test` : orderId)
+          const subConfigs = await vpn.getConfigFromSub(subId)
+          const matches = subConfigs[0].match(/:\/\/(.*?)@/);
+          if (matches && matches.length > 1) {
+            const uuid = matches[1];
+            for (const inbound of INBOUNDS[`${environment}`]) {
+              await api.xui.deleteClient(inbound.id, uuid)
+            }
           }
         }
-      })
+      }
     }
   } catch (err) {
     console.log('cleanExpiredConfigs => ', err);
