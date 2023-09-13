@@ -1484,7 +1484,7 @@ server.listen(port, '0.0.0.0', async () => {
     checkOrdersTimeout()
   }).start();
 
-  cron.schedule('0 * * * * *', () => {
+  cron.schedule('*/5 * * * * *', () => {
     updateConfigsTotalUsages()
     checkConfigsTraffics()
   }).start();
