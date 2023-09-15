@@ -554,7 +554,7 @@ const cleanExpiredConfigs = async () => {
     if (configs.length > 0) {
       for (const config of configs) {
         const { email, expiry_time } = config
-        if (expiry_time + 86400000 <= date) {
+        if (expiry_time + 172800000 <= date) {
           const [userId, orderId,] = email.split('-')
           const subId = vpn.getSubLink(orderId == 'test' ? `${userId}-test` : orderId)
           const subConfigs = await vpn.getConfigFromSub(subId)
