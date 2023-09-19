@@ -1041,7 +1041,7 @@
       "id": 5470740055,
       "tg_name": "🇲 🇮 🇳 🇦",
       "tg_username": "Mina_s7805",
-      "tested": false,
+      "tested": true,
       "created_at": "2023-07-30T17:00:23"
     },
     "5153670967": {
@@ -1845,6 +1845,27 @@
         "payment_limit_time": 1694232327556,
         "paid_at": "2023-09-08T22:47:07"
       },
+      "488816105": {
+        "id": 488816105,
+        "user_id": 115907384,
+        "plan": {
+          "id": 98,
+          "name": "🥉 25 گیگ     1 کاربره   💳 59   تومان ",
+          "symbol": "🥉",
+          "traffic": 25,
+          "period": 30,
+          "original_price": 75,
+          "final_price": 59,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
+        },
+        "amount": 589009,
+        "created_at": "2023-09-16T21:15:51",
+        "expire_at": "2023-10-16T21:15:51",
+        "payment_limit_time": 1694918751908,
+        "paid_at": "2023-09-16T21:21:30"
+      },
       "492649248": {
         "id": 492649248,
         "user_id": 479466228,
@@ -1860,11 +1881,12 @@
           "version": 1,
           "active": true
         },
-        "amount": 589856,
-        "created_at": "2023-08-29T08:01:57",
-        "expire_at": "2023-09-28T08:01:57",
-        "payment_limit_time": 1693315917304,
-        "paid_at": "2023-08-29T08:03:15"
+        "amount": 589602,
+        "created_at": "2023-09-19T08:29:04",
+        "expire_at": "2023-10-19T08:29:04",
+        "payment_limit_time": 1695131944996,
+        "paid_at": "2023-09-19T08:29:54",
+        "renewed": true
       },
       "503079070": {
         "id": 503079070,
@@ -1903,11 +1925,11 @@
           "version": 1,
           "active": true
         },
-        "amount": 1499088,
-        "created_at": "2023-08-30T02:31:06",
-        "expire_at": "2023-09-29T02:31:06",
-        "payment_limit_time": 1693382466154,
-        "paid_at": "2023-08-30T02:32:08",
+        "amount": 1499448,
+        "created_at": "2023-09-17T14:59:44",
+        "expire_at": "2023-10-17T14:59:44",
+        "payment_limit_time": 1694982584211,
+        "paid_at": "2023-09-17T15:00:11",
         "renewed": true
       },
       "517731628": {
@@ -2057,6 +2079,27 @@
         "expire_at": "2023-10-09T13:06:14",
         "payment_limit_time": 1694284574965,
         "paid_at": "2023-09-09T13:06:21"
+      },
+      "558846305": {
+        "id": 558846305,
+        "user_id": 102702711,
+        "plan": {
+          "id": 99,
+          "name": "🥈 50 گیگ     2 کاربره   💳 99   تومان ",
+          "symbol": "🥈",
+          "traffic": 50,
+          "period": 30,
+          "original_price": 125,
+          "final_price": 99,
+          "limit_ip": 2,
+          "version": 1,
+          "active": true
+        },
+        "amount": 989855,
+        "created_at": "2023-09-17T01:06:48",
+        "expire_at": "2023-10-17T01:06:48",
+        "payment_limit_time": 1694932608746,
+        "paid_at": "2023-09-17T01:09:21"
       },
       "561525929": {
         "id": 561525929,
