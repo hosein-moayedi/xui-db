@@ -766,7 +766,7 @@ bot.onText(/ok/, async ({ from, text }) => {
             bot.deleteMessage(userId, messageId);
             db.write()
 
-            bot.sendMessage(userId, `✅ سرویس <b>${order.id}</b> تا تاریخ <b>${order.expire_at.slice(0, 10)}</b> با موفقیت تمدید شد\n\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال`,
+            bot.sendMessage(userId, `✅ سرویس <b>${parentId}</b> تا تاریخ <b>${order.expire_at.slice(0, 10)}</b> با موفقیت تمدید شد\n\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال`,
               { parse_mode: 'HTML' })
           } else {
             const config = await vpn.addConfig(userId, orderId, order.plan)
@@ -1396,7 +1396,7 @@ app.post("/c2c-transaction-verification", async (req, res) => {
             bot.deleteMessage(userId, messageId);
             db.write()
 
-            bot.sendMessage(userId, `✅ سرویس <b>${order.id}</b> تا تاریخ <b>${order.expire_at.slice(0, 10)}</b> با موفقیت تمدید شد\n\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال`,
+            bot.sendMessage(userId, `✅ سرویس <b>${parentId}</b> تا تاریخ <b>${order.expire_at.slice(0, 10)}</b> با موفقیت تمدید شد\n\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال`,
               { parse_mode: 'HTML' })
           } else {
             const config = await vpn.addConfig(userId, orderId, order.plan)
