@@ -632,7 +632,7 @@ const updateConfigsTotalUsages = async () => {
   try {
     const idValues = INBOUNDS[`${environment}`].map(item => item.id);
     const inClause = idValues.length > 0 ? `IN (${idValues.join(', ')})` : '';
-    const query = `SELECT SUBSTR(email, 1, INSTR(email, '-') - 1) AS user_id, SUBSTR(email, INSTR(email, '-') + 1, INSTR(SUBSTR(email, INSTR(email, '-') + 1), '-') - 1) AS order_id, SUM(up) AS summed_up, SUM(down) AS summed_down, total FROM client_traffics WHERE enable = 1 AND inbound_id ${inClause} AND email LIKE '%-%-%' GROUP BY user_id, order_id;`
+    const query = `SELECT SUBSTR(email, 1, INSTR(email, '-') - 1) AS user_id, SUBSTR(email, INSTR(email, '-') + 1, INSTR(SUBSTR(email, INSTR(email, '-') + 1), '-') - 1) AS order_id, SUM(up) AS summed_up, SUM(down) AS summed_down, total FROM client_traffics WHERE traffic_expired=false AND inbound_id ${inClause} AND email LIKE '%-%-%' GROUP BY user_id, order_id;`
     const rows = await api.db(query)
     const configs = [...rows];
     for (const config of configs) {
@@ -640,7 +640,7 @@ const updateConfigsTotalUsages = async () => {
         const updateTotalUsageQuery = `UPDATE client_traffics SET total_usage=${config.summed_up + config.summed_down} where email LIKE '${config.user_id}-${config.order_id}-%';`
         await api.db(updateTotalUsageQuery)
         if (config.total != 0 && (config.summed_up + config.summed_down) >= config.total) {
-          const disableExpiredTrafficQuery = `UPDATE client_traffics SET enable=0, up=${config.summed_up}, down=${config.summed_down} where email LIKE '${config.user_id}-${config.order_id}-%';`
+          const disableExpiredTrafficQuery = `UPDATE client_traffics SET traffic_expired=true, up=${config.summed_up}, down=${config.summed_down} where email LIKE '${config.user_id}-${config.order_id}-%';`
           await api.db(disableExpiredTrafficQuery)
         }
       } catch (err) {
