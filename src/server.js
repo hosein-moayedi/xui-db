@@ -630,7 +630,9 @@ const checkConfigsTraffics = async () => {
 
 const updateConfigsTotalUsages = async () => {
   try {
-    const query = `SELECT SUBSTR(email, 1, INSTR(email, '-') - 1) AS user_id, SUBSTR(email, INSTR(email, '-') + 1, INSTR(SUBSTR(email, INSTR(email, '-') + 1), '-') - 1) AS order_id, SUM(up) AS summed_up, SUM(down) AS summed_down, total FROM client_traffics WHERE enable = 1 AND email LIKE '%-%-%' GROUP BY user_id, order_id;`
+    const idValues = INBOUNDS[`${environment}`].map(item => item.id);
+    const inClause = idValues.length > 0 ? `IN (${idValues.join(', ')})` : '';
+    const query = `SELECT SUBSTR(email, 1, INSTR(email, '-') - 1) AS user_id, SUBSTR(email, INSTR(email, '-') + 1, INSTR(SUBSTR(email, INSTR(email, '-') + 1), '-') - 1) AS order_id, SUM(up) AS summed_up, SUM(down) AS summed_down, total FROM client_traffics WHERE enable = 1 AND inbound_id ${inClause} AND email LIKE '%-%-%' GROUP BY user_id, order_id;`
     const rows = await api.db(query)
     const configs = [...rows];
     for (const config of configs) {
