@@ -781,11 +781,14 @@ bot.onText(/ok/, async ({ from, text }) => {
             db.write()
 
             bot.sendPhoto(userId, subLinkQR, {
-              caption: `✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n♻️ <b>لینک آپدیت خودکار: </b>(روی لینک پایین بزنید تا کپی شود 👇)\n<code>${subLink}</code>`,
+              caption: `✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n‼️ <u> لینک پایین را کپی کرده و بر اساس آموزش های زیر، از آن برای دریافت کانفیگ ها در نرم افزارها استفاده کنید </u>\n\n👇 👇 👇 👇 👇 👇 👇`,
               parse_mode: "HTML",
             });
             setTimeout(() => {
-              bot.sendMessage(userId, 'لینک دانلود آخرین نسخه نرم افزار ها به همراه آموزش نحوه اتصال بر اساس سیستم عامل شما در پایین قرار داده شده 👇',
+              bot.sendMessage(userId, `<code>${subLink}</code>`, { parse_mode: 'HTML' })
+            }, 500)
+            setTimeout(() => {
+              bot.sendMessage(from.id, '👆 👆 👆 👆 👆 👆 👆\n\nآخرین نسخه نرم افزار ها به همراه آموزش نحوه اتصال بر اساس سیستم عامل شما در پایین قرار داده شده 👇',
                 {
                   parse_mode: 'HTML',
                   reply_markup: JSON.stringify({
@@ -793,7 +796,7 @@ bot.onText(/ok/, async ({ from, text }) => {
                     resize_keyboard: true,
                   }),
                 })
-            }, 500)
+            }, 2000)
           }
           bot.sendMessage(from.id, '✅ Done ✅')
           return
@@ -1082,15 +1085,22 @@ bot.on("callback_query", async (query) => {
         user.tested = true
         db.write()
 
-        bot.sendMessage(from.id, `🎁 <b>حجم</b>: نامحدود\n⏰ <b>مدت استفاده</b>: ۱ ساعت\n♻️ <b>لینک آپدیت خودکار</b>: (روی لینک پایین بزنید تا کپی شود 👇)\n\n<code>${subLink}</code>\n\n👇 بر اساس نرم افزاری که در مرحله قبل نصب و یا بروزرسانی کردین، آموزش نحوه اتصال در آن نرم افزار را مشاهده بفرمایید👇`,
-          {
-            parse_mode: "HTML",
-            reply_markup: JSON.stringify({
-              inline_keyboard: buttons.education.slice(0, 3),
-              resize_keyboard: true,
-            }),
-          },
-        );
+        bot.sendMessage(from.id, `🎁 <b>حجم</b>: نامحدود\n⏰ <b>مدت استفاده</b>: ۱ ساعت\n\n‼️ <u> لینک پایین را کپی کرده و بر اساس آموزش های زیر، از آن برای دریافت کانفیگ ها در نرم افزارها استفاده کنید </u>\n\n👇 👇 👇 👇 👇 👇 👇`, {
+          parse_mode: "HTML",
+        });
+        setTimeout(() => {
+          bot.sendMessage(from.id, `<code>${subLink}</code>`, { parse_mode: 'HTML' })
+        }, 500)
+        setTimeout(() => {
+          bot.sendMessage(from.id, '👆 👆 👆 👆 👆 👆 👆\n\nآخرین نسخه نرم افزار ها به همراه آموزش نحوه اتصال بر اساس سیستم عامل شما در پایین قرار داده شده 👇',
+            {
+              parse_mode: 'HTML',
+              reply_markup: JSON.stringify({
+                inline_keyboard: buttons.education,
+                resize_keyboard: true,
+              }),
+            })
+        }, 2000)
         if (user.id != ownerId) {
           setTimeout(() => {
             bot.sendMessage(from.id,
@@ -1411,11 +1421,14 @@ app.post("/c2c-transaction-verification", async (req, res) => {
             db.write()
 
             bot.sendPhoto(userId, subLinkQR, {
-              caption: `✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n♻️ <b>لینک آپدیت خودکار: </b>(روی لینک پایین بزنید تا کپی شود 👇)\n<code>${subLink}</code>`,
+              caption: `✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n‼️ <u> لینک پایین را کپی کرده و بر اساس آموزش های زیر، از آن برای دریافت کانفیگ ها در نرم افزارها استفاده کنید </u>\n\n👇 👇 👇 👇 👇 👇 👇`,
               parse_mode: "HTML",
             });
             setTimeout(() => {
-              bot.sendMessage(userId, 'لینک دانلود آخرین نسخه نرم افزار ها به همراه آموزش نحوه اتصال بر اساس سیستم عامل شما در پایین قرار داده شده 👇',
+              bot.sendMessage(userId, `<code>${subLink}</code>`, { parse_mode: 'HTML' })
+            }, 500)
+            setTimeout(() => {
+              bot.sendMessage(userId, '👆 👆 👆 👆 👆 👆 👆\n\nآخرین نسخه نرم افزار ها به همراه آموزش نحوه اتصال بر اساس سیستم عامل شما در پایین قرار داده شده 👇',
                 {
                   parse_mode: 'HTML',
                   reply_markup: JSON.stringify({
@@ -1423,7 +1436,7 @@ app.post("/c2c-transaction-verification", async (req, res) => {
                     resize_keyboard: true,
                   }),
                 })
-            }, 500)
+            }, 2000)
           }
           const user = db.data.users[userId]
           bot.sendMessage(ownerId,
