@@ -1471,8 +1471,8 @@ const checkXUISessionExpiration = () => {
 
 const port = process.env.PORT || 9090;
 const certOptions = {
-  key: fs.readFileSync('/root/cert/turbo.torgod.top.key'),
-  cert: fs.readFileSync('/root/cert/fullchain.cer')
+  key: fs.readFileSync('./certs/torgod.top/torgod.top.key'),
+  cert: fs.readFileSync('./certs/torgod.top/fullchain.cer'),
 };
 
 const server = https.createServer(certOptions, app);
