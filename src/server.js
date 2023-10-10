@@ -158,7 +158,7 @@ let api = {
           price_amount: amount,
           price_currency: currency,
           pay_currency: "trx",
-          ipn_callback_url: "http://vpn.torgod.site/update_payment",
+          ipn_callback_url: "http://vpn.torgod.top/update_payment",
           is_fixed_rate: true,
         };
         const options = {
@@ -456,11 +456,11 @@ const buttons = {
   softwares: [
     [{
       text: '⬇️ اندروید - Hiddify (پیشنهاد ما) ⬇️',
-      url: 'http://turbo.torgod.site/softwares/HiddifyNG.apk'
+      url: 'http://turbo.torgod.top/softwares/HiddifyNG.apk'
     }],
     [{
       text: '⬇️ اندروید - V2rayNG ⬇️',
-      url: 'http://turbo.torgod.site/softwares/v2rayNG_1.8.5.apk'
+      url: 'http://turbo.torgod.top/softwares/v2rayNG_1.8.5.apk'
     }],
     [{
       text: '⬇️ آی او اس (آیفون) - V2Box ⬇️',
@@ -1262,7 +1262,7 @@ bot.on("callback_query", async (query) => {
       switch (queryData.data.device) {
         case 'android':
           bot.sendPhoto(chatId, images.hiddify, {
-            caption: '‼️ <b>آخرین نسخه هیدیفای را نصب کنید</b>\n\n👈 <b><a href="http://turbo.torgod.site/softwares/HiddifyNG.apk">(دریافت آخرین نسخه هیدیفای)</a> 👉</b>\n\n🔰 طبق آموزش داخل عکس عمل کنید',
+            caption: '‼️ <b>آخرین نسخه هیدیفای را نصب کنید</b>\n\n👈 <b><a href="http://turbo.torgod.top/softwares/HiddifyNG.apk">(دریافت آخرین نسخه هیدیفای)</a> 👉</b>\n\n🔰 طبق آموزش داخل عکس عمل کنید',
             parse_mode: "HTML"
           })
           break;
@@ -1351,7 +1351,7 @@ app.get("/sub/:order_id", async (req, res) => {
     const configs = content?.split('\n')?.slice(0, -1)?.reverse()
     let newContent = ''
     configs.map((config, index) => {
-      newContent += (config.replace(/@([^:]+)/, '@turbo.torgod.site').replace(/#.*/, INBOUNDS[environment][index].name) + (configs.length != index + 1 ? '\n' : ''))
+      newContent += (config.replace(/@([^:]+)/, '@turbo.torgod.top').replace(/#.*/, INBOUNDS[environment][index].name) + (configs.length != index + 1 ? '\n' : ''))
     })
     res.setHeader('Content-Type', response.headers['content-type']);
     res.setHeader('Profile-Title', response.headers['profile-title']);
@@ -1471,8 +1471,8 @@ const checkXUISessionExpiration = () => {
 
 const port = process.env.PORT || 9090;
 const certOptions = {
-  key: fs.readFileSync('./certs/turbo.torgod.site/privkey.pem'),
-  cert: fs.readFileSync('./certs/turbo.torgod.site/fullchain.pem')
+  key: fs.readFileSync('/root/cert/turbo.torgod.top.key'),
+  cert: fs.readFileSync('/root/cert/fullchain.cer')
 };
 
 const server = https.createServer(certOptions, app);
