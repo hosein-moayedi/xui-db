@@ -512,16 +512,17 @@ const cleanExpiredCooldown = () => {
 const checkOrdersTimeout = () => {
   try {
     const { orders } = db.data
-    let userId, messageId
+    let userId, messageId, parentId
     for (const orderId in orders.waiting) {
       const order = orders.waiting[orderId];
       if (order.payment_limit_time < moment().valueOf()) {
         [userId, messageId] = [order.user_id, order.message_id]
+        parentId = order?.parentId
         delete order.message_id
         orders.expired[order.id] = { ...order }
         delete orders.waiting[orderId]
         bot.deleteMessage(userId, messageId);
-        bot.sendMessage(userId, `🫠 متاسفانه زمان انجام تراکنش برای سرویس ${orderId} به اتمام رسید.\n\n😇 لطفا از منو زیر مجددا اقدام به خرید سرویس بفرمایید 👇`, { parse_mode: "HTML" })
+        bot.sendMessage(userId, `🫠 متاسفانه زمان انجام تراکنش برای ${parentId ? 'تمدید' : 'خرید'} سرویس ${parentId || orderId} به اتمام رسید.\n\n😇 لطفا مجددا اقدام به ${parentId ? 'تمدید' : 'خرید'} بفرمایید`, { parse_mode: "HTML" })
         db.write()
       }
     }
@@ -788,7 +789,7 @@ bot.onText(/ok/, async ({ from, text }) => {
               bot.sendMessage(userId, `<code>${subLink}</code>`, { parse_mode: 'HTML' })
             }, 500)
             setTimeout(() => {
-              bot.sendMessage(from.id, '👆 👆 👆 👆 👆 👆 👆\n\nآخرین نسخه نرم افزار ها به همراه آموزش نحوه اتصال بر اساس سیستم عامل شما در پایین قرار داده شده 👇',
+              bot.sendMessage(userId, '👆 👆 👆 👆 👆 👆 👆\n\nآخرین نسخه نرم افزار ها به همراه آموزش نحوه اتصال بر اساس سیستم عامل شما در پایین قرار داده شده 👇',
                 {
                   parse_mode: 'HTML',
                   reply_markup: JSON.stringify({
