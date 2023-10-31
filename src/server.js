@@ -40,7 +40,7 @@ const bot = new TelegramBot(token, { polling: true });
 const plans = [
   {
     id: 103,
-    name: "${SYMBOL} نامحدود     ${LIMIT_IP} کاربره   💳 ${PRICE} تومان",
+    name: "${SYMBOL}نامحدود 👤${LIMIT_IP} کاربره ⏰${PERIOD} روزه 💳${PRICE} تومان",
     symbol: "🎖️",
     traffic: 0,
     period: 30,
@@ -51,32 +51,20 @@ const plans = [
     active: true,
   },
   {
-    id: 96,
-    name: "${SYMBOL} ${TRAFFIC} گیگ - ${LIMIT_IP} کاربره - 💳 ${PRICE} تومان",
-    symbol: "🔴",
-    traffic: 5,
-    period: 30,
-    original_price: 25,
-    final_price: 15,
+    id: 104,
+    name: "${SYMBOL}نامحدود 👤${LIMIT_IP} کاربره ⏰${PERIOD} روزه 💳${PRICE} تومان",
+    symbol: "🎖️",
+    traffic: 0,
+    period: 60,
+    original_price: 400,
+    final_price: 299,
     limit_ip: 1,
     version: 1,
-    active: false,
-  },
-  {
-    id: 97,
-    name: "${SYMBOL} ${TRAFFIC} گیگ - ${LIMIT_IP} کاربره - 💳 ${PRICE} تومان",
-    symbol: "⚪️",
-    traffic: 15,
-    period: 30,
-    original_price: 55,
-    final_price: 39,
-    limit_ip: 1,
-    version: 1,
-    active: false,
+    active: true,
   },
   {
     id: 98,
-    name: "${SYMBOL} ${TRAFFIC} گیگ     ${LIMIT_IP} کاربره   💳 ${PRICE}   تومان ",
+    name: "${SYMBOL}${TRAFFIC} گیگ 👤${LIMIT_IP} کاربره ⏰${PERIOD} روزه 💳${PRICE} تومان",
     symbol: "🥉",
     traffic: 25,
     period: 30,
@@ -87,8 +75,20 @@ const plans = [
     active: true,
   },
   {
+    id: 105,
+    name: "${SYMBOL}${TRAFFIC} گیگ 👤${LIMIT_IP} کاربره ⏰${PERIOD} روزه 💳${PRICE} تومان",
+    symbol: "🥉",
+    traffic: 50,
+    period: 60,
+    original_price: 150,
+    final_price: 119,
+    limit_ip: 1,
+    version: 1,
+    active: true,
+  },
+  {
     id: 99,
-    name: "${SYMBOL} ${TRAFFIC} گیگ     ${LIMIT_IP} کاربره   💳 ${PRICE}   تومان ",
+    name: "${SYMBOL}${TRAFFIC} گیگ 👥${LIMIT_IP} کاربره ⏰${PERIOD} روزه 💳${PRICE} تومان",
     symbol: "🥈",
     traffic: 50,
     period: 30,
@@ -100,7 +100,7 @@ const plans = [
   },
   {
     id: 100,
-    name: "${SYMBOL} ${TRAFFIC} گیگ     ${LIMIT_IP} کاربره   💳 ${PRICE} تومان",
+    name: "${SYMBOL}${TRAFFIC} گیگ 👥${LIMIT_IP} کاربره ⏰${PERIOD} روزه 💳${PRICE} تومان",
     symbol: "🥇",
     traffic: 75,
     period: 30,
@@ -112,7 +112,7 @@ const plans = [
   },
   {
     id: 101,
-    name: "${SYMBOL} ${TRAFFIC} گیگ   ${LIMIT_IP} کاربره   💳 ${PRICE} تومان",
+    name: "${SYMBOL}${TRAFFIC} گیگ 👥${LIMIT_IP} کاربره ⏰${PERIOD} روزه 💳${PRICE} تومان",
     symbol: "🥇",
     traffic: 100,
     period: 30,
@@ -121,19 +121,7 @@ const plans = [
     limit_ip: 4,
     version: 1,
     active: true,
-  },
-  {
-    id: 102,
-    name: "${SYMBOL}${TRAFFIC} گیگ   ${LIMIT_IP} کاربره   💳 ${PRICE} تومان",
-    symbol: "🏅",
-    traffic: 200,
-    period: 30,
-    original_price: 420,
-    final_price: 379,
-    limit_ip: 4,
-    version: 1,
-    active: true,
-  },
+  }
 ];
 
 let PANEL_IP = '0.0.0.0'
@@ -1000,7 +988,10 @@ bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
           caption: `🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${total > 0 ? `${remainingTraffic} گیگ` : 'نامحدود'}\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n\n♻️ <b>لینک آپدیت خودکار: </b>(روی لینک پایین بزنید تا کپی شود 👇)\n<code>${subLink}</code>` : '\n\n⚠️ حجم و یا تاریخ انقضای این سرویس به پایان رسیده. جهت تمدید سرویس روی دکمه زیر بزنید 👇'}`,
           parse_mode: "HTML",
           reply_markup: {
-            inline_keyboard: [[{ text: '♻️ تمدید سرویس', callback_data: JSON.stringify({ act: 'renew_gen', data: { orderId } }) }]]
+            inline_keyboard: [
+              [{ text: '♻️ تمدید سرویس ♻️', callback_data: JSON.stringify({ act: 'renew_gen', data: { orderId } }) }],
+              [{ text: '✍️ تغییر سرویس ✍️', callback_data: JSON.stringify({ act: 'edit_plan', data: { orderId } }) }],
+            ]
           }
         }
       );
@@ -1124,7 +1115,7 @@ bot.on("callback_query", async (query) => {
     }
     case "store": {
       const botMsg =
-        `<b>‼️ تمامی سرویس ها 30 روزه میباشد ‼️</b>\n\n🔻 سرویس مورد نظر خود را انتخاب کنید🔻`;
+        `<b>🎉 سرویس های 60 روزه اضافه شد 🎉</b>\n\n🔻 سرویس مورد نظر خود را انتخاب کنید🔻`;
       bot.editMessageText(botMsg, {
         chat_id: chatId,
         message_id: messageId,
@@ -1137,6 +1128,7 @@ bot.on("callback_query", async (query) => {
                     .replace("${TRAFFIC}", item.traffic)
                     .replace("${LIMIT_IP}", item.limit_ip)
                     .replace("${SYMBOL}", item.symbol)
+                    .replace("${PERIOD}", item.period)
                     .replace("${PRICE}", item.final_price),
                   callback_data: JSON.stringify({
                     act: "plan_detailes",
@@ -1318,7 +1310,7 @@ bot.on("callback_query", async (query) => {
         configs.map(async ({ email }) => {
           const orderId = email.split('-')[1]
           const order = db.data.orders.verified[orderId]
-          orders.push([{ text: `${orderId} - ${order.plan.symbol}${order.plan.traffic === 0 ? 'نامحدود' : `${order.plan.traffic} گیگ`} - ${order.plan.limit_ip} کاربره`, callback_data: JSON.stringify({ act: 'renew_gen', data: { orderId } }) }])
+          orders.push([{ text: `${orderId} ${order.plan.symbol}${order.plan.traffic === 0 ? 'نامحدود' : `${order.plan.traffic} گیگ`}-${order.plan.limit_ip} کاربره-${order.plan.period} روزه`, callback_data: JSON.stringify({ act: 'renew_gen', data: { orderId } }) }])
         })
         bot.sendMessage(chatId, `♻️ <b>تمدید سرویس: </b>\n\n⚠️ <u><b>توجه: پس از تمدید سرویس، حجم و زمان باقیمانده سرویس قبلی از بین خواهد رفت </b></u>\n\n😇 لطفا سرویسی که قصد تمدید آن را دارید را انتخاب بفرمایید 👇`, {
           parse_mode: 'HTML',
@@ -1330,6 +1322,84 @@ bot.on("callback_query", async (query) => {
         console.log(err);
         bot.sendMessage(from.id, "🤕 اوه اوه!\n🤔 فکر کنم مشکلی در دریافت سرویس های شما پیش اومده\n\n😇 لطفا بعد از چند دقیقه دوباره تلاش کنید.");
       }
+      break
+    }
+    case 'edit_plan': {
+      const { orderId } = queryData.data
+      const order = db.data.orders.verified[orderId]
+      if (!order) {
+        bot.sendMessage(chatId, '⚠️ این سرویس دیگر در دسترس نمی باشد\n\nلطفا از منو اصلی اقدام به خرید سرویس جدید نمایید 👇');
+        return
+      }
+
+      const botMsg =
+        `<b>🎉 سرویس های 60 روزه اضافه شد 🎉</b>\n\n🔻 سرویس مورد نظر خود را انتخاب کنید🔻`;
+      bot.sendMessage(chatId, botMsg, {
+        reply_markup: {
+          inline_keyboard: plans.map((item) => {
+            if (item.active) {
+              return [
+                {
+                  text: item.name
+                    .replace("${TRAFFIC}", item.traffic)
+                    .replace("${LIMIT_IP}", item.limit_ip)
+                    .replace("${SYMBOL}", item.symbol)
+                    .replace("${PERIOD}", item.period)
+                    .replace("${PRICE}", item.final_price),
+                  callback_data: JSON.stringify({
+                    act: "edit_gen",
+                    data: { orderId, planId: item.id },
+                  }),
+                },
+              ];
+            }
+            return []
+          }),
+        },
+        parse_mode: "HTML"
+      });
+      break
+    }
+    case 'edit_gen': {
+      const { orderId, planId } = queryData.data
+      const order = db.data.orders.verified[orderId]
+      if (!order) {
+        bot.sendMessage(chatId, '⚠️ این سرویس دیگر در دسترس نمی باشد\n\nلطفا از منو اصلی اقدام به خرید سرویس جدید نمایید 👇');
+        return
+      }
+      const plan = plans.find((item) => item.id == planId && item.active);
+      if (!plan) {
+        bot.sendMessage(chatId, `😔 متاسفانه درحال حاضر امکان تمدید این سرویس وجود ندارد.\n\n🙏 لطفا از طریق دکمه <b>"🛍️ خرید سرویس"</b> که در منو اصلی ربات قرار دارد، اقدام به خرید سرویس جدید بفرمایید 👇`, { parse_mode: "HTML" });
+        return
+      }
+      bot.editMessageText(`🛍️ <b>شماره سرویس: </b>${orderId}\n\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n${plan.symbol} <b>حجم:</b> ${plan.traffic > 0 ? `${plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت:</b> ${plan.period} روزه\n\n🎁 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\n⚠️ <u><b>توجه: پس از تغییر سرویس، حجم و زمان باقیمانده سرویس قبلی از بین خواهد رفت </b></u> ⚠️\n\n😊 برای خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`,
+        {
+          chat_id: chatId,
+          message_id: messageId,
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: "⬅️ بازگشت",
+                  callback_data: JSON.stringify({
+                    act: "edit_plan",
+                    data: { orderId },
+                  }),
+                },
+                {
+                  text: "✅ صدور فاکتور",
+                  callback_data: JSON.stringify({
+                    act: "gen_order",
+                    data: { planId: plan.id, parentId: orderId },
+                  }),
+                }
+              ],
+            ],
+          },
+        }
+      );
+      break
     }
     default:
       break;
