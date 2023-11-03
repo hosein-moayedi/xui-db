@@ -990,7 +990,7 @@ bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
           reply_markup: {
             inline_keyboard: [
               [{ text: '♻️ تمدید سرویس ♻️', callback_data: JSON.stringify({ act: 'renew_gen', data: { orderId } }) }],
-              [{ text: '✍️ تغییر سرویس ✍️', callback_data: JSON.stringify({ act: 'edit_plan', data: { orderId } }) }],
+              [{ text: '✍️ تغییر و تمدید سرویس ✍️', callback_data: JSON.stringify({ act: 'edit_plan', data: { orderId } }) }],
             ]
           }
         }
