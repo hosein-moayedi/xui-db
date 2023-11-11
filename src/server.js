@@ -698,22 +698,38 @@ const baseChecking = async (userId, isStartCommand) => {
   return true
 }
 
-bot.onText(/\/start/, async ({ from }) => {
+const getReferralWalletBalance = (userId) => {
+  let totalBalance = 0
+  totalBalance = db.data.referralWallet[userId].balance
+  return totalBalance
+}
+
+bot.onText(/\/start(?: (.*))?/, async ({ from }, match) => {
   if (from.is_bot)
     return;
+
   const baseCheckingStatus = await baseChecking(from.id, true)
   if (!baseCheckingStatus) return
-  const user = db.data.users[from.id];
+
+  const { users, referralWallet } = db.data
+
+  const user = users[from.id];
   if (!user) {
-    db.data.users[from.id] = {
+    const referral = match[1]
+
+    users[from.id] = {
       id: from.id,
       tg_name: from.first_name,
       tg_username: from.username,
       tested: false,
+      referral: referral && users[referral] ? referral : null,
       created_at: moment().format().slice(0, 19)
     }
+    referralWallet[from.id] = []
+
     db.write();
   }
+
   try {
     bot.sendPhoto(from.id, images.gift, {
       caption: "😇 به ربات <b>NOVA</b> خوش آمدید 🌹\n\n🎁 جهت دریافت تست <b>نامحدود و رایگان</b>، از منوی زیر اقدام بفرمایید 👇",
@@ -755,6 +771,30 @@ bot.onText(/ok/, async ({ from, text }) => {
             delete orders.verified[parentId].parentId
             delete orders.waiting[orderId]
             bot.deleteMessage(userId, messageId);
+
+            if (order?.referralBalanceUsed) {
+              db.data.referralWallet[userId].balance -= order.referralBalanceUsed
+              db.data.referralWallet[userId].records.push(
+                {
+                  type: "withdraw",
+                  orderId,
+                  amount: order.referralBalanceUsed
+                }
+              )
+            }
+            
+            const user = db.data.users[userId]
+            if (user.referral) {
+              let profit = parseInt((order.plan.final_price * 10000 * 0.1).toFixed())
+              db.data.referralWallet[user.referral].balance += profit
+              db.data.referralWallet[user.referral].records.push({
+                type: "deposit",
+                subsetId: `${userId}`,
+                subsetOrder: `${orderId}`,
+                amount: profit
+              })
+            }
+
             db.write()
 
             bot.sendMessage(userId, `✅ سرویس <b>${parentId}</b> تا تاریخ <b>${order.expire_at.slice(0, 10)}</b> با موفقیت تمدید شد\n\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال`,
@@ -767,6 +807,30 @@ bot.onText(/ok/, async ({ from, text }) => {
             orders.verified[order.id] = { ...order, paid_at: moment().format().slice(0, 19) }
             delete orders.waiting[orderId]
             bot.deleteMessage(userId, messageId);
+
+            if (order?.referralBalanceUsed) {
+              db.data.referralWallet[userId].balance -= order.referralBalanceUsed
+              db.data.referralWallet[userId].records.push(
+                {
+                  type: "withdraw",
+                  orderId,
+                  amount: order.referralBalanceUsed
+                }
+              )
+            }
+            
+            const user = db.data.users[userId]
+            if (user.referral) {
+              let profit = parseInt((order.plan.final_price * 10000 * 0.1).toFixed())
+              db.data.referralWallet[user.referral].balance += profit
+              db.data.referralWallet[user.referral].records.push({
+                type: "deposit",
+                subsetId: `${userId}`,
+                subsetOrder: `${orderId}`,
+                amount: profit
+              })
+            }
+
             db.write()
 
             bot.sendPhoto(userId, subLinkQR, {
@@ -1146,8 +1210,9 @@ bot.on("callback_query", async (query) => {
     }
     case "plan_detailes": {
       const plan = plans.find((item) => item.id == queryData.data.planId);
+      const referralBalance = getReferralWalletBalance(chatId)
 
-      const botMsg = `${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n${plan.symbol} <b>حجم:</b> ${plan.traffic > 0 ? `${plan.traffic} گیگ` : 'نامحدود'}\n\n⏰ <b>مدت:</b> ${plan.period} روزه\n\n🎁 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\n😊 برای خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`
+      const botMsg = `${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n${plan.symbol} <b>حجم:</b> ${plan.traffic > 0 ? `${plan.traffic} گیگ` : 'نامحدود'}\n\n⏰ <b>مدت:</b> ${plan.period} روزه\n\n🎁 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\n${referralBalance && `👥 <b>اعتبار هدیه: </b>${Number(String(referralBalance).slice(0, -1)).toLocaleString()} تومان\n\n`}😊 برای خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`
 
       bot.editMessageText(botMsg, {
         chat_id: chatId,
@@ -1178,7 +1243,21 @@ bot.on("callback_query", async (query) => {
       const parentId = queryData.data?.parentId
       try {
         const orderId = Math.floor(Math.random() * (999999999 - 100000000 + 1)) + 100000000;
-        const amount = (plan.final_price * 10000) - Math.floor(Math.random() * 1000);
+        const amount = (plan.final_price * 10000) - Math.floor(Math.random() * 1000)
+        const referralBalance = getReferralWalletBalance(chatId)
+        let [difference, newReferralBalance, shouldPay] = [0, 0, 0]
+
+        if (referralBalance) {
+          difference = amount - referralBalance
+          if (difference >= 0) {
+            newReferralBalance = 0
+            shouldPay = difference
+          } else {
+            newReferralBalance = Math.abs(difference)
+            shouldPay = 0
+          }
+        }
+
         const paymentLimitTime = moment().add(32400000) // 9 hour
 
         const order = {
@@ -1194,18 +1273,23 @@ bot.on("callback_query", async (query) => {
               .replace("${SYMBOL}", plan.symbol)
               .replace("${PRICE}", plan.final_price),
           },
-          amount,
+          amount: shouldPay,
           created_at: moment().format().slice(0, 19),
           expire_at: moment().add(plan.period * 24 * 60 * 60 * 1000).format().slice(0, 19),
           payment_limit_time: paymentLimitTime.valueOf()
         };
+
+        if (referralBalance) {
+          order.referralBalanceUsed = referralBalance - newReferralBalance
+        }
+
         if (parentId)
           order.parentId = parseInt(parentId)
         db.data.orders.waiting[orderId] = order;
         db.write();
 
         bot.editMessageText(
-          `🛍️ <b>شماره سرویس: </b>${parentId || orderId}\n\n💳 <b>مبلغ نهایی: </b>\n<code>${amount.toLocaleString()}</code> ریال 👉 (روی اعداد ضربه بزنید تا کپی شود)\n\n🏦 <b>شماره کارت: </b>\n<code>${environment === 'pro' ? BANK_ACCOUNT.CARD_NUMBER : '0000-0000-0000-0000'}</code> 👉 (ضربه بزنید تا کپی شود)\n\n👤 <b>صاحب حساب: </b> ${environment === 'pro' ? BANK_ACCOUNT.OWNER_NAME : 'admin'}\n\n⚠️ <b>مهلت پرداخت: </b> تا ساعت <u><b>${paymentLimitTime.format().slice(11, 16)}</b></u> ⚠️\n\n‼️ <u><b>توجه: از رند کردن مبلغ نهایی خودداری کنید </b></u>‼️\n\n✅ جهت تکمیل خرید سرویس، مبلغ <u><b>دقیق</b></u> بالا را به شماره کارت ذکر شده واریز بفرمایید و رسید خود را برای <u><b>پشتیبانی</b></u> ارسال کنید 👇`,
+          `🛍️ <b>شماره سرویس: </b>${parentId || orderId}\n\n💳 <b>مبلغ نهایی: </b>\n<code>${shouldPay.toLocaleString()}</code> ریال 👉 (روی اعداد ضربه بزنید تا کپی شود)\n\n🏦 <b>شماره کارت: </b>\n<code>${environment === 'pro' ? BANK_ACCOUNT.CARD_NUMBER : '0000-0000-0000-0000'}</code> 👉 (ضربه بزنید تا کپی شود)\n\n👤 <b>صاحب حساب: </b> ${environment === 'pro' ? BANK_ACCOUNT.OWNER_NAME : 'admin'}\n\n⚠️ <b>مهلت پرداخت: </b> تا ساعت <u><b>${paymentLimitTime.format().slice(11, 16)}</b></u> ⚠️\n\n‼️ <u><b>توجه: از رند کردن مبلغ نهایی خودداری کنید </b></u>‼️\n\n✅ جهت تکمیل خرید سرویس، مبلغ <u><b>دقیق</b></u> بالا را به شماره کارت ذکر شده واریز بفرمایید و رسید خود را برای <u><b>پشتیبانی</b></u> ارسال کنید 👇`,
           {
             parse_mode: "HTML",
             chat_id: chatId,
@@ -1477,7 +1561,29 @@ app.post("/c2c-transaction-verification", async (req, res) => {
             delete orders.verified[parentId].parentId
             delete orders.waiting[orderId]
             bot.deleteMessage(userId, messageId);
-            db.write()
+
+            if (order?.referralBalanceUsed) {
+              db.data.referralWallet[userId].balance -= order.referralBalanceUsed
+              db.data.referralWallet[userId].records.push(
+                {
+                  type: "withdraw",
+                  orderId,
+                  amount: order.referralBalanceUsed
+                }
+              )
+            }
+            
+            const user = db.data.users[userId]
+            if (user.referral) {
+              let profit = parseInt((order.plan.final_price * 10000 * 0.1).toFixed())
+              db.data.referralWallet[user.referral].balance += profit
+              db.data.referralWallet[user.referral].records.push({
+                type: "deposit",
+                subsetId: `${userId}`,
+                subsetOrder: `${orderId}`,
+                amount: profit
+              })
+            }
 
             bot.sendMessage(userId, `✅ سرویس <b>${parentId}</b> تا تاریخ <b>${order.expire_at.slice(0, 10)}</b> با موفقیت تمدید شد\n\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال`,
               { parse_mode: 'HTML' })
@@ -1489,7 +1595,29 @@ app.post("/c2c-transaction-verification", async (req, res) => {
             orders.verified[order.id] = { ...order, paid_at: moment().format().slice(0, 19) }
             delete orders.waiting[orderId]
             bot.deleteMessage(userId, messageId);
-            db.write()
+
+            if (order?.referralBalanceUsed) {
+              db.data.referralWallet[userId].balance -= order.referralBalanceUsed
+              db.data.referralWallet[userId].records.push(
+                {
+                  type: "withdraw",
+                  orderId,
+                  amount: order.referralBalanceUsed
+                }
+              )
+            }
+            
+            const user = db.data.users[userId]
+            if (user.referral) {
+              let profit = parseInt((order.plan.final_price * 10000 * 0.1).toFixed())
+              db.data.referralWallet[user.referral].balance += profit
+              db.data.referralWallet[user.referral].records.push({
+                type: "deposit",
+                subsetId: `${userId}`,
+                subsetOrder: `${orderId}`,
+                amount: profit
+              })
+            }
 
             bot.sendPhoto(userId, subLinkQR, {
               caption: `✅ تراکنش شما با موفقیت تایید شد.\n\n🛍️ <b>شماره سرویس: </b>${order.id}\n🔋 <b>حجم: </b>${order.plan.traffic > 0 ? `${order.plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت: </b>${order.plan.period} روزه\n${order.plan.limit_ip > 1 ? "👥" : "👤"}<b>نوع طرح: </b>${order.plan.limit_ip} کاربره\n💳 <b>هزینه پرداخت شده: </b>${(order.amount).toLocaleString()} ریال\n\n‼️ <u> لینک پایین را کپی کرده و بر اساس آموزش های زیر، از آن برای دریافت کانفیگ ها در نرم افزارها استفاده کنید </u>\n\n👇 👇 👇 👇 👇 👇 👇`,
