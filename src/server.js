@@ -99,6 +99,18 @@ const plans = [
     active: true,
   },
   {
+    id: 106,
+    name: "${SYMBOL}${TRAFFIC} گیگ 👥${LIMIT_IP} کاربره ⏰${PERIOD} روزه 💳${PRICE} تومان",
+    symbol: "🥈",
+    traffic: 100,
+    period: 60,
+    original_price: 250,
+    final_price: 198,
+    limit_ip: 2,
+    version: 1,
+    active: true,
+  },
+  {
     id: 100,
     name: "${SYMBOL}${TRAFFIC} گیگ 👥${LIMIT_IP} کاربره ⏰${PERIOD} روزه 💳${PRICE} تومان",
     symbol: "🥇",
