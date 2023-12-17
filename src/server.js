@@ -921,6 +921,33 @@ bot.onText(/msg/, async ({ from, text }) => {
   }
 });
 
+// bot.onText(/add_time/, async ({ from, text }) => {
+//   const baseCheckingStatus = await baseChecking(from.id, true)
+//   if (!baseCheckingStatus) return
+
+//   if (from.id == ownerId) {
+//     const regexAdditionalTime = /add_time\s+(\d+)/;
+//     const matchAdditionalTime = text.match(regexAdditionalTime);
+//     const additionalTime = matchAdditionalTime ? matchAdditionalTime[1].trim() : null;
+
+//     if (additionalTime != null) {
+//       let inbounds = INBOUNDS[environment].map((item) => {
+//         return item.id
+//       })
+
+//       try {
+//         let query = `UPDATE client_traffics SET expiry_time = expiry_time + ${additionalTime * 3600000} WHERE inbound_id IN (${inbounds[0]}, ${inbounds[1]});`
+//         console.log(query);
+//         await api.db(query)
+//         bot.sendMessage(from.id, '✅ Done ✅')
+//       } catch (err) {
+//         console.log('add_time error: ', err);
+//         bot.sendMessage(from.id, `❌ Failed with error:\n${err}`)
+//       }
+//     }
+//   }
+// })
+
 bot.onText(/🎁 تست نامحدود و رایگان/, async ({ from }) => {
   const baseCheckingStatus = await baseChecking(from.id)
   if (!baseCheckingStatus) return
