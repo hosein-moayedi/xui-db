@@ -546,6 +546,29 @@ const cleanExpiredOrders = () => {
   }
 }
 
+const cleanTrashOrders = async () => {
+  try {
+    const query = `SELECT email FROM client_traffics WHERE inbound_id=${MAIN_INBOUND_ID} AND email NOT LIKE '%-test-%'`; // get expired configs
+    const rows = await api.db(query)
+    const remoteOrdersId = rows.map(row => {
+      const orderId = row.email.split('-')[1]
+      return orderId
+    });
+    if (remoteOrdersId.length > 0) {
+      let localOrdersId = Object.getOwnPropertyNames(db.data.orders.verified)
+      localOrdersId.map(id => {
+        if (!remoteOrdersId.includes(id)) {
+          console.log('Order removed: ', id);
+          delete db.data.orders.verified[id]
+        }
+      })
+      db.write()
+    }
+  } catch (err) {
+    console.log('cleanTrashOrders => ', err);
+  }
+}
+
 const cleanExpiredConfigs = async () => {
   try {
     const date = Date.now()
@@ -1618,6 +1641,7 @@ server.listen(port, '0.0.0.0', async () => {
     checkConfigsExpiration()
     cleanExpiredConfigs()
     cleanExpiredOrders()
+    cleanTrashOrders()
   }).start()
 });
 
