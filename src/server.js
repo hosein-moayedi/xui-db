@@ -929,12 +929,14 @@ bot.onText(/msg/, async ({ from, text }) => {
               bot.sendMessage(from.id, '⚠️ Target user not found! ⚠️')
               return
             }
+            bot.sendMessage(from.id, '📩 Start to sending...')
             let botMsg = `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients:</b>\n\n`
-            targets.map((targetId) => {
+            for (const targetId of targets) {
               const userInfo = users[targetId]
               bot.sendMessage(targetId, message, { parse_mode: 'HTML' })
               botMsg = botMsg + `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
-            })
+              await new Promise((resolve) => setTimeout(resolve, 5000))
+            }
             botMsg = botMsg + `\n\n\n👥 <b>Total Recipients: </b>${targets.length}\n\n`
             botMsg = botMsg + `✉️ <b>Message:</b>\n\n${message}`
             bot.sendMessage(from.id, botMsg, { parse_mode: "HTML" })
