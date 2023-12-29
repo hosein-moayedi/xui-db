@@ -854,9 +854,11 @@ bot.onText(/msg/, async ({ from, text }) => {
       if (recipient && message) {
         switch (recipient) {
           case "all": {
+            bot.sendMessage(from.id, '📩 Start to sending...')
             for (const userId in users) {
               if (userId !== ownerId)
                 bot.sendMessage(userId, message)
+              await new Promise((resolve) => setTimeout(resolve, 5000))
             }
             bot.sendMessage(from.id, `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients</b>: ${recipient}\n\n✉️ <b>Message:</b>\n\n${message}`, { parse_mode: "HTML" })
             break;
@@ -868,19 +870,21 @@ bot.onText(/msg/, async ({ from, text }) => {
               bot.sendMessage(from.id, '⚠️ There is no any sub user! ⚠️')
               return
             }
-            const recipients = []
+            let recipients = []
             rows.map(({ email }) => {
               const userId = email.split('-')[0]
               if (!recipients.find((item) => item == userId) && userId !== ownerId) {
                 recipients.push(userId)
               }
             })
+            bot.sendMessage(from.id, '📩 Start to sending...')
             let botMsgToAdmin = `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients:</b>\n\n`
-            recipients.map((userId) => {
+            for (const userId of recipients) {
               const userInfo = users[userId]
               bot.sendMessage(userInfo.id, message)
               botMsgToAdmin = botMsgToAdmin + `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
-            })
+              await new Promise((resolve) => setTimeout(resolve, 5000))
+            }
             botMsgToAdmin = botMsgToAdmin + `\n\n\n👥 <b>Total Recipients: </b>${recipients.length}\n\n`
             botMsgToAdmin = botMsgToAdmin + `✉️ <b>Message:</b>\n\n${message}`
             bot.sendMessage(from.id, botMsgToAdmin, { parse_mode: "HTML" })
@@ -898,15 +902,16 @@ bot.onText(/msg/, async ({ from, text }) => {
                 subUsers.push(userId)
               }
             })
+            bot.sendMessage(from.id, '📩 Start to sending...')
             recipients = allUsers.filter(element => !subUsers.includes(element))
             let botMsgToAdmin = `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients:</b>\n\n`
-            recipients.map((userId) => {
-              if (userId !== ownerId) {
-                const userInfo = users[userId]
-                bot.sendMessage(userInfo.id, message)
-                botMsgToAdmin = botMsgToAdmin + `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
-              }
-            })
+            recipients = recipients.filter((userId) => userId !== ownerId)
+            for (const userId of recipients) {
+              const userInfo = users[userId]
+              bot.sendMessage(userInfo.id, message)
+              botMsgToAdmin = botMsgToAdmin + `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
+              await new Promise((resolve) => setTimeout(resolve, 5000))
+            }
             botMsgToAdmin = botMsgToAdmin + `\n\n\n👥 <b>Total Recipients: </b>${recipients.length}\n\n`
             botMsgToAdmin = botMsgToAdmin + `✉️ <b>Message:</b>\n\n${message}`
             bot.sendMessage(from.id, botMsgToAdmin, { parse_mode: "HTML" })
