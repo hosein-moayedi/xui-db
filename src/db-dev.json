@@ -1,121 +1,23 @@
 {
   "users": {
-    "63528751": {
-      "id": 63528751,
-      "tg_name": "Дmiянossein",
-      "tg_username": "Am1r_H_SH",
+    "120409216": {
+      "id": 120409216,
+      "tg_name": "عجل لولیک الفرج",
+      "tg_username": "server123",
       "tested": false,
-      "created_at": "2023-08-18T10:57:58"
-    },
-    "105149362": {
-      "id": 105149362,
-      "tg_name": "Borzu 9",
-      "tg_username": "Borzu_parsa",
-      "tested": true,
-      "created_at": "2023-08-24T23:03:25"
-    },
-    "200809663": {
-      "id": 200809663,
-      "tg_name": "Pooriya",
-      "tg_username": "mfpsd",
-      "tested": false,
-      "created_at": "2023-08-21T12:07:48"
-    },
-    "232953404": {
-      "id": 232953404,
-      "tg_name": "حًََُِِِِِِِمَََََیِِِِِدَََََرََََََِِِِِِِضَََََاَََََََِِِِِِ",
-      "tg_username": "H4midR3za",
-      "tested": true,
-      "created_at": "2023-08-21T00:58:13"
-    },
-    "409431573": {
-      "id": 409431573,
-      "tg_name": "Hosein",
-      "tg_username": "xrois",
-      "tested": true,
-      "created_at": "2023-08-03T03:47:36"
-    },
-    "491004519": {
-      "id": 491004519,
-      "tg_name": "سینا",
-      "tg_username": "Jimmyy_Neutronn",
-      "tested": false,
-      "created_at": "2023-09-29T16:25:17"
-    },
-    "540479727": {
-      "id": 540479727,
-      "tg_name": "Hesam",
-      "tg_username": "Ignore12",
-      "tested": true,
-      "created_at": "2023-08-21T12:34:09"
-    },
-    "840821109": {
-      "id": 840821109,
-      "tg_name": "Amin",
-      "tg_username": "amin_moayedi",
-      "tested": false,
-      "created_at": "2023-08-09T19:02:56"
+      "created_at": "2023-12-29T15:08:39"
     },
     "1085276188": {
       "id": 1085276188,
       "tg_name": "Support 👨🏻‍💻",
       "tg_username": "nova_vpn_support",
-      "tested": true,
+      "tested": false,
       "created_at": "2023-08-03T19:09:35"
-    },
-    "1546569209": {
-      "id": 1546569209,
-      "tg_name": "aria",
-      "tg_username": "colonel_aria",
-      "tested": false,
-      "created_at": "2023-09-03T11:41:37"
-    },
-    "6017602287": {
-      "id": 6017602287,
-      "tg_name": "Hamid",
-      "tested": false,
-      "created_at": "2023-08-05T23:03:46"
-    },
-    "5291183818": {
-      "id": 5291183818,
-      "tg_name": "Sajad",
-      "tg_username": "Donsheidaei",
-      "tested": false,
-      "created_at": "2023-08-18T10:56:00"
-    },
-    "5688834528": {
-      "id": 5688834528,
-      "tg_name": "Mahdi",
-      "tg_username": "mahdi_na_dl",
-      "tested": true,
-      "created_at": "2023-09-27T23:22:36"
     }
   },
   "orders": {
     "waiting": {},
-    "verified": {
-      "457110792": {
-        "id": 457110792,
-        "user_id": 1085276188,
-        "plan": {
-          "id": 103,
-          "name": "🎖️ نامحدود     1 کاربره   💳 150 تومان",
-          "symbol": "🎖️",
-          "traffic": 0,
-          "period": 30,
-          "original_price": 200,
-          "final_price": 150,
-          "limit_ip": 1,
-          "version": 1,
-          "active": true
-        },
-        "amount": 1499228,
-        "created_at": "2023-10-06T14:35:09",
-        "expire_at": "2023-11-05T14:35:09",
-        "payment_limit_time": 1696622709215,
-        "paid_at": "2023-10-06T14:35:14"
-      }
-    },
+    "verified": {},
     "expired": {}
   }
 }
