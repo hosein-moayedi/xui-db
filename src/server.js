@@ -854,13 +854,38 @@ bot.onText(/msg/, async ({ from, text }) => {
       if (recipient && message) {
         switch (recipient) {
           case "all": {
-            bot.sendMessage(from.id, '📩 Start to sending...')
-            for (const userId in users) {
-              if (userId !== ownerId)
-                bot.sendMessage(userId, message)
-              await new Promise((resolve) => setTimeout(resolve, 5000))
+            let recipients = Object.getOwnPropertyNames(users).filter((id) => id != ownerId)
+
+            let splitedArray = []
+            let chunkSize = 30
+            for (let i = 0; i < recipients.length; i += chunkSize) {
+              splitedArray.push(recipients.slice(i, i + chunkSize))
             }
-            bot.sendMessage(from.id, `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients</b>: ${recipient}\n\n✉️ <b>Message:</b>\n\n${message}`, { parse_mode: "HTML" })
+
+            let numberOfSuccess = 0
+            bot.sendMessage(from.id, '⬆️ Start to sending...')
+
+            for (const division of splitedArray) {
+              try {
+                numberOfSuccess += division.length
+                let botMsgToAdmin = `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients:</b>\n\n`
+                for (const userId of division) {
+                  const userInfo = users[userId]
+                  bot.sendMessage(userInfo.id, message)
+                  botMsgToAdmin += `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
+                }
+                botMsgToAdmin += `\n\n\n👥 <b>Total Recipients: </b>${numberOfSuccess}/${recipients.length}\n\n`
+                botMsgToAdmin += `✉️ <b>Message:</b>\n\n${message}`
+                bot.sendMessage(from.id, botMsgToAdmin, { parse_mode: 'HTML' })
+              } catch (error) {
+                console.log(error)
+                bot.sendMessage(from.id, `❌ Failed to send message to division users: ${error}`, { parse_mode: 'HTML' })
+              }
+              if (numberOfSuccess != recipients.length)
+                await new Promise((resolve) => setTimeout(resolve, 900000))
+            }
+
+            setTimeout(() => bot.sendMessage(from.id, "========================\n\n✅ The message was successfully sent to all recipients ✅\n\n========================", { parse_mode: "HTML" }), 1000)
             break;
           }
           case "sub": {
@@ -877,17 +902,37 @@ bot.onText(/msg/, async ({ from, text }) => {
                 recipients.push(userId)
               }
             })
-            bot.sendMessage(from.id, '📩 Start to sending...')
-            let botMsgToAdmin = `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients:</b>\n\n`
-            for (const userId of recipients) {
-              const userInfo = users[userId]
-              bot.sendMessage(userInfo.id, message)
-              botMsgToAdmin = botMsgToAdmin + `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
-              await new Promise((resolve) => setTimeout(resolve, 5000))
+
+            let splitedArray = []
+            let chunkSize = 35
+            for (let i = 0; i < recipients.length; i += chunkSize) {
+              splitedArray.push(recipients.slice(i, i + chunkSize))
             }
-            botMsgToAdmin = botMsgToAdmin + `\n\n\n👥 <b>Total Recipients: </b>${recipients.length}\n\n`
-            botMsgToAdmin = botMsgToAdmin + `✉️ <b>Message:</b>\n\n${message}`
-            bot.sendMessage(from.id, botMsgToAdmin, { parse_mode: "HTML" })
+
+            let numberOfSuccess = 0
+            bot.sendMessage(from.id, '⬆️ Start to sending...')
+
+            for (const division of splitedArray) {
+              try {
+                numberOfSuccess += division.length
+                let botMsgToAdmin = `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients:</b>\n\n`
+                for (const userId of division) {
+                  const userInfo = users[userId]
+                  bot.sendMessage(userInfo.id, message)
+                  botMsgToAdmin += `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
+                }
+                botMsgToAdmin += `\n\n\n👥 <b>Total Recipients: </b>${numberOfSuccess}/${recipients.length}\n\n`
+                botMsgToAdmin += `✉️ <b>Message:</b>\n\n${message}`
+                bot.sendMessage(from.id, botMsgToAdmin, { parse_mode: 'HTML' })
+              } catch (error) {
+                console.log(error)
+                bot.sendMessage(from.id, `❌ Failed to send message to division users: ${error}`, { parse_mode: 'HTML' })
+              }
+              if (numberOfSuccess != recipients.length)
+                await new Promise((resolve) => setTimeout(resolve, 900000))
+            }
+
+            setTimeout(() => bot.sendMessage(from.id, "========================\n\n✅ The message was successfully sent to all recipients ✅\n\n========================", { parse_mode: "HTML" }), 1000)
             break;
           }
           case 'unsub': {
@@ -902,25 +947,46 @@ bot.onText(/msg/, async ({ from, text }) => {
                 subUsers.push(userId)
               }
             })
-            bot.sendMessage(from.id, '📩 Start to sending...')
+
             recipients = allUsers.filter(element => !subUsers.includes(element))
-            let botMsgToAdmin = `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients:</b>\n\n`
             recipients = recipients.filter((userId) => userId !== ownerId)
-            for (const userId of recipients) {
-              const userInfo = users[userId]
-              bot.sendMessage(userInfo.id, message)
-              botMsgToAdmin = botMsgToAdmin + `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
-              await new Promise((resolve) => setTimeout(resolve, 5000))
+
+            let splitedArray = []
+            let chunkSize = 35
+            for (let i = 0; i < recipients.length; i += chunkSize) {
+              splitedArray.push(recipients.slice(i, i + chunkSize))
             }
-            botMsgToAdmin = botMsgToAdmin + `\n\n\n👥 <b>Total Recipients: </b>${recipients.length}\n\n`
-            botMsgToAdmin = botMsgToAdmin + `✉️ <b>Message:</b>\n\n${message}`
-            bot.sendMessage(from.id, botMsgToAdmin, { parse_mode: "HTML" })
+
+            let numberOfSuccess = 0
+            bot.sendMessage(from.id, '⬆️ Start to sending...')
+
+            for (const division of splitedArray) {
+              try {
+                numberOfSuccess += division.length
+                let botMsgToAdmin = `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients:</b>\n\n`
+                for (const userId of division) {
+                  const userInfo = users[userId]
+                  bot.sendMessage(userInfo.id, message)
+                  botMsgToAdmin += `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
+                }
+                botMsgToAdmin += `\n\n\n👥 <b>Total Recipients: </b>${numberOfSuccess}/${recipients.length}\n\n`
+                botMsgToAdmin += `✉️ <b>Message:</b>\n\n${message}`
+                bot.sendMessage(from.id, botMsgToAdmin, { parse_mode: 'HTML' })
+              } catch (error) {
+                console.log(error)
+                bot.sendMessage(from.id, `❌ Failed to send message to division users: ${error}`, { parse_mode: 'HTML' })
+              }
+              if (numberOfSuccess != recipients.length)
+                await new Promise((resolve) => setTimeout(resolve, 900000))
+            }
+
+            setTimeout(() => bot.sendMessage(from.id, "========================\n\n✅ The message was successfully sent to all recipients ✅\n\n========================", { parse_mode: "HTML" }), 1000)
             break;
           }
           default: {
-            const targets = recipient.split(',')
+            const recipients = recipient.split(',')
             let notValid = false
-            targets.map((targetId) => {
+            recipients.map((targetId) => {
               if (!notValid && !users[targetId]) {
                 notValid = true
               }
@@ -929,17 +995,37 @@ bot.onText(/msg/, async ({ from, text }) => {
               bot.sendMessage(from.id, '⚠️ Target user not found! ⚠️')
               return
             }
-            bot.sendMessage(from.id, '📩 Start to sending...')
-            let botMsg = `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients:</b>\n\n`
-            for (const targetId of targets) {
-              const userInfo = users[targetId]
-              bot.sendMessage(targetId, message, { parse_mode: 'HTML' })
-              botMsg = botMsg + `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
-              await new Promise((resolve) => setTimeout(resolve, 5000))
+
+            let splitedArray = []
+            let chunkSize = 30
+            for (let i = 0; i < recipients.length; i += chunkSize) {
+              splitedArray.push(recipients.slice(i, i + chunkSize))
             }
-            botMsg = botMsg + `\n\n\n👥 <b>Total Recipients: </b>${targets.length}\n\n`
-            botMsg = botMsg + `✉️ <b>Message:</b>\n\n${message}`
-            bot.sendMessage(from.id, botMsg, { parse_mode: "HTML" })
+
+            let numberOfSuccess = 0
+            bot.sendMessage(from.id, '⬆️ Start to sending...')
+
+            for (const division of splitedArray) {
+              try {
+                numberOfSuccess += division.length
+                let botMsgToAdmin = `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients:</b>\n\n`
+                for (const userId of division) {
+                  const userInfo = users[userId]
+                  bot.sendMessage(userInfo.id, message)
+                  botMsgToAdmin += `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
+                }
+                botMsgToAdmin += `\n\n\n👥 <b>Total Recipients: </b>${numberOfSuccess}/${recipients.length}\n\n`
+                botMsgToAdmin += `✉️ <b>Message:</b>\n\n${message}`
+                bot.sendMessage(from.id, botMsgToAdmin, { parse_mode: 'HTML' })
+              } catch (error) {
+                console.log(error)
+                bot.sendMessage(from.id, `❌ Failed to send message to division users: ${error}`, { parse_mode: 'HTML' })
+              }
+              if (numberOfSuccess != recipients.length)
+                await new Promise((resolve) => setTimeout(resolve, 900000))
+            }
+
+            setTimeout(() => bot.sendMessage(from.id, "========================\n\n✅ The message was successfully sent to all recipients ✅\n\n========================", { parse_mode: "HTML" }), 1000)
             break;
           }
         }
