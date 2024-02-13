@@ -52,7 +52,30 @@
   },
   "orders": {
     "waiting": {},
-    "verified": {},
+    "verified": {
+      "457110792": {
+        "id": 457110792,
+        "user_id": 1085276188,
+        "plan": {
+          "id": 103,
+          "name": "🎖️نامحدود 👤1 کاربره ⏰${PERIOD} روزه 💳150 تومان",
+          "symbol": "🎖️",
+          "traffic": 0,
+          "period": 30,
+          "original_price": 200,
+          "final_price": 150,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
+        },
+        "amount": 1499603,
+        "created_at": "2024-01-14T14:06:43",
+        "expire_at": "2024-02-13T14:06:43",
+        "payment_limit_time": 1705261003515,
+        "paid_at": "2024-01-14T15:13:22",
+        "renewed": true
+      }
+    },
     "expired": {}
   }
 }
