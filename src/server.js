@@ -1133,23 +1133,27 @@ bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
     }
     configs.map(async ({ email, total_usage, total, enable }) => {
       const orderId = email.split('-')[1]
-      const { plan, paid_at, expire_at } = db.data.orders.verified[orderId]
-      let remainingTraffic = ((total - total_usage) / 1024 / 1024 / 1024).toFixed(2)
-      remainingTraffic = remainingTraffic > 0 ? remainingTraffic : 0
-      const subLink = vpn.getSubLink(orderId)
-      const subLinkQR = await qrGenerator(subLink)
-      bot.sendPhoto(from.id, subLinkQR,
-        {
-          caption: `🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${total > 0 ? `${remainingTraffic} گیگ` : 'نامحدود'}\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n\n♻️ <b>لینک آپدیت خودکار: </b>(روی لینک پایین بزنید تا کپی شود 👇)\n<code>${subLink}</code>` : '\n\n⚠️ حجم و یا تاریخ انقضای این سرویس به پایان رسیده. جهت تمدید سرویس روی دکمه زیر بزنید 👇'}`,
-          parse_mode: "HTML",
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: '♻️ تمدید سرویس ♻️', callback_data: JSON.stringify({ act: 'renew_gen', data: { orderId } }) }],
-              [{ text: '✍️ تغییر و تمدید سرویس ✍️', callback_data: JSON.stringify({ act: 'edit_plan', data: { orderId } }) }],
-            ]
+      try {
+        const { plan, paid_at, expire_at } = db.data.orders.verified[orderId]
+        let remainingTraffic = ((total - total_usage) / 1024 / 1024 / 1024).toFixed(2)
+        remainingTraffic = remainingTraffic > 0 ? remainingTraffic : 0
+        const subLink = vpn.getSubLink(orderId)
+        const subLinkQR = await qrGenerator(subLink)
+        bot.sendPhoto(from.id, subLinkQR,
+          {
+            caption: `🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${total > 0 ? `${remainingTraffic} گیگ` : 'نامحدود'}\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n\n♻️ <b>لینک آپدیت خودکار: </b>(روی لینک پایین بزنید تا کپی شود 👇)\n<code>${subLink}</code>` : '\n\n⚠️ حجم و یا تاریخ انقضای این سرویس به پایان رسیده. جهت تمدید سرویس روی دکمه زیر بزنید 👇'}`,
+            parse_mode: "HTML",
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: '♻️ تمدید سرویس ♻️', callback_data: JSON.stringify({ act: 'renew_gen', data: { orderId } }) }],
+                [{ text: '✍️ تغییر و تمدید سرویس ✍️', callback_data: JSON.stringify({ act: 'edit_plan', data: { orderId } }) }],
+              ]
+            }
           }
-        }
-      );
+        );
+      } catch (err) {
+        console.log(err);
+      }
     })
   } catch (err) {
     console.log(err);
@@ -1734,7 +1738,7 @@ server.listen(port, '0.0.0.0', async () => {
     checkConfigsExpiration()
     cleanExpiredConfigs()
     cleanExpiredOrders()
-    cleanTrashOrders()
+    // cleanTrashOrders()
   }).start()
 });
 
