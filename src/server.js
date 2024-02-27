@@ -733,6 +733,18 @@ const baseChecking = async (userId, isStartCommand) => {
   return true
 }
 
+const cleanErrorLogs = async () => {
+  const filePath = '/usr/local/x-ui/error.log';
+
+  fs.truncate(filePath, 0, (err) => {
+    if (err) {
+      console.error(`Error truncating file: ${err}`);
+      return;
+    }
+    console.log('File emptied successfully');
+  });
+}
+
 bot.onText(/\/start/, async ({ from }) => {
   if (from.is_bot)
     return;
@@ -1739,6 +1751,7 @@ server.listen(port, '0.0.0.0', async () => {
     cleanExpiredConfigs()
     cleanExpiredOrders()
     // cleanTrashOrders()
+    cleanErrorLogs()
   }).start()
 });
 
