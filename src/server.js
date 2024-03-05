@@ -791,10 +791,10 @@ bot.onText(/ok/, async ({ from, text }) => {
           const [userId, messageId] = [order.user_id, order.message_id]
           const parentId = order?.parentId
           delete order.message_id
-          order.trashMessages.map((msgId) => {
+          order?.trashMessages?.map((msgId) => {
             bot.deleteMessage(userId, msgId);
           })
-          delete order.trashMessages
+          delete order?.trashMessages
           if (parentId) {
             await vpn.renewConfig(userId, parentId, order.plan)
 
