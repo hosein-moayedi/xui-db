@@ -99,6 +99,18 @@ const plans = [
     active: true,
   },
   {
+    id: 106,
+    name: "${SYMBOL}${TRAFFIC} گیگ 👥${LIMIT_IP} کاربره ⏰${PERIOD} روزه 💳${PRICE} تومان",
+    symbol: "🥈",
+    traffic: 100,
+    period: 60,
+    original_price: 250,
+    final_price: 198,
+    limit_ip: 2,
+    version: 1,
+    active: true,
+  },
+  {
     id: 100,
     name: "${SYMBOL}${TRAFFIC} گیگ 👥${LIMIT_IP} کاربره ⏰${PERIOD} روزه 💳${PRICE} تومان",
     symbol: "🥇",
@@ -416,8 +428,13 @@ const buttons = {
   mainMenu: [
     ["🛍️ خرید سرویس"],
     ["🔮 سرویس‌ های فعال", "🎁 تست نامحدود و رایگان",],
-    ["🔰 آموزش اتصال"],
-    ["☎️ پشتیبانی", "🫂 پشتیبانی فنی"],
+    ["🌟 اعتبار رایگان - معرفی دوستان 🌟"],
+    ["☎️ پشتیبانی", "🔰 آموزش اتصال"],
+  ],
+  referralMenu: [
+    ['📩 دعوت نامه اختصاصی من'],
+    ['👥 دوستان من', '💳 اعتبار کیف پول'],
+    ['بازگشت به منو اصلی ربات 🏡']
   ],
   education: [
     [{
@@ -531,6 +548,29 @@ const cleanExpiredOrders = () => {
     }
   } catch (err) {
     console.error("❌ Error: cleanExpiredOrders> ", err);
+  }
+}
+
+const cleanTrashOrders = async () => {
+  try {
+    const query = `SELECT email FROM client_traffics WHERE inbound_id=${MAIN_INBOUND_ID} AND email NOT LIKE '%-test-%'`; // get expired configs
+    const rows = await api.db(query)
+    const remoteOrdersId = rows.map(row => {
+      const orderId = row.email.split('-')[1]
+      return orderId
+    });
+    if (remoteOrdersId.length > 0) {
+      let localOrdersId = Object.getOwnPropertyNames(db.data.orders.verified)
+      localOrdersId.map(id => {
+        if (!remoteOrdersId.includes(id)) {
+          console.log('Order removed: ', id);
+          delete db.data.orders.verified[id]
+        }
+      })
+      db.write()
+    }
+  } catch (err) {
+    console.log('cleanTrashOrders => ', err);
   }
 }
 
@@ -704,6 +744,18 @@ const getReferralWalletBalance = (userId) => {
   return totalBalance
 }
 
+const cleanErrorLogs = async () => {
+  const filePath = '/usr/local/x-ui/error.log';
+
+  fs.truncate(filePath, 0, (err) => {
+    if (err) {
+      console.error(`Error truncating file: ${err}`);
+      return;
+    }
+    console.log('File emptied successfully');
+  });
+}
+
 bot.onText(/\/start(?: (.*))?/, async ({ from }, match) => {
   if (from.is_bot)
     return;
@@ -760,10 +812,10 @@ bot.onText(/ok/, async ({ from, text }) => {
           const [userId, messageId] = [order.user_id, order.message_id]
           const parentId = order?.parentId
           delete order.message_id
-          order.trashMessages.map((msgId) => {
+          order?.trashMessages?.map((msgId) => {
             bot.deleteMessage(userId, msgId);
           })
-          delete order.trashMessages
+          delete order?.trashMessages
           if (parentId) {
             await vpn.renewConfig(userId, parentId, order.plan)
 
@@ -772,17 +824,17 @@ bot.onText(/ok/, async ({ from, text }) => {
             delete orders.waiting[orderId]
             bot.deleteMessage(userId, messageId);
 
-            if (order?.referralBalanceUsed) {
-              db.data.referralWallet[userId].balance -= order.referralBalanceUsed
+            if (order?.referral_balance_used) {
+              db.data.referralWallet[userId].balance -= order.referral_balance_used
               db.data.referralWallet[userId].records.push(
                 {
                   type: "withdraw",
                   orderId,
-                  amount: order.referralBalanceUsed
+                  amount: order.referral_balance_used
                 }
               )
             }
-            
+
             const user = db.data.users[userId]
             if (user.referral) {
               let profit = parseInt((order.plan.final_price * 10000 * 0.1).toFixed())
@@ -808,17 +860,17 @@ bot.onText(/ok/, async ({ from, text }) => {
             delete orders.waiting[orderId]
             bot.deleteMessage(userId, messageId);
 
-            if (order?.referralBalanceUsed) {
-              db.data.referralWallet[userId].balance -= order.referralBalanceUsed
+            if (order?.referral_balance_used) {
+              db.data.referralWallet[userId].balance -= order.referral_balance_used
               db.data.referralWallet[userId].records.push(
                 {
                   type: "withdraw",
                   orderId,
-                  amount: order.referralBalanceUsed
+                  amount: order.referral_balance_used
                 }
               )
             }
-            
+
             const user = db.data.users[userId]
             if (user.referral) {
               let profit = parseInt((order.plan.final_price * 10000 * 0.1).toFixed())
@@ -883,11 +935,38 @@ bot.onText(/msg/, async ({ from, text }) => {
       if (recipient && message) {
         switch (recipient) {
           case "all": {
-            for (const userId in users) {
-              if (userId !== ownerId)
-                bot.sendMessage(userId, message)
+            let recipients = Object.getOwnPropertyNames(users).filter((id) => id != ownerId)
+
+            let splitedArray = []
+            let chunkSize = 30
+            for (let i = 0; i < recipients.length; i += chunkSize) {
+              splitedArray.push(recipients.slice(i, i + chunkSize))
             }
-            bot.sendMessage(from.id, `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients</b>: ${recipient}\n\n✉️ <b>Message:</b>\n\n${message}`, { parse_mode: "HTML" })
+
+            let numberOfSuccess = 0
+            bot.sendMessage(from.id, '⬆️ Start to sending...')
+
+            for (const division of splitedArray) {
+              try {
+                numberOfSuccess += division.length
+                let botMsgToAdmin = `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients:</b>\n\n`
+                for (const userId of division) {
+                  const userInfo = users[userId]
+                  bot.sendMessage(userInfo.id, message)
+                  botMsgToAdmin += `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
+                }
+                botMsgToAdmin += `\n\n\n👥 <b>Total Recipients: </b>${numberOfSuccess}/${recipients.length}\n\n`
+                botMsgToAdmin += `✉️ <b>Message:</b>\n\n${message}`
+                bot.sendMessage(from.id, botMsgToAdmin, { parse_mode: 'HTML' })
+              } catch (error) {
+                console.log(error)
+                bot.sendMessage(from.id, `❌ Failed to send message to division users: ${error}`, { parse_mode: 'HTML' })
+              }
+              if (numberOfSuccess != recipients.length)
+                await new Promise((resolve) => setTimeout(resolve, 900000))
+            }
+
+            setTimeout(() => bot.sendMessage(from.id, "========================\n\n✅ The message was successfully sent to all recipients ✅\n\n========================", { parse_mode: "HTML" }), 1000)
             break;
           }
           case "sub": {
@@ -897,22 +976,44 @@ bot.onText(/msg/, async ({ from, text }) => {
               bot.sendMessage(from.id, '⚠️ There is no any sub user! ⚠️')
               return
             }
-            const recipients = []
+            let recipients = []
             rows.map(({ email }) => {
               const userId = email.split('-')[0]
               if (!recipients.find((item) => item == userId) && userId !== ownerId) {
                 recipients.push(userId)
               }
             })
-            let botMsgToAdmin = `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients:</b>\n\n`
-            recipients.map((userId) => {
-              const userInfo = users[userId]
-              bot.sendMessage(userInfo.id, message)
-              botMsgToAdmin = botMsgToAdmin + `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
-            })
-            botMsgToAdmin = botMsgToAdmin + `\n\n\n👥 <b>Total Recipients: </b>${recipients.length}\n\n`
-            botMsgToAdmin = botMsgToAdmin + `✉️ <b>Message:</b>\n\n${message}`
-            bot.sendMessage(from.id, botMsgToAdmin, { parse_mode: "HTML" })
+
+            let splitedArray = []
+            let chunkSize = 35
+            for (let i = 0; i < recipients.length; i += chunkSize) {
+              splitedArray.push(recipients.slice(i, i + chunkSize))
+            }
+
+            let numberOfSuccess = 0
+            bot.sendMessage(from.id, '⬆️ Start to sending...')
+
+            for (const division of splitedArray) {
+              try {
+                numberOfSuccess += division.length
+                let botMsgToAdmin = `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients:</b>\n\n`
+                for (const userId of division) {
+                  const userInfo = users[userId]
+                  bot.sendMessage(userInfo.id, message)
+                  botMsgToAdmin += `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
+                }
+                botMsgToAdmin += `\n\n\n👥 <b>Total Recipients: </b>${numberOfSuccess}/${recipients.length}\n\n`
+                botMsgToAdmin += `✉️ <b>Message:</b>\n\n${message}`
+                bot.sendMessage(from.id, botMsgToAdmin, { parse_mode: 'HTML' })
+              } catch (error) {
+                console.log(error)
+                bot.sendMessage(from.id, `❌ Failed to send message to division users: ${error}`, { parse_mode: 'HTML' })
+              }
+              if (numberOfSuccess != recipients.length)
+                await new Promise((resolve) => setTimeout(resolve, 900000))
+            }
+
+            setTimeout(() => bot.sendMessage(from.id, "========================\n\n✅ The message was successfully sent to all recipients ✅\n\n========================", { parse_mode: "HTML" }), 1000)
             break;
           }
           case 'unsub': {
@@ -927,24 +1028,46 @@ bot.onText(/msg/, async ({ from, text }) => {
                 subUsers.push(userId)
               }
             })
+
             recipients = allUsers.filter(element => !subUsers.includes(element))
-            let botMsgToAdmin = `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients:</b>\n\n`
-            recipients.map((userId) => {
-              if (userId !== ownerId) {
-                const userInfo = users[userId]
-                bot.sendMessage(userInfo.id, message)
-                botMsgToAdmin = botMsgToAdmin + `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
+            recipients = recipients.filter((userId) => userId !== ownerId)
+
+            let splitedArray = []
+            let chunkSize = 35
+            for (let i = 0; i < recipients.length; i += chunkSize) {
+              splitedArray.push(recipients.slice(i, i + chunkSize))
+            }
+
+            let numberOfSuccess = 0
+            bot.sendMessage(from.id, '⬆️ Start to sending...')
+
+            for (const division of splitedArray) {
+              try {
+                numberOfSuccess += division.length
+                let botMsgToAdmin = `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients:</b>\n\n`
+                for (const userId of division) {
+                  const userInfo = users[userId]
+                  bot.sendMessage(userInfo.id, message)
+                  botMsgToAdmin += `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
+                }
+                botMsgToAdmin += `\n\n\n👥 <b>Total Recipients: </b>${numberOfSuccess}/${recipients.length}\n\n`
+                botMsgToAdmin += `✉️ <b>Message:</b>\n\n${message}`
+                bot.sendMessage(from.id, botMsgToAdmin, { parse_mode: 'HTML' })
+              } catch (error) {
+                console.log(error)
+                bot.sendMessage(from.id, `❌ Failed to send message to division users: ${error}`, { parse_mode: 'HTML' })
               }
-            })
-            botMsgToAdmin = botMsgToAdmin + `\n\n\n👥 <b>Total Recipients: </b>${recipients.length}\n\n`
-            botMsgToAdmin = botMsgToAdmin + `✉️ <b>Message:</b>\n\n${message}`
-            bot.sendMessage(from.id, botMsgToAdmin, { parse_mode: "HTML" })
+              if (numberOfSuccess != recipients.length)
+                await new Promise((resolve) => setTimeout(resolve, 900000))
+            }
+
+            setTimeout(() => bot.sendMessage(from.id, "========================\n\n✅ The message was successfully sent to all recipients ✅\n\n========================", { parse_mode: "HTML" }), 1000)
             break;
           }
           default: {
-            const targets = recipient.split(',')
+            const recipients = recipient.split(',')
             let notValid = false
-            targets.map((targetId) => {
+            recipients.map((targetId) => {
               if (!notValid && !users[targetId]) {
                 notValid = true
               }
@@ -953,15 +1076,37 @@ bot.onText(/msg/, async ({ from, text }) => {
               bot.sendMessage(from.id, '⚠️ Target user not found! ⚠️')
               return
             }
-            let botMsg = `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients:</b>\n\n`
-            targets.map((targetId) => {
-              const userInfo = users[targetId]
-              bot.sendMessage(targetId, message, { parse_mode: 'HTML' })
-              botMsg = botMsg + `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
-            })
-            botMsg = botMsg + `\n\n\n👥 <b>Total Recipients: </b>${targets.length}\n\n`
-            botMsg = botMsg + `✉️ <b>Message:</b>\n\n${message}`
-            bot.sendMessage(from.id, botMsg, { parse_mode: "HTML" })
+
+            let splitedArray = []
+            let chunkSize = 30
+            for (let i = 0; i < recipients.length; i += chunkSize) {
+              splitedArray.push(recipients.slice(i, i + chunkSize))
+            }
+
+            let numberOfSuccess = 0
+            bot.sendMessage(from.id, '⬆️ Start to sending...')
+
+            for (const division of splitedArray) {
+              try {
+                numberOfSuccess += division.length
+                let botMsgToAdmin = `✅ <b>The message was sent</b> ✅\n\n📫 <b>Recipients:</b>\n\n`
+                for (const userId of division) {
+                  const userInfo = users[userId]
+                  bot.sendMessage(userInfo.id, message)
+                  botMsgToAdmin += `\nid: ${userInfo.id}\nusername: @${userInfo.tg_username || 'none'}\nname: ${userInfo.tg_name}\n-----------------------------`
+                }
+                botMsgToAdmin += `\n\n\n👥 <b>Total Recipients: </b>${numberOfSuccess}/${recipients.length}\n\n`
+                botMsgToAdmin += `✉️ <b>Message:</b>\n\n${message}`
+                bot.sendMessage(from.id, botMsgToAdmin, { parse_mode: 'HTML' })
+              } catch (error) {
+                console.log(error)
+                bot.sendMessage(from.id, `❌ Failed to send message to division users: ${error}`, { parse_mode: 'HTML' })
+              }
+              if (numberOfSuccess != recipients.length)
+                await new Promise((resolve) => setTimeout(resolve, 900000))
+            }
+
+            setTimeout(() => bot.sendMessage(from.id, "========================\n\n✅ The message was successfully sent to all recipients ✅\n\n========================", { parse_mode: "HTML" }), 1000)
             break;
           }
         }
@@ -972,6 +1117,33 @@ bot.onText(/msg/, async ({ from, text }) => {
     }
   }
 });
+
+// bot.onText(/add_time/, async ({ from, text }) => {
+//   const baseCheckingStatus = await baseChecking(from.id, true)
+//   if (!baseCheckingStatus) return
+
+//   if (from.id == ownerId) {
+//     const regexAdditionalTime = /add_time\s+(\d+)/;
+//     const matchAdditionalTime = text.match(regexAdditionalTime);
+//     const additionalTime = matchAdditionalTime ? matchAdditionalTime[1].trim() : null;
+
+//     if (additionalTime != null) {
+//       let inbounds = INBOUNDS[environment].map((item) => {
+//         return item.id
+//       })
+
+//       try {
+//         let query = `UPDATE client_traffics SET expiry_time = expiry_time + ${additionalTime * 3600000} WHERE inbound_id IN (${inbounds[0]}, ${inbounds[1]});`
+//         console.log(query);
+//         await api.db(query)
+//         bot.sendMessage(from.id, '✅ Done ✅')
+//       } catch (err) {
+//         console.log('add_time error: ', err);
+//         bot.sendMessage(from.id, `❌ Failed with error:\n${err}`)
+//       }
+//     }
+//   }
+// })
 
 bot.onText(/🎁 تست نامحدود و رایگان/, async ({ from }) => {
   const baseCheckingStatus = await baseChecking(from.id)
@@ -1042,23 +1214,27 @@ bot.onText(/🔮 سرویس‌ های فعال/, async ({ from }) => {
     }
     configs.map(async ({ email, total_usage, total, enable }) => {
       const orderId = email.split('-')[1]
-      const { plan, paid_at, expire_at } = db.data.orders.verified[orderId]
-      let remainingTraffic = ((total - total_usage) / 1024 / 1024 / 1024).toFixed(2)
-      remainingTraffic = remainingTraffic > 0 ? remainingTraffic : 0
-      const subLink = vpn.getSubLink(orderId)
-      const subLinkQR = await qrGenerator(subLink)
-      bot.sendPhoto(from.id, subLinkQR,
-        {
-          caption: `🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${total > 0 ? `${remainingTraffic} گیگ` : 'نامحدود'}\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n\n♻️ <b>لینک آپدیت خودکار: </b>(روی لینک پایین بزنید تا کپی شود 👇)\n<code>${subLink}</code>` : '\n\n⚠️ حجم و یا تاریخ انقضای این سرویس به پایان رسیده. جهت تمدید سرویس روی دکمه زیر بزنید 👇'}`,
-          parse_mode: "HTML",
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: '♻️ تمدید سرویس ♻️', callback_data: JSON.stringify({ act: 'renew_gen', data: { orderId } }) }],
-              [{ text: '✍️ تغییر و تمدید سرویس ✍️', callback_data: JSON.stringify({ act: 'edit_plan', data: { orderId } }) }],
-            ]
+      try {
+        const { plan, paid_at, expire_at } = db.data.orders.verified[orderId]
+        let remainingTraffic = ((total - total_usage) / 1024 / 1024 / 1024).toFixed(2)
+        remainingTraffic = remainingTraffic > 0 ? remainingTraffic : 0
+        const subLink = vpn.getSubLink(orderId)
+        const subLinkQR = await qrGenerator(subLink)
+        bot.sendPhoto(from.id, subLinkQR,
+          {
+            caption: `🛍️ <b>شماره سرویس: </b>${orderId}\n🪫 <b>حجم باقیمانده: </b>${total > 0 ? `${remainingTraffic} گیگ` : 'نامحدود'}\n⏱️ <b>تاریخ تحویل: </b>${paid_at.slice(0, 10)}\n📅 <b>تاریخ انقضا: </b>${expire_at.slice(0, 10)}\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n👀 <b>وضعیت سرویس: ${enable ? '✅ فعال' : '❌ غیر فعال'}</b>${enable ? `\n\n♻️ <b>لینک آپدیت خودکار: </b>(روی لینک پایین بزنید تا کپی شود 👇)\n<code>${subLink}</code>` : '\n\n⚠️ حجم و یا تاریخ انقضای این سرویس به پایان رسیده. جهت تمدید سرویس روی دکمه زیر بزنید 👇'}`,
+            parse_mode: "HTML",
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: '♻️ تمدید سرویس ♻️', callback_data: JSON.stringify({ act: 'renew_gen', data: { orderId } }) }],
+                [{ text: '✍️ تغییر و تمدید سرویس ✍️', callback_data: JSON.stringify({ act: 'edit_plan', data: { orderId } }) }],
+              ]
+            }
           }
-        }
-      );
+        );
+      } catch (err) {
+        console.log(err);
+      }
     })
   } catch (err) {
     console.log(err);
@@ -1092,6 +1268,118 @@ bot.onText(/🫂 پشتیبانی فنی/, async ({ from }) => {
       reply_markup: {
         inline_keyboard: [[{ text: "☎️ پشتیبان فنی", url: "https://t.me/nova_vpn_support" }]]
       }, parse_mode: "HTML"
+    }
+  );
+});
+
+bot.onText(/🌟 اعتبار رایگان - معرفی دوستان 🌟/, async ({ from }) => {
+  const baseCheckingStatus = await baseChecking(from.id)
+  if (!baseCheckingStatus) return
+  const user = db.data.users[from.id]
+  if (!user) {
+    bot.sendMessage(from.id, "🤕 اوه اوه!\n🤔 فکر کنم مشکلی پیش اومده\n\n😇 لطفا بر روی /start بزنید.");
+    return
+  }
+  const botMsg = `برای دریافت اعتبار رایگان میتوانید با به اشتراک گذاری لینک اختصاصیتان با دوستان خود، درصدی از هر خرید و تمدید ماهیانه سرویسشان را به شکل کیف پول اعتباری دریافت کرده و برای خرید و یا تمدید سرویس خود درآینده استفاده کنید.\n\nاین ویژگی تنها برای کاربرانی که تا کنون در ربات ثبت نام نکرده اند فعال میباشد\n\nبرای به اشتراک گذاری لینک خود روی دکمه زیر بزنید و لینک اختصاصی خود را به اشتراک بگذارید 👇 `
+  bot.sendMessage(from.id, botMsg,
+    {
+      reply_markup: {
+        keyboard: buttons.referralMenu,
+        resize_keyboard: true,
+      }, parse_mode: "HTML"
+    }
+  );
+});
+
+bot.onText(/بازگشت به منو اصلی ربات 🏡/, async ({ from }) => {
+  const baseCheckingStatus = await baseChecking(from.id)
+  if (!baseCheckingStatus) return
+  const user = db.data.users[from.id]
+  if (!user) {
+    bot.sendMessage(from.id, "🤕 اوه اوه!\n🤔 فکر کنم مشکلی پیش اومده\n\n😇 لطفا بر روی /start بزنید.");
+    return
+  }
+  const botMsg = `به منو اصلی بازگشتید 🏡`
+  bot.sendMessage(from.id, botMsg,
+    {
+      reply_markup: {
+        keyboard: buttons.mainMenu,
+        resize_keyboard: true,
+      }, parse_mode: "HTML"
+    }
+  );
+});
+
+bot.onText(/💳 اعتبار کیف پول/, async ({ from }) => {
+  const baseCheckingStatus = await baseChecking(from.id)
+  if (!baseCheckingStatus) return
+  const user = db.data.users[from.id]
+  if (!user) {
+    bot.sendMessage(from.id, "🤕 اوه اوه!\n🤔 فکر کنم مشکلی پیش اومده\n\n😇 لطفا بر روی /start بزنید.");
+    return
+  }
+  try {
+    const referralBalance = getReferralWalletBalance(from.id)
+    bot.sendMessage(from.id, `---------------------------\n💳 اعتبار کیف پول:\n\n💰 مبلغ: ${Number(String(referralBalance).slice(0, -1)).toLocaleString()} تومان\n---------------------------`,
+      { parse_mode: "HTML" }
+    );
+  } catch (error) {
+    console.log('Error for getting wallet balance: ', error);
+    bot.sendMessage(from.id, "🤕 اواو!\n🤔 فکر کنم یه مشکلی پیش اومده\n\n😇 لطفا بعد از چند دقیقا مجددا تلاش کنید");
+  }
+});
+
+bot.onText(/👥 دوستان من/, async ({ from }) => {
+  const baseCheckingStatus = await baseChecking(from.id)
+  if (!baseCheckingStatus) return
+  const user = db.data.users[from.id]
+  if (!user) {
+    bot.sendMessage(from.id, "🤕 اوه اوه!\n🤔 فکر کنم مشکلی پیش اومده\n\n😇 لطفا بر روی /start بزنید.");
+    return
+  }
+  try {
+    const { users } = db.data
+    const referrals = []
+
+    for (const user of Object.keys(users)) {
+      if (users[user].referral == from.id.toString()) {
+        referrals.push(users[user])
+      }
+    }
+
+    let botMsg = '👥 دوستان من:\n'
+
+    if (referrals.length > 0) {
+      referrals.map((referral, index) => {
+        botMsg += `\n🥰 دوست شماره (${index + 1}):`
+        botMsg += `\nنام مستعار: ${referral?.tg_name}`
+        if (referral?.tg_username) botMsg += `\nنام کاربری: @${referral.tg_username}`
+        botMsg += '\n---------------------------'
+      })
+    } else {
+      botMsg += '\nمتاسفانه هنوز شخصی از طرف شما به ربات دعوت نشده است 😔'
+    }
+
+
+    bot.sendMessage(from.id, botMsg, { parse_mode: "HTML" });
+  } catch (error) {
+    console.log('Error for getting friends list: ', error);
+    bot.sendMessage(from.id, "🤕 اواو!\n🤔 فکر کنم یه مشکلی پیش اومده\n\n😇 لطفا بعد از چند دقیقا مجددا تلاش کنید");
+  }
+});
+
+bot.onText(/📩 دعوت نامه اختصاصی من/, async ({ from }) => {
+  const baseCheckingStatus = await baseChecking(from.id)
+  if (!baseCheckingStatus) return
+  const user = db.data.users[from.id]
+  if (!user) {
+    bot.sendMessage(from.id, "🤕 اوه اوه!\n🤔 فکر کنم مشکلی پیش اومده\n\n😇 لطفا بر روی /start بزنید.");
+    return
+  }
+  const botMsg = `برای دریافت اعتبار رایگان میتوانید با به اشتراک گذاری لینک اختصاصیتان با دوستان خود، درصدی از هر خرید و تمدید ماهیانه سرویسشان را به شکل کیف پول اعتباری دریافت کرده و برای خرید و یا تمدید سرویس خود درآینده استفاده کنید.\n\nاین ویژگی تنها برای کاربرانی که تا کنون در ربات ثبت نام نکرده اند فعال میباشد\n\nبرای به اشتراک گذاری لینک خود روی دکمه زیر بزنید و لینک اختصاصی خود را به اشتراک بگذارید 👇 `
+  bot.sendMessage(from.id, botMsg,
+    {
+      reply_markup: {}, parse_mode: "HTML"
     }
   );
 });
@@ -1212,7 +1500,7 @@ bot.on("callback_query", async (query) => {
       const plan = plans.find((item) => item.id == queryData.data.planId);
       const referralBalance = getReferralWalletBalance(chatId)
 
-      const botMsg = `${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n${plan.symbol} <b>حجم:</b> ${plan.traffic > 0 ? `${plan.traffic} گیگ` : 'نامحدود'}\n\n⏰ <b>مدت:</b> ${plan.period} روزه\n\n🎁 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\n${referralBalance && `👥 <b>اعتبار هدیه: </b>${Number(String(referralBalance).slice(0, -1)).toLocaleString()} تومان\n\n`}😊 برای خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`
+      const botMsg = `${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n\n${plan.symbol} <b>حجم:</b> ${plan.traffic > 0 ? `${plan.traffic} گیگ` : 'نامحدود'}\n\n⏰ <b>مدت:</b> ${plan.period} روزه\n\n🎁 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\n${`🌟 <b>تخفیف معرفی دوستان: </b>${Number(String(referralBalance).slice(0, -1)).toLocaleString()} تومان\n\n`}😊 برای خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`
 
       bot.editMessageText(botMsg, {
         chat_id: chatId,
@@ -1247,16 +1535,17 @@ bot.on("callback_query", async (query) => {
         const referralBalance = getReferralWalletBalance(chatId)
         let [difference, newReferralBalance, shouldPay] = [0, 0, 0]
 
-        if (referralBalance) {
+        // if (referralBalance) {
           difference = amount - referralBalance
           if (difference >= 0) {
             newReferralBalance = 0
             shouldPay = difference
           } else {
-            newReferralBalance = Math.abs(difference)
-            shouldPay = 0
+            const MIN_TRANSACTION_AMOUNT = 40000 - Math.floor(Math.random() * 1000)
+            newReferralBalance = Math.abs(difference) - MIN_TRANSACTION_AMOUNT
+            shouldPay = MIN_TRANSACTION_AMOUNT
           }
-        }
+        // }
 
         const paymentLimitTime = moment().add(32400000) // 9 hour
 
@@ -1280,7 +1569,7 @@ bot.on("callback_query", async (query) => {
         };
 
         if (referralBalance) {
-          order.referralBalanceUsed = referralBalance - newReferralBalance
+          order.referral_balance_used = referralBalance - newReferralBalance
         }
 
         if (parentId)
@@ -1361,7 +1650,9 @@ bot.on("callback_query", async (query) => {
         bot.sendMessage(chatId, `😔 متاسفانه درحال حاضر امکان تمدید این سرویس وجود ندارد.\n\n🙏 لطفا از طریق دکمه <b>"🛍️ خرید سرویس"</b> که در منو اصلی ربات قرار دارد، اقدام به خرید سرویس جدید بفرمایید 👇`, { parse_mode: "HTML" });
         return
       }
-      bot.sendMessage(chatId, `🛍️ <b>شماره سرویس: </b>${orderId}\n\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n${plan.symbol} <b>حجم:</b> ${plan.traffic > 0 ? `${plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت:</b> ${plan.period} روزه\n\n🎁 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\n⚠️ <u><b>توجه: پس از تمدید سرویس، حجم و زمان باقیمانده سرویس قبلی از بین خواهد رفت </b></u> ⚠️\n\n😊 برای خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`,
+      const referralBalance = getReferralWalletBalance(chatId)
+
+      bot.sendMessage(chatId, `🛍️ <b>شماره سرویس: </b>${orderId}\n\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n${plan.symbol} <b>حجم:</b> ${plan.traffic > 0 ? `${plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت:</b> ${plan.period} روزه\n\n🎁 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\n${`🌟 <b>تخفیف معرفی دوستان: </b>${Number(String(referralBalance).slice(0, -1)).toLocaleString()} تومان\n\n`}⚠️ <u><b>توجه: پس از تمدید سرویس، حجم و زمان باقیمانده سرویس قبلی از بین خواهد رفت </b></u> ⚠️\n\n😊 برای خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`,
         {
           parse_mode: "HTML",
           reply_markup: {
@@ -1456,7 +1747,10 @@ bot.on("callback_query", async (query) => {
         bot.sendMessage(chatId, `😔 متاسفانه درحال حاضر امکان تمدید این سرویس وجود ندارد.\n\n🙏 لطفا از طریق دکمه <b>"🛍️ خرید سرویس"</b> که در منو اصلی ربات قرار دارد، اقدام به خرید سرویس جدید بفرمایید 👇`, { parse_mode: "HTML" });
         return
       }
-      bot.editMessageText(`🛍️ <b>شماره سرویس: </b>${orderId}\n\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n${plan.symbol} <b>حجم:</b> ${plan.traffic > 0 ? `${plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت:</b> ${plan.period} روزه\n\n🎁 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\n⚠️ <u><b>توجه: پس از تغییر سرویس، حجم و زمان باقیمانده سرویس قبلی از بین خواهد رفت </b></u> ⚠️\n\n😊 برای خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`,
+
+      const referralBalance = getReferralWalletBalance(chatId)
+      
+      bot.editMessageText(`🛍️ <b>شماره سرویس: </b>${orderId}\n\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n${plan.symbol} <b>حجم:</b> ${plan.traffic > 0 ? `${plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت:</b> ${plan.period} روزه\n\n🎁 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\n${`🌟 <b>تخفیف معرفی دوستان: </b>${Number(String(referralBalance).slice(0, -1)).toLocaleString()} تومان\n\n`}⚠️ <u><b>توجه: پس از تغییر سرویس، حجم و زمان باقیمانده سرویس قبلی از بین خواهد رفت </b></u> ⚠️\n\n😊 برای خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`,
         {
           chat_id: chatId,
           message_id: messageId,
@@ -1562,17 +1856,17 @@ app.post("/c2c-transaction-verification", async (req, res) => {
             delete orders.waiting[orderId]
             bot.deleteMessage(userId, messageId);
 
-            if (order?.referralBalanceUsed) {
-              db.data.referralWallet[userId].balance -= order.referralBalanceUsed
+            if (order?.referral_balance_used) {
+              db.data.referralWallet[userId].balance -= order.referral_balance_used
               db.data.referralWallet[userId].records.push(
                 {
                   type: "withdraw",
                   orderId,
-                  amount: order.referralBalanceUsed
+                  amount: order.referral_balance_used
                 }
               )
             }
-            
+
             const user = db.data.users[userId]
             if (user.referral) {
               let profit = parseInt((order.plan.final_price * 10000 * 0.1).toFixed())
@@ -1596,17 +1890,17 @@ app.post("/c2c-transaction-verification", async (req, res) => {
             delete orders.waiting[orderId]
             bot.deleteMessage(userId, messageId);
 
-            if (order?.referralBalanceUsed) {
-              db.data.referralWallet[userId].balance -= order.referralBalanceUsed
+            if (order?.referral_balance_used) {
+              db.data.referralWallet[userId].balance -= order.referral_balance_used
               db.data.referralWallet[userId].records.push(
                 {
                   type: "withdraw",
                   orderId,
-                  amount: order.referralBalanceUsed
+                  amount: order.referral_balance_used
                 }
               )
             }
-            
+
             const user = db.data.users[userId]
             if (user.referral) {
               let profit = parseInt((order.plan.final_price * 10000 * 0.1).toFixed())
@@ -1707,6 +2001,8 @@ server.listen(port, '0.0.0.0', async () => {
     checkConfigsExpiration()
     cleanExpiredConfigs()
     cleanExpiredOrders()
+    // cleanTrashOrders()
+    cleanErrorLogs()
   }).start()
 });
 
