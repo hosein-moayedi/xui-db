@@ -439,23 +439,23 @@ const buttons = {
   ],
   education: [
     [{
-      text: '🍀 اتصال در Hiddify ✨',
+      text: '🍀 اندروید Hiddify ✨',
       url: 'https://telegra.ph/%D8%A2%D9%85%D9%88%D8%B2%D8%B4-%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-%D8%A7%D9%86%D8%AF%D8%B1%D9%88%DB%8C%D8%AF-%D8%A8%D8%A7-HiddifyNG-08-03'
     }],
     [{
-      text: '🍀 اتصال در V2rayNG 🍭',
+      text: '🍀 اندروید V2rayNG 🍭',
       url: 'https://telegra.ph/%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-%D8%A7%D9%86%D8%AF%D8%B1%D9%88%DB%8C%D8%AF-%D8%A8%D8%A7-V2rayNG-08-03'
     }],
     [{
-      text: '🍎 اتصال در V2Box 🗳️',
+      text: '🍎 آیفون V2Box 🗳️',
       url: 'https://telegra.ph/%D8%A2%D9%85%D9%88%D8%B2%D8%B4-%D8%A7%D8%AA%D8%B5%D8%A7%D9%84-%D8%AF%D8%B1-IOS-%D8%A8%D8%A7-%D9%86%D8%B1%D9%85-%D8%A7%D9%81%D8%B2%D8%A7%D8%B1-V2Box-08-03'
     }],
     [{
-      text: '🖥️ اتصال در V2rayN 💫',
+      text: '🖥️ ویندوز V2rayN 💫',
       url: 'https://t.me/nova_vpn_channel/24'
     }],
     [{
-      text: '💻 اتصال در V2Box 🗳️',
+      text: '💻 مک بوک V2Box 🗳️',
       url: 'https://t.me/nova_vpn_channel/93'
     }]
   ],
