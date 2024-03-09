@@ -2287,6 +2287,13 @@
       "tg_name": "Jabar",
       "tested": false,
       "created_at": "2024-03-05T21:53:41"
+    },
+    "6745818233": {
+      "id": 6745818233,
+      "tg_name": "ɐzǝᴚ",
+      "tested": true,
+      "referral": null,
+      "created_at": "2024-03-10T00:05:46"
     }
   },
   "orders": {
@@ -6240,6 +6247,10 @@
       "records": []
     },
     "6727403523": {
+      "balance": 0,
+      "records": []
+    },
+    "6745818233": {
       "balance": 0,
       "records": []
     }
