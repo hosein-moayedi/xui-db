@@ -760,8 +760,14 @@ const cleanLogs = async () => {
 }
 
 const getBackup = () => {
-  exec('sh bash_scripts/bot-db-backup.sh');
-  setTimeout(() => exec('sh bash_scripts/xui-db-backup.sh'), 20000);
+  exec('sh bash_scripts/bot-db-backup.sh', (error) => {
+    error && console.error('Error [sh bash_scripts/bot-db-backup.sh]:', error);
+  })
+  setTimeout(() => {
+    exec('sh bash_scripts/xui-db-backup.sh', (error) => {
+      error && console.error('Error [sh bash_scripts/xui-db-backup.sh]:', error);
+    })
+  }, 20000);
 }
 
 bot.onText(/\/start(?: (.*))?/, async ({ from }, match) => {
@@ -2004,7 +2010,6 @@ server.listen(port, '0.0.0.0', async () => {
   cron.schedule('*/5 * * * * *', () => {
     updateConfigsTotalUsages()
     checkConfigsTraffics()
-    getBackup()
   }).start();
 
   cron.schedule('0 22 * * *', () => {
@@ -2014,6 +2019,12 @@ server.listen(port, '0.0.0.0', async () => {
     // cleanTrashOrders()
     cleanLogs()
   }).start()
+
+  if (environment == 'pro') {
+    cron.schedule('*/15 * * * *', () => {
+      getBackup()
+    }).start()
+  }
 });
 
 
