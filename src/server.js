@@ -744,16 +744,18 @@ const getReferralWalletBalance = (userId) => {
   return totalBalance
 }
 
-const cleanErrorLogs = async () => {
-  const filePath = '/usr/local/x-ui/error.log';
+const cleanLogs = async () => {
+  const filesPath = ['/usr/local/x-ui/error.log', '/var/log/3xipl-access-persistent.log'];
 
-  fs.truncate(filePath, 0, (err) => {
-    if (err) {
-      console.error(`Error truncating file: ${err}`);
-      return;
-    }
-    console.log('File emptied successfully');
-  });
+  filesPath.map((path) => {
+    fs.truncate(path, 0, (err) => {
+      if (err) {
+        console.error(`Error truncating file: ${err}`);
+        return;
+      }
+      console.log('clear log successfully');
+    });
+  })
 }
 
 bot.onText(/\/start(?: (.*))?/, async ({ from }, match) => {
@@ -2003,7 +2005,7 @@ server.listen(port, '0.0.0.0', async () => {
     cleanExpiredConfigs()
     cleanExpiredOrders()
     // cleanTrashOrders()
-    cleanErrorLogs()
+    cleanLogs()
   }).start()
 });
 
