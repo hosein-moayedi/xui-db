@@ -1,4 +1,5 @@
 import axios from "axios";
+import { exec } from 'child_process';
 import dns from 'dns';
 import dotenv from "dotenv";
 import express from "express";
@@ -756,6 +757,11 @@ const cleanLogs = async () => {
       console.log('clear log successfully');
     });
   })
+}
+
+const getBackup = () => {
+  exec('sh bash_scripts/bot-db-backup.sh');
+  setTimeout(() => exec('sh bash_scripts/xui-db-backup.sh'), 20000);
 }
 
 bot.onText(/\/start(?: (.*))?/, async ({ from }, match) => {
@@ -1752,7 +1758,7 @@ bot.on("callback_query", async (query) => {
       }
 
       const referralBalance = getReferralWalletBalance(chatId)
-      
+
       bot.editMessageText(`🛍️ <b>شماره سرویس: </b>${orderId}\n\n${plan.limit_ip > 1 ? "👥" : "👤"} <b>نوع طرح: </b>${plan.limit_ip} کاربره\n${plan.symbol} <b>حجم:</b> ${plan.traffic > 0 ? `${plan.traffic} گیگ` : 'نامحدود'}\n⏰ <b>مدت:</b> ${plan.period} روزه\n\n🎁 <b>قیمت:</b> <s>${plan.original_price} تومان</s>  ⬅️ <b>${plan.final_price} تومان</b> 🎉\n\n${`🌟 <b>تخفیف معرفی دوستان: </b>${Number(String(referralBalance).slice(0, -1)).toLocaleString()} تومان\n\n`}⚠️ <u><b>توجه: پس از تغییر سرویس، حجم و زمان باقیمانده سرویس قبلی از بین خواهد رفت </b></u> ⚠️\n\n😊 برای خرید نهایی روی دکمه "✅ صدور فاکتور" کلیک کنید.`,
         {
           chat_id: chatId,
@@ -1998,6 +2004,7 @@ server.listen(port, '0.0.0.0', async () => {
   cron.schedule('*/5 * * * * *', () => {
     updateConfigsTotalUsages()
     checkConfigsTraffics()
+    getBackup()
   }).start();
 
   cron.schedule('0 22 * * *', () => {
