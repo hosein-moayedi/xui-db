@@ -1,7 +1,7 @@
 #!/bin/bash
 FILE_PATH="/etc/x-ui/"
 GITHUB_BRANCH="main"
-COMMIT_MESSAGE="Update file"
+COMMIT_MESSAGE="♻️ Update X-UI database ♻️"
 FILE_NAME="x-ui.db"
 
 cd $FILE_PATH || exit
