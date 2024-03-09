@@ -2297,31 +2297,7 @@
     }
   },
   "orders": {
-    "waiting": {
-      "583596348": {
-        "id": 583596348,
-        "user_id": 104121554,
-        "message_id": 13279,
-        "trashMessages": [],
-        "plan": {
-          "id": 98,
-          "name": "🥉25 گیگ 👤1 کاربره ⏰${PERIOD} روزه 💳59 تومان",
-          "symbol": "🥉",
-          "traffic": 25,
-          "period": 30,
-          "original_price": 75,
-          "final_price": 59,
-          "limit_ip": 1,
-          "version": 1,
-          "active": true
-        },
-        "amount": 589314,
-        "created_at": "2024-03-09T23:35:13",
-        "expire_at": "2024-04-08T23:35:13",
-        "payment_limit_time": 1710047113257,
-        "parentId": 672468742
-      }
-    },
+    "waiting": {},
     "verified": {
       "104291015": {
         "id": 104291015,
@@ -3888,11 +3864,11 @@
           "version": 1,
           "active": true
         },
-        "amount": 589884,
-        "created_at": "2024-02-10T03:04:38",
-        "expire_at": "2024-03-11T03:04:38",
-        "payment_limit_time": 1707554078060,
-        "paid_at": "2024-02-10T03:07:06",
+        "amount": 589314,
+        "created_at": "2024-03-09T23:35:13",
+        "expire_at": "2024-04-08T23:35:13",
+        "payment_limit_time": 1710047113257,
+        "paid_at": "2024-03-10T00:52:42",
         "renewed": true
       },
       "672918736": {
