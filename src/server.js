@@ -244,7 +244,7 @@ let api = {
             const setCookieHeader = response.headers['set-cookie'][0];
             const expirationMatch = setCookieHeader.match(/Expires=([^;]+)/)
             const expires = expirationMatch ? Date.parse(expirationMatch[1]) : null;
-            const token = setCookieHeader.split(';')[0].split('=')[1];
+            const token = setCookieHeader.split(';')[0].split('=')[1] + '==';
             api.xui.session = { token, expires }
             console.log('\n ✅ Connected to X-UI panel \n\n');
             resolve();
@@ -264,7 +264,7 @@ let api = {
         };
         const options = {
           headers: {
-            Cookie: `session=${api.xui.session.token}=`
+            Cookie: `session=${api.xui.session.token}`
           }
         }
         await axios
@@ -284,7 +284,7 @@ let api = {
       return new Promise(async (resolve, reject) => {
         const options = {
           headers: {
-            Cookie: `session=${api.xui.session.token}=`
+            Cookie: `session=${api.xui.session.token}`
           }
         }
         await axios
@@ -304,7 +304,7 @@ let api = {
       return new Promise(async (resolve, reject) => {
         const options = {
           headers: {
-            Cookie: `session=${api.xui.session.token}=`
+            Cookie: `session=${api.xui.session.token}`
           }
         }
         await axios
@@ -324,7 +324,7 @@ let api = {
       return new Promise(async (resolve, reject) => {
         const options = {
           headers: {
-            Cookie: `session=${api.xui.session.token}=`
+            Cookie: `session=${api.xui.session.token}`
           }
         }
         await axios
@@ -2020,11 +2020,11 @@ server.listen(port, '0.0.0.0', async () => {
     cleanLogs()
   }).start()
 
-  if (environment == 'pro') {
-    cron.schedule('*/15 * * * *', () => {
-      getBackup()
-    }).start()
-  }
+  // if (environment == 'pro') {
+  //   cron.schedule('*/15 * * * *', () => {
+  //     getBackup()
+  //   }).start()
+  // }
 });
 
 
