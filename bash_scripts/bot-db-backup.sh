@@ -5,7 +5,7 @@ COMMIT_MESSAGE="♻️ Update bot database ♻️"
 PRO_DB_FILE_NAME="db-pro.json"
 DEV_DB_FILE_NAME="db-dev.json"
 
-cd $FILE_PATH || exit
+cd $FILE_PATH
 git add "$PRO_DB_FILE_NAME"
 git add "$DEV_DB_FILE_NAME"
 git commit -m "$COMMIT_MESSAGE"
