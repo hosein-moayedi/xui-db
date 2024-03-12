@@ -2209,7 +2209,7 @@
       "id": 6297588544,
       "tg_name": "Raha",
       "tg_username": "Rahadamirchi",
-      "tested": false,
+      "tested": true,
       "created_at": "2024-02-13T16:10:44"
     },
     "5284583610": {
@@ -2304,31 +2304,7 @@
     }
   },
   "orders": {
-    "waiting": {
-      "151800103": {
-        "id": 151800103,
-        "user_id": 95614904,
-        "message_id": 13891,
-        "trashMessages": [],
-        "plan": {
-          "id": 101,
-          "name": "🥇100 گیگ 👥4 کاربره ⏰${PERIOD} روزه 💳199 تومان",
-          "symbol": "🥇",
-          "traffic": 100,
-          "period": 30,
-          "original_price": 230,
-          "final_price": 199,
-          "limit_ip": 4,
-          "version": 1,
-          "active": true
-        },
-        "amount": 1989723,
-        "created_at": "2024-03-12T22:03:30",
-        "expire_at": "2024-04-11T22:03:30",
-        "payment_limit_time": 1710300810114,
-        "parentId": 854648289
-      }
-    },
+    "waiting": {},
     "verified": {
       "104291015": {
         "id": 104291015,
@@ -4456,11 +4432,11 @@
           "version": 1,
           "active": true
         },
-        "amount": 1989272,
-        "created_at": "2024-02-12T08:04:03",
-        "expire_at": "2024-03-13T08:04:03",
-        "payment_limit_time": 1707744843915,
-        "paid_at": "2024-02-12T08:05:04",
+        "amount": 1989723,
+        "created_at": "2024-03-12T22:03:30",
+        "expire_at": "2024-04-11T22:03:30",
+        "payment_limit_time": 1710300810114,
+        "paid_at": "2024-03-12T22:04:43",
         "renewed": true
       },
       "881547999": {
