@@ -244,7 +244,7 @@ let api = {
             const setCookieHeader = response.headers['set-cookie'][0];
             const expirationMatch = setCookieHeader.match(/Expires=([^;]+)/)
             const expires = expirationMatch ? Date.parse(expirationMatch[1]) : null;
-            const token = setCookieHeader.split(';')[0].split('=')[1] + '==';
+            const token = setCookieHeader.split(';')[0].split('=')[1] + '='
             api.xui.session = { token, expires }
             console.log('\n ✅ Connected to X-UI panel \n\n');
             resolve();
