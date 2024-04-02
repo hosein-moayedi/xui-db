@@ -2352,27 +2352,6 @@
   },
   "orders": {
     "waiting": {
-      "245983732": {
-        "id": 245983732,
-        "user_id": 95614904,
-        "plan": {
-          "id": 99,
-          "name": "🥈50 گیگ 👥2 کاربره ⏰${PERIOD} روزه 💳99 تومان",
-          "symbol": "🥈",
-          "traffic": 50,
-          "period": 30,
-          "original_price": 125,
-          "final_price": 99,
-          "limit_ip": 2,
-          "version": 1,
-          "active": true
-        },
-        "amount": 989971,
-        "created_at": "2024-04-02T16:04:24",
-        "expire_at": "2024-05-02T16:04:24",
-        "payment_limit_time": 1712093664446,
-        "parentId": 711685088
-      },
       "550019921": {
         "id": 550019921,
         "user_id": 110091199,
@@ -4392,11 +4371,11 @@
           "version": 1,
           "active": true
         },
-        "amount": 989517,
-        "created_at": "2024-02-28T22:59:26",
-        "expire_at": "2024-03-29T22:59:26",
-        "payment_limit_time": 1709180966577,
-        "paid_at": "2024-02-28T23:28:20",
+        "amount": 989971,
+        "created_at": "2024-04-02T16:04:24",
+        "expire_at": "2024-05-02T16:04:24",
+        "payment_limit_time": 1712093664446,
+        "paid_at": "2024-04-02T22:43:28",
         "renewed": true
       },
       "732828599": {
