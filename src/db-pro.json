@@ -677,6 +677,14 @@
       "tested": false,
       "created_at": "2024-02-19T22:58:49"
     },
+    "302522266": {
+      "id": 302522266,
+      "tg_name": "śärä",
+      "tg_username": "SARA_GNJI",
+      "tested": true,
+      "referral": null,
+      "created_at": "2024-04-18T10:00:26"
+    },
     "305890325": {
       "id": 305890325,
       "tg_name": "Hale",
@@ -3325,11 +3333,11 @@
           "version": 1,
           "active": true
         },
-        "amount": 1489191,
-        "created_at": "2024-04-01T13:56:36",
-        "expire_at": "2024-05-01T13:56:36",
-        "payment_limit_time": 1711999596477,
-        "paid_at": "2024-04-01T13:59:24",
+        "amount": 1489094,
+        "created_at": "2024-04-18T20:30:57",
+        "expire_at": "2024-05-18T20:30:57",
+        "payment_limit_time": 1713492057561,
+        "paid_at": "2024-04-18T20:32:13",
         "renewed": true
       },
       "352232006": {
@@ -3806,6 +3814,27 @@
         "payment_limit_time": 1709160134462,
         "paid_at": "2024-02-28T17:51:35",
         "renewed": true
+      },
+      "489665656": {
+        "id": 489665656,
+        "user_id": 434099629,
+        "plan": {
+          "id": 99,
+          "name": "🥈50 گیگ 👥2 کاربره ⏰${PERIOD} روزه 💳99 تومان",
+          "symbol": "🥈",
+          "traffic": 50,
+          "period": 30,
+          "original_price": 125,
+          "final_price": 99,
+          "limit_ip": 2,
+          "version": 1,
+          "active": true
+        },
+        "amount": 989841,
+        "created_at": "2024-04-18T00:01:43",
+        "expire_at": "2024-05-18T00:01:43",
+        "payment_limit_time": 1713418303823,
+        "paid_at": "2024-04-18T00:02:37"
       },
       "492649248": {
         "id": 492649248,
@@ -4855,11 +4884,11 @@
           "version": 1,
           "active": true
         },
-        "amount": 589880,
-        "created_at": "2024-04-10T01:17:46",
-        "expire_at": "2024-05-10T01:17:46",
-        "payment_limit_time": 1712731666004,
-        "paid_at": "2024-04-10T01:18:18",
+        "amount": 589713,
+        "created_at": "2024-04-17T11:43:01",
+        "expire_at": "2024-05-17T11:43:01",
+        "payment_limit_time": 1713373981725,
+        "paid_at": "2024-04-17T11:44:02",
         "renewed": true
       },
       "818710651": {
@@ -5290,11 +5319,11 @@
           "version": 1,
           "active": true
         },
-        "amount": 2989111,
-        "created_at": "2024-02-12T14:49:36",
-        "expire_at": "2024-04-12T14:49:36",
-        "payment_limit_time": 1707769176164,
-        "paid_at": "2024-02-12T14:52:19",
+        "amount": 2989853,
+        "created_at": "2024-04-17T13:02:54",
+        "expire_at": "2024-06-16T13:02:54",
+        "payment_limit_time": 1713378774931,
+        "paid_at": "2024-04-17T13:42:15",
         "renewed": true
       },
       "926885246": {
@@ -5472,6 +5501,27 @@
         "paid_at": "2024-03-16T16:41:26",
         "renewed": true
       },
+      "969928369": {
+        "id": 969928369,
+        "user_id": 85593687,
+        "plan": {
+          "id": 104,
+          "name": "🎖️نامحدود 👤1 کاربره ⏰${PERIOD} روزه 💳299 تومان",
+          "symbol": "🎖️",
+          "traffic": 0,
+          "period": 60,
+          "original_price": 400,
+          "final_price": 299,
+          "limit_ip": 1,
+          "version": 1,
+          "active": true
+        },
+        "amount": 2989769,
+        "created_at": "2024-04-19T13:19:02",
+        "expire_at": "2024-06-18T13:19:02",
+        "payment_limit_time": 1713552542683,
+        "paid_at": "2024-04-19T13:19:26"
+      },
       "977096529": {
         "id": 977096529,
         "user_id": 1265388613,
@@ -5531,11 +5581,12 @@
           "version": 1,
           "active": true
         },
-        "amount": 1189356,
-        "created_at": "2024-02-19T08:40:16",
-        "expire_at": "2024-04-19T08:40:16",
-        "payment_limit_time": 1708351816950,
-        "paid_at": "2024-02-19T08:41:58"
+        "amount": 1189717,
+        "created_at": "2024-04-18T08:38:27",
+        "expire_at": "2024-06-17T08:38:27",
+        "payment_limit_time": 1713449307619,
+        "paid_at": "2024-04-18T08:39:54",
+        "renewed": true
       },
       "995056466": {
         "id": 995056466,
@@ -5560,9 +5611,9 @@
       }
     },
     "expired": {
-      "514344369": {
-        "id": 514344369,
-        "user_id": 6515580120,
+      "498027412": {
+        "id": 498027412,
+        "user_id": 302522266,
         "trashMessages": [],
         "plan": {
           "id": 99,
@@ -5576,10 +5627,10 @@
           "version": 1,
           "active": true
         },
-        "amount": 989293,
-        "created_at": "2024-04-14T10:18:40",
-        "expire_at": "2024-05-14T10:18:40",
-        "payment_limit_time": 1713109720328
+        "amount": 989737,
+        "created_at": "2024-04-18T12:01:22",
+        "expire_at": "2024-05-18T12:01:22",
+        "payment_limit_time": 1713461482507
       }
     }
   },
@@ -5977,6 +6028,10 @@
       "records": []
     },
     "294927499": {
+      "balance": 0,
+      "records": []
+    },
+    "302522266": {
       "balance": 0,
       "records": []
     },
