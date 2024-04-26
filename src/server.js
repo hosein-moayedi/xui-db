@@ -1544,9 +1544,27 @@ bot.on("callback_query", async (query) => {
       break
     }
     case "gen_order": {
-      const plan = plans.find((item) => item.id == queryData.data.planId);
-      const parentId = queryData.data?.parentId
       try {
+        const plan = plans.find((item) => item.id == queryData.data.planId);
+        const parentId = queryData.data?.parentId
+
+        if (parentId) {
+          const query = `SELECT email FROM client_traffics WHERE inbound_id=${MAIN_INBOUND_ID} AND email LIKE '${user.id}-${parentId}-${MAIN_INBOUND_ID}'`;
+          const rows = await api.db(query)
+          const configs = [...rows];
+          if (configs.length == 0) {
+            bot.editMessageText(
+              `❌ متاسفانه سرویس مورد نظر شما با شماره <b>${parentId}</b> بدلیل <b>عدم تمدید</b>، به صورت خودکار حذف شده است. \n\n😇 لطفا از منو اصلی ربات روی دکمه  <b>"🛍️ خرید سرویس"</b> بزنید و نسبت به خرید سرویس جدید اقدام بفرمایید 👇`,
+              {
+                parse_mode: "HTML",
+                chat_id: chatId,
+                message_id: messageId,
+              }
+            );
+            break
+          }
+        }
+
         const orderId = Math.floor(Math.random() * (999999999 - 100000000 + 1)) + 100000000;
         const amount = (plan.final_price * 10000) - Math.floor(Math.random() * 1000)
         const referralBalance = getReferralWalletBalance(chatId)
