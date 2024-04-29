@@ -141,8 +141,8 @@ let PANEL_IP = '0.0.0.0'
 
 const MAIN_INBOUND_ID = environment == 'dev' ? 3 : 2
 const INBOUNDS = {
-  dev: [{ id: 5, name: '#%F0%9F%9A%80%20Stable%20NOVA%202%20%28%D9%BE%DB%8C%D8%B4%D9%86%D9%87%D8%A7%D8%AF%DB%8C%29' }, { id: 3, name: '#%E2%9C%A8%20Stable%20NOVA%20' }],
-  pro: [{ id: 4, name: '#%F0%9F%9A%80%20Stable%20NOVA%202%20%28%D9%BE%DB%8C%D8%B4%D9%86%D9%87%D8%A7%D8%AF%DB%8C%29' }, { id: 2, name: '#%E2%9C%A8%20Stable%20NOVA%20' }],
+  dev: [{ id: 7, name: 'new1', hasFlow: false }, { id: 5, name: '#%F0%9F%9A%80%20Stable%20NOVA%202%20%28%D9%BE%DB%8C%D8%B4%D9%86%D9%87%D8%A7%D8%AF%DB%8C%29', hasFlow: true }, { id: 3, name: '#%E2%9C%A8%20Stable%20NOVA%20', hasFlow: true }],
+  pro: [{ id: 6, name: 'new1', hasFlow: false }, { id: 4, name: '#%F0%9F%9A%80%20Stable%20NOVA%202%20%28%D9%BE%DB%8C%D8%B4%D9%86%D9%87%D8%A7%D8%AF%DB%8C%29', hasFlow: true }, { id: 2, name: '#%E2%9C%A8%20Stable%20NOVA%20', hasFlow: true }],
 }
 
 const BANK_ACCOUNT = {
@@ -366,7 +366,11 @@ const vpn = {
   addConfig: async (userId, orderId, plan, uuid) => {
     const config = vpn.createConfigObj(userId, orderId, plan.traffic, plan.period, plan.limit_ip, false, uuid)
     for (const inbound of INBOUNDS[`${environment}`]) {
-      await api.xui.addClient(inbound.id, { ...config, email: config.email.replace('{INBOUND_ID}', inbound.id) })
+      let newConfig = { ...config, email: config.email.replace('{INBOUND_ID}', inbound.id) }
+      if (inbound.hasFlow)
+        newConfig.flow = 'xtls-rprx-vision',
+
+      await api.xui.addClient(inbound.id, newConfig)
     }
     return { ...config }
   },
@@ -388,7 +392,11 @@ const vpn = {
   addTestConfig: async (userId) => {
     const testConfig = vpn.createConfigObj(userId, null, 2, 0.041, 1, true)
     for (const inbound of INBOUNDS[`${environment}`]) {
-      await api.xui.addClient(inbound.id, { ...testConfig, email: testConfig.email.replace('{INBOUND_ID}', inbound.id) })
+      let newTestConfig = { ...testConfig, email: testConfig.email.replace('{INBOUND_ID}', inbound.id) }
+      if (inbound.hasFlow)
+        newTestConfig.flow = 'xtls-rprx-vision',
+      
+      await api.xui.addClient(inbound.id, newTestConfig)
     }
     return { ...testConfig }
   },
@@ -396,7 +404,6 @@ const vpn = {
     const expiryTime = moment().add(period * 24 * 60 * 60 * 1000).valueOf()
     return {
       id: uuid || uuidv4(),
-      flow: 'xtls-rprx-vision',
       email: `${userId}-${isTest ? "test" : orderId}-{INBOUND_ID}`,
       limitIp: limitIp + 1,
       totalGB: traffic * 1024 * 1024 * 1024,
