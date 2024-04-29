@@ -141,8 +141,8 @@ let PANEL_IP = '0.0.0.0'
 
 const MAIN_INBOUND_ID = environment == 'dev' ? 3 : 2
 const INBOUNDS = {
-  dev: [{ id: 7, name: 'new1', hasFlow: false }, { id: 5, name: '#%F0%9F%9A%80%20Stable%20NOVA%202%20%28%D9%BE%DB%8C%D8%B4%D9%86%D9%87%D8%A7%D8%AF%DB%8C%29', hasFlow: true }, { id: 3, name: '#%E2%9C%A8%20Stable%20NOVA%20', hasFlow: true }],
-  pro: [{ id: 6, name: 'new1', hasFlow: false }, { id: 4, name: '#%F0%9F%9A%80%20Stable%20NOVA%202%20%28%D9%BE%DB%8C%D8%B4%D9%86%D9%87%D8%A7%D8%AF%DB%8C%29', hasFlow: true }, { id: 2, name: '#%E2%9C%A8%20Stable%20NOVA%20', hasFlow: true }],
+  dev: [{ id: 7, name: '#%F0%9F%9A%80%20Stable%20NOVA%202%20(%D9%BE%DB%8C%D8%B4%D9%86%D9%87%D8%A7%D8%AF%DB%8C)', hasFlow: false }, { id: 5, name: '#%F0%9F%9A%80%20Stable%20NOVA%201', hasFlow: true }, { id: 3, name: '#%E2%9C%A8%20Stable%20NOVA%200', hasFlow: true }],
+  pro: [{ id: 6, name: '#%F0%9F%9A%80%20Stable%20NOVA%202%20(%D9%BE%DB%8C%D8%B4%D9%86%D9%87%D8%A7%D8%AF%DB%8C)', hasFlow: false }, { id: 4, name: '#%F0%9F%9A%80%20Stable%20NOVA%201', hasFlow: true }, { id: 2, name: '#%E2%9C%A8%20Stable%20NOVA%200', hasFlow: true }],
 }
 
 const BANK_ACCOUNT = {
@@ -368,7 +368,7 @@ const vpn = {
     for (const inbound of INBOUNDS[`${environment}`]) {
       let newConfig = { ...config, email: config.email.replace('{INBOUND_ID}', inbound.id) }
       if (inbound.hasFlow)
-        newConfig.flow = 'xtls-rprx-vision',
+        newConfig.flow = 'xtls-rprx-vision'
 
       await api.xui.addClient(inbound.id, newConfig)
     }
@@ -394,8 +394,8 @@ const vpn = {
     for (const inbound of INBOUNDS[`${environment}`]) {
       let newTestConfig = { ...testConfig, email: testConfig.email.replace('{INBOUND_ID}', inbound.id) }
       if (inbound.hasFlow)
-        newTestConfig.flow = 'xtls-rprx-vision',
-      
+        newTestConfig.flow = 'xtls-rprx-vision'
+
       await api.xui.addClient(inbound.id, newTestConfig)
     }
     return { ...testConfig }
@@ -1840,7 +1840,9 @@ app.get("/sub/:order_id", async (req, res) => {
     const configs = content?.split('\n')?.slice(0, -1)?.reverse()
     let newContent = ''
     configs.map((config, index) => {
-      newContent += (config.replace(/@([^:]+)/, '@turbo.torgod.top').replace(/#.*/, INBOUNDS[environment][index].name) + (configs.length != index + 1 ? '\n' : ''))
+      if (index == 0) {
+        newContent += (config.replace(/@([^:]+)/, '@turbo.torgod.top').replace(/#.*/, INBOUNDS[environment][index].name) + (configs.length != index + 1 ? '\n' : ''))
+      }
     })
     res.setHeader('Content-Type', response.headers['content-type']);
     res.setHeader('Profile-Title', response.headers['profile-title']);
