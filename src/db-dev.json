@@ -17,32 +17,7 @@
     }
   },
   "orders": {
-    "waiting": {
-      "569468174": {
-        "id": 569468174,
-        "user_id": 1085276188,
-        "message_id": 8267,
-        "trashMessages": [],
-        "plan": {
-          "id": 99,
-          "name": "🥈50 گیگ 👥2 کاربره ⏰${PERIOD} روزه 💳99 تومان",
-          "symbol": "🥈",
-          "traffic": 50,
-          "period": 30,
-          "original_price": 125,
-          "final_price": 99,
-          "limit_ip": 2,
-          "version": 1,
-          "active": true
-        },
-        "amount": 722090,
-        "created_at": "2024-03-11T02:28:16",
-        "expire_at": "2024-04-10T02:28:16",
-        "payment_limit_time": 1710143896849,
-        "referral_balance_used": 267542,
-        "parentId": 247078271
-      }
-    },
+    "waiting": {},
     "verified": {
       "247078271": {
         "id": 247078271,
@@ -521,6 +496,29 @@
         "created_at": "2023-11-03T18:01:10",
         "expire_at": "2023-12-03T18:01:10",
         "payment_limit_time": 1699054270661
+      },
+      "569468174": {
+        "id": 569468174,
+        "user_id": 1085276188,
+        "trashMessages": [],
+        "plan": {
+          "id": 99,
+          "name": "🥈50 گیگ 👥2 کاربره ⏰${PERIOD} روزه 💳99 تومان",
+          "symbol": "🥈",
+          "traffic": 50,
+          "period": 30,
+          "original_price": 125,
+          "final_price": 99,
+          "limit_ip": 2,
+          "version": 1,
+          "active": true
+        },
+        "amount": 722090,
+        "created_at": "2024-03-11T02:28:16",
+        "expire_at": "2024-04-10T02:28:16",
+        "payment_limit_time": 1710143896849,
+        "referral_balance_used": 267542,
+        "parentId": 247078271
       }
     }
   },
