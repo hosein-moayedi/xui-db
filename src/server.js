@@ -244,7 +244,7 @@ let api = {
             const setCookieHeader = response.headers['set-cookie'][0];
             const expirationMatch = setCookieHeader.match(/Expires=([^;]+)/)
             const expires = expirationMatch ? Date.parse(expirationMatch[1]) : null;
-            const token = setCookieHeader.split(';')[0].split('=')[1] + '='
+            const token = setCookieHeader.split(';')[0].split('=')[1] + '=='
             api.xui.session = { token, expires }
             console.log('\n ✅ Connected to X-UI panel \n\n');
             resolve();
@@ -1198,6 +1198,21 @@ bot.onText(/🛍️ خرید سرویس/, async ({ from }) => {
     return
   }
 
+  bot.sendMessage(from.id, 
+    `<b>لطفا جهت خرید سرویس، به ای دی زیر پیام دهید</b> 👇\n\n😇 <b>پشتیبانی خرید:</b> @Borzu_parsa`,
+    {
+    reply_markup: {
+      inline_keyboard: [[
+          {
+            text: "👈 پشتیبانی خرید 👉",
+            url: "https://t.me/Borzu_parsa",
+          }
+        ]]
+    },
+    parse_mode: "HTML"
+  });
+  return
+
   const botMsg =
     `✅ <b>مزایای تمامی سرویس ها</b>\n\n💥 دور زدن اینترنت ملی\n💥 مناسب تمامی اپراتور ها\n💥 پشتیبانی از تمامی سیستم عامل ها\n💥مخصوص دانلود با سرعت بالا\n💥 رنج آی پی ثابت\n\n👇 لطفا یکی گزینه ها را انتخاب کنید 👇`;
   bot.sendMessage(from.id, botMsg, {
@@ -1552,73 +1567,8 @@ bot.on("callback_query", async (query) => {
     }
     case "gen_order": {
       try {
-        const plan = plans.find((item) => item.id == queryData.data.planId);
-        const parentId = queryData.data?.parentId
-
-        if (parentId) {
-          const query = `SELECT email FROM client_traffics WHERE inbound_id=${MAIN_INBOUND_ID} AND email LIKE '${user.id}-${parentId}-${MAIN_INBOUND_ID}'`;
-          const rows = await api.db(query)
-          const configs = [...rows];
-          if (configs.length == 0) {
-            bot.editMessageText(
-              `❌ متاسفانه سرویس مورد نظر شما با شماره <b>${parentId}</b> بدلیل <b>عدم تمدید</b>، به صورت خودکار حذف شده است. \n\n😇 لطفا از منو اصلی ربات روی دکمه  <b>"🛍️ خرید سرویس"</b> بزنید و نسبت به خرید سرویس جدید اقدام بفرمایید 👇`,
-              {
-                parse_mode: "HTML",
-                chat_id: chatId,
-                message_id: messageId,
-              }
-            );
-            break
-          }
-        }
-
-        const orderId = Math.floor(Math.random() * (999999999 - 100000000 + 1)) + 100000000;
-        const amount = (plan.final_price * 10000) - Math.floor(Math.random() * 1000)
-        const referralBalance = getReferralWalletBalance(chatId)
-        let [difference, newReferralBalance, shouldPay] = [0, 0, 0]
-
-        difference = amount - referralBalance
-        if (difference >= 0) {
-          newReferralBalance = 0
-          shouldPay = difference
-        } else {
-          const MIN_TRANSACTION_AMOUNT = 40000 - Math.floor(Math.random() * 1000)
-          newReferralBalance = Math.abs(difference) - MIN_TRANSACTION_AMOUNT
-          shouldPay = MIN_TRANSACTION_AMOUNT
-        }
-
-        const paymentLimitTime = moment().add(32400000) // 9 hour
-
-        const order = {
-          id: orderId,
-          user_id: from.id,
-          message_id: messageId,
-          trashMessages: [],
-          plan: {
-            ...plan,
-            name: plan.name
-              .replace("${TRAFFIC}", plan.traffic)
-              .replace("${LIMIT_IP}", plan.limit_ip)
-              .replace("${SYMBOL}", plan.symbol)
-              .replace("${PRICE}", plan.final_price),
-          },
-          amount: shouldPay,
-          created_at: moment().format().slice(0, 19),
-          expire_at: moment().add(plan.period * 24 * 60 * 60 * 1000).format().slice(0, 19),
-          payment_limit_time: paymentLimitTime.valueOf()
-        };
-
-        if (referralBalance) {
-          order.referral_balance_used = referralBalance - newReferralBalance
-        }
-
-        if (parentId)
-          order.parentId = parseInt(parentId)
-        db.data.orders.waiting[orderId] = order;
-        db.write();
-
         bot.editMessageText(
-          `🛍️ <b>شماره سرویس: </b>${parentId || orderId}\n\n💳 <b>مبلغ نهایی: </b>\n<code>${shouldPay.toLocaleString()}</code> ریال 👉 (روی اعداد ضربه بزنید تا کپی شود)\n\n🏦 <b>شماره کارت: </b>\n<code>${environment === 'pro' ? BANK_ACCOUNT.CARD_NUMBER : '0000-0000-0000-0000'}</code> 👉 (ضربه بزنید تا کپی شود)\n\n👤 <b>صاحب حساب: </b> ${environment === 'pro' ? BANK_ACCOUNT.OWNER_NAME : 'admin'}\n\n⚠️ <b>مهلت پرداخت: </b> تا ساعت <u><b>${paymentLimitTime.format().slice(11, 16)}</b></u> ⚠️\n\n‼️ <u><b>توجه: از رند کردن مبلغ نهایی خودداری کنید </b></u>‼️\n\n✅ جهت تکمیل خرید سرویس، مبلغ <u><b>دقیق</b></u> بالا را به شماره کارت ذکر شده واریز بفرمایید و رسید خود را برای <u><b>پشتیبانی</b></u> ارسال کنید 👇`,
+          `<b>لطفا جهت خرید سرویس، به ای دی زیر پیام دهید</b> 👇\n\n😇 <b>پشتیبانی خرید:</b> @Borzu_parsa`,
           {
             parse_mode: "HTML",
             chat_id: chatId,
@@ -1626,13 +1576,95 @@ bot.on("callback_query", async (query) => {
             reply_markup: {
               inline_keyboard: [[
                 {
-                  text: "☎️ پشتیبانی",
-                  url: "https://t.me/nova_vpn_support",
+                  text: "👈 پشتیبانی خرید 👉",
+                  url: "https://t.me/Borzu_parsa",
                 }
               ]]
             },
           }
-        );
+        ); 
+
+        // const plan = plans.find((item) => item.id == queryData.data.planId);
+        // const parentId = queryData.data?.parentId
+
+        // if (parentId) {
+        //   const query = `SELECT email FROM client_traffics WHERE inbound_id=${MAIN_INBOUND_ID} AND email LIKE '${user.id}-${parentId}-${MAIN_INBOUND_ID}'`;
+        //   const rows = await api.db(query)
+        //   const configs = [...rows];
+        //   if (configs.length == 0) {
+        //     bot.editMessageText(
+        //       `❌ متاسفانه سرویس مورد نظر شما با شماره <b>${parentId}</b> بدلیل <b>عدم تمدید</b>، به صورت خودکار حذف شده است. \n\n😇 لطفا از منو اصلی ربات روی دکمه  <b>"🛍️ خرید سرویس"</b> بزنید و نسبت به خرید سرویس جدید اقدام بفرمایید 👇`,
+        //       {
+        //         parse_mode: "HTML",
+        //         chat_id: chatId,
+        //         message_id: messageId,
+        //       }
+        //     );
+        //     break
+        //   }
+        // }
+
+        // const orderId = Math.floor(Math.random() * (999999999 - 100000000 + 1)) + 100000000;
+        // const amount = (plan.final_price * 10000) - Math.floor(Math.random() * 1000)
+        // const referralBalance = getReferralWalletBalance(chatId)
+        // let [difference, newReferralBalance, shouldPay] = [0, 0, 0]
+
+        // difference = amount - referralBalance
+        // if (difference >= 0) {
+        //   newReferralBalance = 0
+        //   shouldPay = difference
+        // } else {
+        //   const MIN_TRANSACTION_AMOUNT = 40000 - Math.floor(Math.random() * 1000)
+        //   newReferralBalance = Math.abs(difference) - MIN_TRANSACTION_AMOUNT
+        //   shouldPay = MIN_TRANSACTION_AMOUNT
+        // }
+
+        // const paymentLimitTime = moment().add(32400000) // 9 hour
+
+        // const order = {
+        //   id: orderId,
+        //   user_id: from.id,
+        //   message_id: messageId,
+        //   trashMessages: [],
+        //   plan: {
+        //     ...plan,
+        //     name: plan.name
+        //       .replace("${TRAFFIC}", plan.traffic)
+        //       .replace("${LIMIT_IP}", plan.limit_ip)
+        //       .replace("${SYMBOL}", plan.symbol)
+        //       .replace("${PRICE}", plan.final_price),
+        //   },
+        //   amount: shouldPay,
+        //   created_at: moment().format().slice(0, 19),
+        //   expire_at: moment().add(plan.period * 24 * 60 * 60 * 1000).format().slice(0, 19),
+        //   payment_limit_time: paymentLimitTime.valueOf()
+        // };
+
+        // if (referralBalance) {
+        //   order.referral_balance_used = referralBalance - newReferralBalance
+        // }
+
+        // if (parentId)
+        //   order.parentId = parseInt(parentId)
+        // db.data.orders.waiting[orderId] = order;
+        // db.write();
+
+        // bot.editMessageText(
+        //   `🛍️ <b>شماره سرویس: </b>${parentId || orderId}\n\n💳 <b>مبلغ نهایی: </b>\n<code>${shouldPay.toLocaleString()}</code> ریال 👉 (روی اعداد ضربه بزنید تا کپی شود)\n\n🏦 <b>شماره کارت: </b>\n<code>${environment === 'pro' ? BANK_ACCOUNT.CARD_NUMBER : '0000-0000-0000-0000'}</code> 👉 (ضربه بزنید تا کپی شود)\n\n👤 <b>صاحب حساب: </b> ${environment === 'pro' ? BANK_ACCOUNT.OWNER_NAME : 'admin'}\n\n⚠️ <b>مهلت پرداخت: </b> تا ساعت <u><b>${paymentLimitTime.format().slice(11, 16)}</b></u> ⚠️\n\n‼️ <u><b>توجه: از رند کردن مبلغ نهایی خودداری کنید </b></u>‼️\n\n✅ جهت تکمیل خرید سرویس، مبلغ <u><b>دقیق</b></u> بالا را به شماره کارت ذکر شده واریز بفرمایید و رسید خود را برای <u><b>پشتیبانی</b></u> ارسال کنید 👇`,
+        //   {
+        //     parse_mode: "HTML",
+        //     chat_id: chatId,
+        //     message_id: messageId,
+        //     reply_markup: {
+        //       inline_keyboard: [[
+        //         {
+        //           text: "☎️ پشتیبانی",
+        //           url: "https://t.me/nova_vpn_support",
+        //         }
+        //       ]]
+        //     },
+        //   }
+        // );
       } catch (e) {
         console.error("❌ Error: invoice_generation> ", e);
         bot.editMessageText(
